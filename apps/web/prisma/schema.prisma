@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  guardian
+  admin
+}
+
+enum SchoolLevel {
+  elementary
+  middle
+  high
+}
+
+enum Subject {
+  math
+  science
+  english
+}
+
+model User {
+  id           String    @id @default(uuid())
+  role         UserRole
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  students     Student[]
+
+  @@map("users")
+}
+
+model Student {
+  id             String         @id @default(uuid())
+  guardianUserId String         @map("guardian_user_id")
+  name           String
+  schoolLevel    SchoolLevel    @map("school_level")
+  grade          Int
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  guardian       User           @relation(fields: [guardianUserId], references: [id], onDelete: Cascade)
+  materials      Material[]
+  attempts       Attempt[]
+  mastery        MasterySnapshot[]
+
+  @@index([guardianUserId])
+  @@map("students")
+}
+
+model CurriculumNode {
+  id                String           @id @default(uuid())
+  curriculumVersion String           @map("curriculum_version")
+  schoolLevel       SchoolLevel      @map("school_level")
+  subject           Subject
+  grade             Int
+  semester          Int
+  unitCode          String           @map("unit_code")
+  unitName          String           @map("unit_name")
+  parentId          String?          @map("parent_id")
+  sortOrder         Int              @default(0) @map("sort_order")
+  activeFrom        DateTime         @map("active_from")
+  activeTo          DateTime?        @map("active_to")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  parent            CurriculumNode?  @relation("CurriculumNodeTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children          CurriculumNode[] @relation("CurriculumNodeTree")
+  attemptItems      AttemptItem[]
+  masterySnapshots  MasterySnapshot[]
+
+  @@index([schoolLevel, subject, grade, semester])
+  @@index([curriculumVersion, schoolLevel, subject])
+  @@map("curriculum_nodes")
+}
+
+model Material {
+  id         String      @id @default(uuid())
+  studentId  String      @map("student_id")
+  title      String
+  publisher  String
+  subject    Subject
+  schoolLevel SchoolLevel @map("school_level")
+  grade      Int
+  semester   Int
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  student    Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  attempts   Attempt[]
+
+  @@index([studentId, createdAt])
+  @@map("materials")
+}
+
+model Attempt {
+  id          String       @id @default(uuid())
+  studentId   String       @map("student_id")
+  materialId  String       @map("material_id")
+  attemptDate DateTime     @map("attempt_date")
+  notes       String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  material    Material     @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  items       AttemptItem[]
+
+  @@index([studentId, attemptDate])
+  @@map("attempts")
+}
+
+model AttemptItem {
+  id               String          @id @default(uuid())
+  attemptId        String          @map("attempt_id")
+  curriculumNodeId String          @map("curriculum_node_id")
+  problemNo        Int             @map("problem_no")
+  isCorrect        Boolean         @map("is_correct")
+  difficulty       Int?
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+  attempt          Attempt         @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  curriculumNode   CurriculumNode  @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
+  wrongAnswer      WrongAnswer?
+
+  @@index([attemptId, curriculumNodeId])
+  @@map("attempt_items")
+}
+
+model WrongAnswer {
+  id            String                 @id @default(uuid())
+  attemptItemId String                 @unique @map("attempt_item_id")
+  imagePath     String?                @map("image_path")
+  memo          String?
+  reviewedAt    DateTime?              @map("reviewed_at")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+  attemptItem   AttemptItem            @relation(fields: [attemptItemId], references: [id], onDelete: Cascade)
+  categories    WrongAnswerCategoryMap[]
+
+  @@index([createdAt])
+  @@map("wrong_answers")
+}
+
+model WrongAnswerCategory {
+  id         String                 @id @default(uuid())
+  key        String                 @unique
+  labelKo    String                 @map("label_ko")
+  createdAt  DateTime               @default(now()) @map("created_at")
+  updatedAt  DateTime               @updatedAt @map("updated_at")
+  wrongItems WrongAnswerCategoryMap[]
+
+  @@map("wrong_answer_categories")
+}
+
+model WrongAnswerCategoryMap {
+  wrongAnswerId String              @map("wrong_answer_id")
+  categoryId    String              @map("category_id")
+  wrongAnswer   WrongAnswer         @relation(fields: [wrongAnswerId], references: [id], onDelete: Cascade)
+  category      WrongAnswerCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([wrongAnswerId, categoryId])
+  @@map("wrong_answer_category_map")
+}
+
+model MasterySnapshot {
+  id               String         @id @default(uuid())
+  studentId        String         @map("student_id")
+  curriculumNodeId String         @map("curriculum_node_id")
+  score            Decimal        @db.Decimal(5, 2)
+  accuracy         Decimal        @db.Decimal(4, 3)
+  periodStart      DateTime       @map("period_start")
+  periodEnd        DateTime       @map("period_end")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  student          Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  curriculumNode   CurriculumNode @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
+
+  @@index([studentId, curriculumNodeId, periodEnd])
+  @@map("mastery_snapshots")
+}

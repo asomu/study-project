@@ -27,6 +27,23 @@
 - 로컬 배포 안정화
 - 사용자 피드백 반영
 
+## 1.1 M1 Scope Lock (2026-02-20)
+
+포함 범위:
+
+- pnpm 워크스페이스 + Next.js 16(App Router) + Tailwind 4 + ESLint/Prettier
+- PostgreSQL 대상 Prisma 스키마/마이그레이션/시드 파일
+- 커스텀 JWT + HttpOnly 쿠키 기반 인증(`POST /api/v1/auth/login`, `POST /api/v1/auth/logout`)
+- 학생 기본 API(`GET /api/v1/students`, `POST /api/v1/students`) + 소유권 가드 스캐폴딩
+- 기본 로그인/대시보드 셸 화면과 보호 라우팅
+- Unit/Integration/E2E smoke 테스트 게이트
+
+비포함 범위:
+
+- Redis/BullMQ, MinIO, Caddy 운영 구성
+- 오답 이미지 업로드 API 및 대시보드 분석 API 구현
+- M2 이후 도메인(문제집/시도/오답 입력) 기능 상세
+
 ## 2. MVP 작업 우선순위
 
 - P0: 인증/학생 프로필/커리큘럼

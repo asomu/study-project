@@ -48,3 +48,10 @@
 - Decision: 초기 운영은 로컬 네트워크 우선, 외부 공개는 TLS/접근제어 검증 후 단계적으로 허용
 - Rationale: 개인정보 노출 리스크를 낮추고 운영 복잡도를 통제
 - Consequence: 외부 공개 전 보안 점검 체크리스트가 필수
+
+## ADR-0008: M1 기반 구축 범위/인증 방식 고정
+
+- Date: 2026-02-20
+- Decision: M1은 코어 기반(Next.js + Prisma + JWT + 기본 UI + 테스트 게이트)까지만 포함하고, 인증은 커스텀 JWT + HttpOnly 쿠키로 고정
+- Rationale: MVP 초기에는 필수 경로를 빠르게 안정화하고, 인프라 확장(Redis/MinIO/Caddy)은 M2 이후로 분리해 리스크를 줄임
+- Consequence: M1 완료 판정 시 DB 런타임 검증과 권한 테스트를 우선 확인하고, 나머지 인프라 요소는 후속 마일스톤에서 별도 추적해야 함
