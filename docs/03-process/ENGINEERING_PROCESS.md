@@ -8,6 +8,8 @@
 - 수용 기준(acceptance criteria) 존재
 - 데이터/API 영향도 확인 완료
 - 테스트 관점(성공/실패 케이스) 정의 완료
+- 권한/소유권 검증 조건 정의 완료
+- 변경 기능의 FR ID와 테스트 연결 계획 존재
 
 ## 2. Definition of Done (DoD)
 

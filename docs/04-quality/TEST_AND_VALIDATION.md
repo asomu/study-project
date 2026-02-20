@@ -47,3 +47,16 @@
 - 이미지 업로드 실패/재시도
 - 카테고리 복수 선택 정확성
 - 오답 수정/삭제 후 분석 반영 일관성
+
+## 7. 권한/버전 리스크 검증 포인트
+
+- 보호자 A가 보호자 B의 `studentId`로 요청 시 403 반환
+- `attemptId/materialId/wrongAnswerId` 경유 요청의 소유권 체인 검증
+- `asOfDate` 기준 커리큘럼 버전 선택 정확성
+- `curriculumVersion` 명시 시 해당 버전 우선 적용
+
+## 8. FR-테스트 추적 규칙
+
+- FR-001/003/004/005/006은 Unit + Integration으로 기본 검증한다.
+- FR-002/007/008/009는 Integration + E2E 스모크를 포함한다.
+- PR마다 변경된 FR ID를 PR 설명에 기록하고, 대응 테스트를 연결한다.

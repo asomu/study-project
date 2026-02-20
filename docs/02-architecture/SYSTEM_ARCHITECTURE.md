@@ -65,3 +65,15 @@ MVP 기본 카테고리:
 - DB 백업/복구 스크립트 표준화
 - 스토리지 버킷 마이그레이션 자동화
 - 환경변수 파일 분리(`.env.local`, `.env.prod`)
+
+## 9. 커리큘럼 버전 선택 규칙
+
+- 커리큘럼 조회는 `asOfDate` 기준으로 유효 버전을 선택한다.
+- 버전 충돌 시 명시적 `curriculumVersion` 파라미터가 우선한다.
+- 응답에 적용 버전 메타를 포함해 대시보드 계산과 추적성을 보장한다.
+
+## 10. 공식 데이터 소스 정책
+
+- NCIC 수집은 `inventoryNodeList.do`, `invFileList.do`, `inv/org/download.do` 경로를 기준으로 한다.
+- `bbs/standard/view/*` 상세 페이지는 404 리스크가 있어 MVP 자동수집 경로에서 제외한다.
+- 데이터 소스 변경은 Decision Log에 기록 후 반영한다.

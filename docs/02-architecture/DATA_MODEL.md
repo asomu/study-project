@@ -14,7 +14,7 @@
 ### users
 
 - id (uuid, pk)
-- role (guardian, student, admin)
+- role (guardian, admin)
 - email (unique)
 - password_hash
 - created_at, updated_at
@@ -31,6 +31,7 @@
 ### curriculum_nodes
 
 - id (uuid, pk)
+- curriculum_version (ex: 2022.12, 2026.01)
 - school_level
 - subject
 - grade
@@ -120,3 +121,10 @@ Seed values:
 - category 커스텀 지원: wrong_answer_categories.owner_student_id (nullable)
 - subject 확장: 과학/영어 추가 시 curriculum_nodes 동일 구조 사용
 - 다자녀 가정: guardian 1:N students 이미 대응
+
+## 5. 권한/무결성 규칙
+
+- MVP에서는 `students.guardian_user_id`가 단일 소유권 기준이다.
+- `materials.student_id`, `attempts.student_id`, `mastery_snapshots.student_id`는 모두 같은 보호자 소유 학생으로 연결되어야 한다.
+- 서버는 조회/수정 시 학생 소유권 체인을 항상 검증해야 한다.
+- 학생 독립 로그인은 MVP 범위 밖이며, 추후 별도 사용자 맵핑 테이블로 확장한다.

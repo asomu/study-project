@@ -36,6 +36,7 @@ Define specialist agents to run before and during development for quality and co
 - Main inputs:
   - `/Users/mark/Documents/project/study-project/docs/01-product/PRD.md`
   - design references or Figma nodes
+  - additional design skills (if installed): `frontend-design`, `web-design-guidelines`
 
 5. Documentation Expert
 - Skill: `study-documentation-expert`
