@@ -1,0 +1,195 @@
+{
+  "fetched_at": "2026-02-20",
+  "source": "NCIC API",
+  "api_endpoints": {
+    "inventory": "https://ncic.re.kr/api/inv/inventoryNodeList.do",
+    "files": "https://ncic.re.kr/api/inv/invFileList.do",
+    "file_download": "https://ncic.re.kr/inv/org/download.do?year={openYear}&seq={orgAttNo}&orgType=ogi4"
+  },
+  "middle_school_periods": [
+    {
+      "title": "중학교(2022.12)",
+      "openYear": "2022",
+      "openMonth": "12"
+    },
+    {
+      "title": "중학교(2026.01)",
+      "openYear": "2026",
+      "openMonth": "01"
+    }
+  ],
+  "middle_school_subjects_2022_12": [
+    {
+      "subjectCode": "1100",
+      "title": "총론"
+    },
+    {
+      "subjectCode": "1713",
+      "title": "국어"
+    },
+    {
+      "subjectCode": "2511",
+      "title": "수학"
+    },
+    {
+      "subjectCode": "3360",
+      "title": "영어"
+    },
+    {
+      "subjectCode": "2304",
+      "title": "사회"
+    },
+    {
+      "subjectCode": "3311",
+      "title": "도덕"
+    },
+    {
+      "subjectCode": "1306",
+      "title": "과학"
+    },
+    {
+      "subjectCode": "3009",
+      "title": "체육"
+    },
+    {
+      "subjectCode": "2801",
+      "title": "음악"
+    },
+    {
+      "subjectCode": "2201",
+      "title": "미술"
+    },
+    {
+      "subjectCode": "1801",
+      "title": "기술·가정"
+    },
+    {
+      "subjectCode": "1825",
+      "title": "정보"
+    },
+    {
+      "subjectCode": "3305",
+      "title": "생활 외국어"
+    },
+    {
+      "subjectCode": "1701",
+      "title": "한문"
+    },
+    {
+      "subjectCode": "1509",
+      "title": "환경"
+    },
+    {
+      "subjectCode": "1510",
+      "title": "보건"
+    },
+    {
+      "subjectCode": "1508",
+      "title": "진로와 직업"
+    },
+    {
+      "subjectCode": "3379",
+      "title": "한국어 교육과정"
+    },
+    {
+      "subjectCode": "3314",
+      "title": "창의적 체험활동"
+    }
+  ],
+  "middle_school_math_sections_2022_12": [
+    {
+      "invDepth": "5",
+      "degreeCode": "1014",
+      "classCode": "1003",
+      "subjectCode": "2511",
+      "openYear": "2022",
+      "openMonth": "12",
+      "ref": "10069279",
+      "title": "교육과정 설계의 개요",
+      "folder": false,
+      "lazy": false,
+      "rootIdx": "10069279"
+    },
+    {
+      "invDepth": "5",
+      "degreeCode": "1014",
+      "classCode": "1003",
+      "subjectCode": "2511",
+      "openYear": "2022",
+      "openMonth": "12",
+      "ref": "10069477",
+      "title": "1. 성격 및 목표",
+      "folder": false,
+      "lazy": false,
+      "rootIdx": "10069477"
+    },
+    {
+      "invDepth": "5",
+      "degreeCode": "1014",
+      "classCode": "1003",
+      "subjectCode": "2511",
+      "openYear": "2022",
+      "openMonth": "12",
+      "ref": "10069478",
+      "title": "2. 내용 체계 및 성취기준",
+      "folder": true,
+      "lazy": true,
+      "rootIdx": "10069478"
+    },
+    {
+      "invDepth": "5",
+      "degreeCode": "1014",
+      "classCode": "1003",
+      "subjectCode": "2511",
+      "openYear": "2022",
+      "openMonth": "12",
+      "ref": "10069479",
+      "title": "3. 교수·학습 및 평가",
+      "folder": false,
+      "lazy": false,
+      "rootIdx": "10069479"
+    }
+  ],
+  "middle_school_math_achievement_nodes_2022_12": [
+    {
+      "invDepth": "6",
+      "degreeCode": "1014",
+      "classCode": "1003",
+      "subjectCode": "2511",
+      "openYear": "2022",
+      "openMonth": "12",
+      "ref": "10069510",
+      "title": "가. 내용 체계",
+      "folder": false,
+      "lazy": false,
+      "rootIdx": "10069510"
+    },
+    {
+      "invDepth": "6",
+      "degreeCode": "1014",
+      "classCode": "1003",
+      "subjectCode": "2511",
+      "openYear": "2022",
+      "openMonth": "12",
+      "ref": "10069511",
+      "title": "나. 성취기준",
+      "folder": false,
+      "lazy": false,
+      "rootIdx": "10069511"
+    }
+  ],
+  "middle_school_math_files_2022_12": [
+    {
+      "fileOrg": "[별책8] 수학과 교육과정.pdf",
+      "fileExt": "pdf",
+      "orgAttNo": "10003592",
+      "openYear": "2022"
+    },
+    {
+      "fileOrg": "[별책8] 수학과 교육과정.hwp",
+      "fileExt": "hwp",
+      "orgAttNo": "10003593",
+      "openYear": "2022"
+    }
+  ]
+}
