@@ -1,15 +1,15 @@
 # Project Status
 
 - Last Updated: 2026-02-21
-- Current Phase: Build (M1)
-- Overall Progress: 63%
+- Current Phase: Build (M2 Ready)
+- Overall Progress: 70%
 
 ## 1. Milestone Status
 
 | Milestone | Status | Progress | Owner | Notes |
 | --- | --- | --- | --- | --- |
 | M0 설계/문서화 | COMPLETED | 100% | Team | 권한/버전/데이터소스/운영정책 리스크 반영 완료 |
-| M1 기반 구축 | IN_PROGRESS | 90% | Team | 코드/테스트 완료, DB 런타임 검증 대기 |
+| M1 기반 구축 | COMPLETED | 100% | Team | Docker DB 런타임 검증 + 인증/학생 API/UI/테스트 게이트 완료 |
 | M2 핵심 입력 기능 | NOT_STARTED | 0% | Team | M1 종료 후 시작 |
 | M3 대시보드 MVP | NOT_STARTED | 0% | Team | M2 완료 후 시작 |
 | M4 검증/안정화 | NOT_STARTED | 0% | Team | 후반 단계 |
@@ -39,19 +39,18 @@
 - [x] Unit/Integration/E2E smoke 테스트 게이트 구성 및 통과
 - [x] 클로즈아웃 리뷰 반영(Prisma config 전환, Playwright 산출물 ignore)
 - [x] `study-tech-explainer` 학습 노트 영역 신설 및 M1 설명 문서화
-- [ ] PostgreSQL 컨테이너 실제 기동 후 migrate/seed 런타임 검증
+- [x] PostgreSQL 컨테이너 실제 기동 후 migrate/seed 런타임 검증
 
 ## 3. Risks and Blocks
 
-- 환경 블록: 현재 작업 머신에 `docker`, `psql` 미설치로 DB 런타임 검증이 지연됨
-- 운영 모니터링 항목:
-  - 디자인 산출물 품질(Figma 노드/레퍼런스 확보 여부)
-  - 외부 공개 시 TLS/접근제어 설정 점검
+- 현재 기능 구현 블로커 없음(M1 종료)
+- 운영 모니터링: 디자인 산출물 품질(Figma 노드/레퍼런스 확보 여부)
+- 운영 모니터링: 외부 공개 시 TLS/접근제어 설정 점검
 
 ## 4. Next Actions
 
-1. Docker/DB 실행 가능한 환경에서 `docker compose -f infra/docker/docker-compose.local.yml up -d` 실행
-2. `pnpm -C apps/web prisma migrate deploy` + `pnpm -C apps/web prisma:seed` 성공 여부 확인 후 M1 완료 처리
+1. M2 범위 확정: 문제집/시도/오답 입력 API와 업로드 정책(제한/검증)을 세부화
+2. M2 테스트 설계: 소유권/입력검증/오류 응답 시나리오를 unit+integration 기준으로 정의
 3. `study-tech-explainer` 사용 시 `docs/07-learning` 인덱스와 학습 노트를 지속 업데이트
 
 ## 5. Change Log
@@ -67,3 +66,5 @@
 - 2026-02-20: M1 기반 구축 코드/테스트/문서 반영 (DB 런타임 검증만 환경 대기)
 - 2026-02-20: study-code-cleanup 재수행(리뷰 2건 수정, 문서 동기화, 커밋 준비)
 - 2026-02-21: `study-tech-explainer` 학습 보관 영역(`docs/07-learning`) 생성 및 M1 학습 노트 추가
+- 2026-02-21: Docker DB 기동 + `prisma migrate deploy`/`prisma:seed` 런타임 검증 완료, M1 상태 COMPLETED로 전환
+- 2026-02-21: Prisma config `.env` 로딩을 Node 내장 `process.loadEnvFile` 기반으로 정리

@@ -1,6 +1,6 @@
 # Session Handoff
 
-## Latest Update (2026-02-20)
+## Latest Update (2026-02-21)
 
 - Done:
   - pnpm 워크스페이스 + Next.js 16(App Router) 앱(`apps/web`) 부트스트랩 완료
@@ -9,15 +9,17 @@
   - 학생 기본 API(`GET/POST /api/v1/students`)와 소유권 가드 스캐폴딩 구현 완료
   - 로그인/대시보드 기본 UI 및 보호 라우팅(Proxy) 구현 완료
   - 품질 게이트 통과: lint, typecheck, unit, integration, e2e smoke
+  - Docker DB 런타임 검증 완료: `docker compose -f infra/docker/docker-compose.local.yml up -d`, `pnpm -C apps/web exec prisma migrate deploy`, `pnpm -C apps/web prisma:seed`
+  - Prisma config `.env` 로딩을 Node 내장 `process.loadEnvFile` 기반으로 정리
   - 클로즈아웃 리뷰 결과 반영: Prisma deprecated seed 설정 제거 및 Playwright 산출물 ignore 적용
 - In Progress:
-  - M1 최종 종료를 위한 PostgreSQL 런타임 검증(migrate/seed 실제 실행)
+  - M2 착수 준비(입력 도메인 API/테스트 범위 확정)
 - Blocked:
-  - 현재 작업 머신에 `docker`, `psql`이 없어 DB 컨테이너 기동 검증 불가
+  - 현재 확인된 블로커 없음
 - Next:
-  - Docker 가능한 환경에서 `docker compose -f infra/docker/docker-compose.local.yml up -d`
-  - `pnpm -C apps/web prisma migrate deploy` + `pnpm -C apps/web prisma:seed` 성공 확인
-  - 확인 후 `PROJECT_STATUS.md`에서 M1 상태를 COMPLETED로 전환하고 M2 착수
+  - M2 상세 작업 항목(문제집/시도/오답 입력, 업로드 제한) 구현 태스크로 분해
+  - 입력 API 권한/검증 규칙에 대한 unit/integration 테스트 케이스 선작성(Hybrid TDD)
+  - 진행 중 결정사항은 `PROJECT_STATUS.md`와 `DECISION_LOG.md`에 즉시 동기화
 
 ## Session Start Checklist
 
