@@ -1,8 +1,8 @@
 # Project Status
 
-- Last Updated: 2026-02-20
+- Last Updated: 2026-02-21
 - Current Phase: Build (M1)
-- Overall Progress: 62%
+- Overall Progress: 63%
 
 ## 1. Milestone Status
 
@@ -38,6 +38,7 @@
 - [x] 로그인/대시보드 기본 레이아웃 및 보호 라우팅 구현
 - [x] Unit/Integration/E2E smoke 테스트 게이트 구성 및 통과
 - [x] 클로즈아웃 리뷰 반영(Prisma config 전환, Playwright 산출물 ignore)
+- [x] `study-tech-explainer` 학습 노트 영역 신설 및 M1 설명 문서화
 - [ ] PostgreSQL 컨테이너 실제 기동 후 migrate/seed 런타임 검증
 
 ## 3. Risks and Blocks
@@ -51,7 +52,7 @@
 
 1. Docker/DB 실행 가능한 환경에서 `docker compose -f infra/docker/docker-compose.local.yml up -d` 실행
 2. `pnpm -C apps/web prisma migrate deploy` + `pnpm -C apps/web prisma:seed` 성공 여부 확인 후 M1 완료 처리
-3. M2 시작: materials/attempts/wrong-answers 입력 API와 화면 구현
+3. `study-tech-explainer` 사용 시 `docs/07-learning` 인덱스와 학습 노트를 지속 업데이트
 
 ## 5. Change Log
 
@@ -65,3 +66,4 @@
 - 2026-02-20: study-code-cleanup 수행(리뷰 완료, 추가 수정사항 없음, 커밋 준비)
 - 2026-02-20: M1 기반 구축 코드/테스트/문서 반영 (DB 런타임 검증만 환경 대기)
 - 2026-02-20: study-code-cleanup 재수행(리뷰 2건 수정, 문서 동기화, 커밋 준비)
+- 2026-02-21: `study-tech-explainer` 학습 보관 영역(`docs/07-learning`) 생성 및 M1 학습 노트 추가

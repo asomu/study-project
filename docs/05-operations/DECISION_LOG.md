@@ -55,3 +55,10 @@
 - Decision: M1은 코어 기반(Next.js + Prisma + JWT + 기본 UI + 테스트 게이트)까지만 포함하고, 인증은 커스텀 JWT + HttpOnly 쿠키로 고정
 - Rationale: MVP 초기에는 필수 경로를 빠르게 안정화하고, 인프라 확장(Redis/MinIO/Caddy)은 M2 이후로 분리해 리스크를 줄임
 - Consequence: M1 완료 판정 시 DB 런타임 검증과 권한 테스트를 우선 확인하고, 나머지 인프라 요소는 후속 마일스톤에서 별도 추적해야 함
+
+## ADR-0009: 기술 설명 학습 노트 보관 정책
+
+- Date: 2026-02-21
+- Decision: `study-tech-explainer`로 생성된 설명은 `docs/07-learning` 영역에 문서화하고 인덱스로 관리한다.
+- Rationale: 구현 설명을 세션성 대화로 소실하지 않고 학습 자산으로 재사용하기 위함.
+- Consequence: explainer 사용 시 노트 저장/인덱스 갱신 작업이 추가되며, 운영 문서와 링크 무결성 검증이 필요하다.

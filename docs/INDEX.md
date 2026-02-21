@@ -41,6 +41,12 @@
 - `/Users/mark/Documents/project/study-project/docs/06-data/ncic_middle_math_sources_2026-02-20.json`
 - `/Users/mark/Documents/project/study-project/docs/06-data/별책8_수학과_교육과정_2022.pdf`
 
-## 7. Tooling
+## 7. Learning
+
+- `/Users/mark/Documents/project/study-project/docs/07-learning/README.md`
+- `/Users/mark/Documents/project/study-project/docs/07-learning/TECH_EXPLAINER_INDEX.md`
+- `/Users/mark/Documents/project/study-project/docs/07-learning/templates/TECH_EXPLAINER_NOTE_TEMPLATE.md`
+
+## 8. Tooling
 
 - `/Users/mark/Documents/project/study-project/scripts/check-doc-links.sh`
