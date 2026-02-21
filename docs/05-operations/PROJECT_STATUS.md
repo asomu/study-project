@@ -1,8 +1,8 @@
 # Project Status
 
 - Last Updated: 2026-02-21
-- Current Phase: Build (M2 Ready)
-- Overall Progress: 70%
+- Current Phase: Build (M3 Ready)
+- Overall Progress: 82%
 
 ## 1. Milestone Status
 
@@ -10,7 +10,7 @@
 | --- | --- | --- | --- | --- |
 | M0 설계/문서화 | COMPLETED | 100% | Team | 권한/버전/데이터소스/운영정책 리스크 반영 완료 |
 | M1 기반 구축 | COMPLETED | 100% | Team | Docker DB 런타임 검증 + 인증/학생 API/UI/테스트 게이트 완료 |
-| M2 핵심 입력 기능 | NOT_STARTED | 0% | Team | M1 종료 후 시작 |
+| M2 핵심 입력 기능 | COMPLETED | 100% | Team | 입력 API 8종 + 최소 UI 2화면 + 업로드/권한/테스트 게이트 완료 |
 | M3 대시보드 MVP | NOT_STARTED | 0% | Team | M2 완료 후 시작 |
 | M4 검증/안정화 | NOT_STARTED | 0% | Team | 후반 단계 |
 
@@ -40,17 +40,22 @@
 - [x] 클로즈아웃 리뷰 반영(Prisma config 전환, Playwright 산출물 ignore)
 - [x] `study-tech-explainer` 학습 노트 영역 신설 및 M1 설명 문서화
 - [x] PostgreSQL 컨테이너 실제 기동 후 migrate/seed 런타임 검증
+- [x] M2 입력 API 8종 구현(curriculum/materials/attempts/items/wrong-answers/categories/image)
+- [x] 소유권 체인 검증 확장(material/attempt/attemptItem/wrongAnswer)
+- [x] M2 최소 UI 2화면(`records/new`, `wrong-answers/manage`) 구현 및 보호 라우팅 연결
+- [x] M2 Hybrid TDD 게이트 통과(lint/typecheck/unit/integration/e2e smoke)
 
 ## 3. Risks and Blocks
 
-- 현재 기능 구현 블로커 없음(M1 종료)
+- 현재 기능 구현 블로커 없음(M2 종료)
 - 운영 모니터링: 디자인 산출물 품질(Figma 노드/레퍼런스 확보 여부)
 - 운영 모니터링: 외부 공개 시 TLS/접근제어 설정 점검
+- 운영 모니터링: 로컬 업로드 스토리지 사용량/백업 정책 점검
 
 ## 4. Next Actions
 
-1. M2 범위 확정: 문제집/시도/오답 입력 API와 업로드 정책(제한/검증)을 세부화
-2. M2 테스트 설계: 소유권/입력검증/오류 응답 시나리오를 unit+integration 기준으로 정의
+1. M3 범위 확정: 대시보드 핵심 API(`overview/weakness/trends`) 계약과 계산 규칙 고정
+2. M3 시각화 구현: 진도/약점/오답유형 카드 및 차트 기본 UI 연결
 3. `study-tech-explainer` 사용 시 `docs/07-learning` 인덱스와 학습 노트를 지속 업데이트
 
 ## 5. Change Log
@@ -68,3 +73,5 @@
 - 2026-02-21: `study-tech-explainer` 학습 보관 영역(`docs/07-learning`) 생성 및 M1 학습 노트 추가
 - 2026-02-21: Docker DB 기동 + `prisma migrate deploy`/`prisma:seed` 런타임 검증 완료, M1 상태 COMPLETED로 전환
 - 2026-02-21: Prisma config `.env` 로딩을 Node 내장 `process.loadEnvFile` 기반으로 정리
+- 2026-02-21: M2 입력 API/보호 UI/소유권 체인/로컬 이미지 업로드 구현 완료
+- 2026-02-21: M2 테스트 확장(통합 20케이스, e2e smoke 2시나리오) 및 품질 게이트 통과

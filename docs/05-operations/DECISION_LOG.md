@@ -62,3 +62,10 @@
 - Decision: `study-tech-explainer`로 생성된 설명은 `docs/07-learning` 영역에 문서화하고 인덱스로 관리한다.
 - Rationale: 구현 설명을 세션성 대화로 소실하지 않고 학습 자산으로 재사용하기 위함.
 - Consequence: explainer 사용 시 노트 저장/인덱스 갱신 작업이 추가되며, 운영 문서와 링크 무결성 검증이 필요하다.
+
+## ADR-0010: M2 오답 이미지 로컬 저장 정책
+
+- Date: 2026-02-21
+- Decision: M2 이미지 업로드는 로컬 파일시스템(`public/uploads/wrong-answers`)에 저장하고 DB에는 공개 상대 경로만 기록한다.
+- Rationale: MinIO 도입 전 단계에서 구현 복잡도를 낮추면서도 실제 업로드/조회 플로우를 빠르게 검증하기 위함.
+- Consequence: 스토리지 사용량/백업 점검이 운영 체크리스트에 추가되며, 외부 스토리지 전환 시 경로 마이그레이션 전략이 필요하다.

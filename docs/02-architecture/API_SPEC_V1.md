@@ -1,7 +1,7 @@
 # API Spec v1 (Draft)
 
-- Version: v1.0-draft
-- Date: 2026-02-20
+- Version: v1.1-draft
+- Date: 2026-02-21
 - Base path: `/api/v1`
 
 ## 1. Auth
@@ -49,22 +49,38 @@ response:
 - 단원 트리 배열
 - 적용 버전 메타 정보 { curriculumVersion, effectiveFrom, effectiveTo }
 
+validation:
+- `asOfDate` 누락/형식 오류 시 `400 VALIDATION_ERROR`
+- `curriculumVersion` 명시 시 해당 버전을 우선 조회
+- 명시 버전이 없으면 `asOfDate` 기준 활성 버전 중 최신 버전 선택
+- 조회 결과가 없으면 `404 NOT_FOUND`
+
 ## 4. Materials and Attempts
 
 ### POST /materials
 
 - request: { studentId, title, publisher, subject, grade, semester }
 - authorization: studentId must belong to authenticated guardian
+- validation: M2는 `subject=math`만 허용
+- response: 201 material
 
 ### POST /attempts
 
 - request: { studentId, materialId, attemptDate, notes }
 - authorization: studentId/materialId ownership chain must be valid
+- validation: `materialId`와 `studentId` 체인이 일치해야 함
+- response: 201 attempt
 
 ### POST /attempts/{attemptId}/items
 
-- request: [{ curriculumNodeId, problemNo, isCorrect, difficulty }]
+- request: { items: [{ curriculumNodeId, problemNo, isCorrect, difficulty }] }
 - authorization: attemptId ownership must be valid
+- validation:
+  - payload 내부 `problemNo` 중복 금지
+  - 기존 attempt 문항과 `problemNo` 충돌 금지
+  - `difficulty`는 1..5
+  - `curriculumNodeId` 유효성 검증
+- response: 201 { attemptId, items }
 
 ## 5. Wrong Answers
 
@@ -73,6 +89,7 @@ response:
 - request: { attemptItemId, memo }
 - response: wrongAnswer
 - authorization: attemptItemId ownership must be valid
+- validation: `isCorrect=false` 문항에서만 생성/업데이트 가능
 
 ### POST /wrong-answers/{id}/image
 
@@ -80,12 +97,17 @@ response:
 - field: file
 - response: { imagePath }
 - authorization: wrongAnswer ownership must be valid
+- storage:
+  - 저장 위치: `public/uploads/wrong-answers`
+  - 허용 MIME: `image/jpeg`, `image/png`, `image/webp`
+  - 업로드 제한: `UPLOAD_MAX_BYTES` (기본 5MB)
 
 ### PUT /wrong-answers/{id}/categories
 
 - request: { categoryKeys: ["calculation_mistake", "misread_question"] }
 - response: updated wrongAnswer with categories
 - authorization: wrongAnswer ownership must be valid
+- validation: 중복 key 금지, 존재하지 않는 key 포함 시 `400`
 
 ### GET /wrong-answers
 
@@ -143,6 +165,16 @@ response:
   }
 }
 ```
+
+대표 에러 코드:
+- `AUTH_REQUIRED`
+- `AUTH_INVALID_CREDENTIALS`
+- `FORBIDDEN`
+- `VALIDATION_ERROR`
+- `NOT_FOUND`
+- `UNSUPPORTED_MEDIA_TYPE`
+- `PAYLOAD_TOO_LARGE`
+- `INTERNAL_SERVER_ERROR`
 
 ## 8. Security
 

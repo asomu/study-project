@@ -44,6 +44,30 @@
 - 오답 이미지 업로드 API 및 대시보드 분석 API 구현
 - M2 이후 도메인(문제집/시도/오답 입력) 기능 상세
 
+## 1.2 M2 Scope Lock (2026-02-21)
+
+포함 범위:
+
+- 입력 API 구현
+  - `GET /api/v1/curriculum`
+  - `POST /api/v1/materials`
+  - `POST /api/v1/attempts`
+  - `POST /api/v1/attempts/{attemptId}/items`
+  - `POST /api/v1/wrong-answers`
+  - `GET /api/v1/wrong-answers`
+  - `PUT /api/v1/wrong-answers/{id}/categories`
+  - `POST /api/v1/wrong-answers/{id}/image`
+- 소유권 체인 검증 확장(`material/attempt/attemptItem/wrongAnswer`)
+- 최소 UI 2화면(`records/new`, `wrong-answers/manage`) + 보호 라우팅 연결
+- 로컬 파일 업로드 정책 적용(`public/uploads/wrong-answers`, 최대 5MB, jpeg/png/webp)
+- Hybrid TDD 게이트 확장(unit/integration/e2e smoke)
+
+비포함 범위:
+
+- Redis/MinIO/Caddy 운영 구성
+- 대시보드 분석 API(`overview/weakness/trends`) 본 구현
+- OCR/자동채점/다과목 확장
+
 ## 2. MVP 작업 우선순위
 
 - P0: 인증/학생 프로필/커리큘럼
