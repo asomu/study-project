@@ -1,6 +1,6 @@
 # Project Status
 
-- Last Updated: 2026-02-21
+- Last Updated: 2026-02-24
 - Current Phase: Build (M3 Completed / M4 Ready)
 - Overall Progress: 91%
 
@@ -81,3 +81,4 @@
 - 2026-02-21: M2 테스트 확장(통합 20케이스, e2e smoke 2시나리오) 및 품질 게이트 통과
 - 2026-02-21: M3 대시보드 API/집계 모듈/UI 구현 완료(overview/weakness/trends + `/dashboard` MVP 개편)
 - 2026-02-21: M3 테스트 확장(unit/integration/e2e 3시나리오) 및 품질 게이트 통과
+- 2026-02-24: 세션 부트스트랩용 `/docs/CONTEXT_INDEX.md` 신설 및 `AGENTS.md`/`Handoff` 시작 체크리스트에 반영

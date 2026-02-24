@@ -2,6 +2,10 @@
 
 - Guide: `/Users/mark/Documents/project/study-project/docs/README.md`
 
+## 0. Quick Context
+
+- `/Users/mark/Documents/project/study-project/docs/CONTEXT_INDEX.md` (세션 시작용 요약 허브)
+
 ## 1. Product
 
 - `/Users/mark/Documents/project/study-project/docs/01-product/PRD.md`

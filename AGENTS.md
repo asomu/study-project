@@ -20,10 +20,11 @@ Roster:
 
 ## 2. 시작 절차 (필수)
 
-1. `/Users/mark/Documents/project/study-project/docs/INDEX.md` 확인
-2. `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` 확인
-3. `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` 확인
-4. 요청 작업이 `/Users/mark/Documents/project/study-project/docs/01-product/PRD.md` 범위와 일치하는지 확인
+1. `/Users/mark/Documents/project/study-project/docs/CONTEXT_INDEX.md` 확인 (요약 우선)
+2. `/Users/mark/Documents/project/study-project/docs/INDEX.md` 확인 (전체 네비게이션)
+3. `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` 확인
+4. `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` 확인
+5. 요청 작업이 `/Users/mark/Documents/project/study-project/docs/01-product/PRD.md` 범위와 일치하는지 확인
 
 ## 3. 문서 동기화 규칙 (필수)
 

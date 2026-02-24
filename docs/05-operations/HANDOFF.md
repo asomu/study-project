@@ -1,6 +1,6 @@
 # Session Handoff
 
-## Latest Update (2026-02-21)
+## Latest Update (2026-02-24)
 
 - Done:
   - pnpm 워크스페이스 + Next.js 16(App Router) 앱(`apps/web`) 부트스트랩 완료
@@ -21,6 +21,11 @@
     - 필터(학생/기준일/기간), KPI 카드, 약점/유형 분포, 주간 추이(SVG 차트), 빈상태 CTA
   - 품질 게이트 통과: `lint`, `typecheck`, `test(unit+integration)`, `test:e2e`
   - 문서 동기화 완료: `API_SPEC_V1`, `DEVELOPMENT_PLAN`, `PROJECT_STATUS`, `DECISION_LOG`, `HANDOFF`
+  - 세션 부트스트랩 요약 허브 추가: `/Users/mark/Documents/project/study-project/docs/CONTEXT_INDEX.md`
+  - `AGENTS.md`, `docs/INDEX.md`, `HANDOFF.md` 시작 체크리스트를 `CONTEXT_INDEX` 우선 순서로 정렬
+  - M3 기술 설명 학습 노트 저장 및 인덱스 반영
+    - `/Users/mark/Documents/project/study-project/docs/07-learning/notes/2026-02-24-m3-dashboard-mvp-tech-explainer.md`
+    - `/Users/mark/Documents/project/study-project/docs/07-learning/TECH_EXPLAINER_INDEX.md`
 - In Progress:
   - M4 검증/안정화 준비(회귀 테스트 강화, UX 백로그 정리)
 - Blocked:
@@ -32,6 +37,8 @@
 
 ## Session Start Checklist
 
-1. `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` 확인
-2. `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` 최신 결정 확인
-3. 현재 작업 범위가 PRD와 일치하는지 점검
+1. `/Users/mark/Documents/project/study-project/docs/CONTEXT_INDEX.md` 요약 확인
+2. `/Users/mark/Documents/project/study-project/docs/INDEX.md` 네비게이션 확인
+3. `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` 확인
+4. `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` 최신 결정 확인
+5. 현재 작업 범위가 PRD와 일치하는지 점검
