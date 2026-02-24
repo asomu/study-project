@@ -68,6 +68,30 @@
 - 대시보드 분석 API(`overview/weakness/trends`) 본 구현
 - OCR/자동채점/다과목 확장
 
+## 1.3 M3 Scope Lock (2026-02-21)
+
+포함 범위:
+
+- 대시보드 API 구현
+  - `GET /api/v1/dashboard/overview`
+  - `GET /api/v1/dashboard/weakness`
+  - `GET /api/v1/dashboard/trends`
+- `/dashboard` 단일 화면을 실사용 가능한 MVP 수준으로 개편
+  - 필터(학생/기준일/기간), KPI 카드, 약점 리스트, 오답 유형 분포, 주간 추이 차트
+  - 차트는 외부 라이브러리 없이 SVG/CSS로 구현
+- 집계 데이터 소스는 `attempt_items` 직접 집계로 고정
+- 트렌드는 최근 4주(28일) 주 단위(월요일 시작) 기준으로 제공
+- 약점 랭킹은 `정답률 오름차순 + 최소 시도수 3회 + 상위 5개` 규칙 적용
+- Hybrid TDD 확장
+  - Unit(계산 규칙), Integration(API 계약/권한/검증), E2E(입력->대시보드 반영 + 학생 전환/빈상태)
+
+비포함 범위:
+
+- 대시보드 상세 분리 화면
+- 차트 라이브러리 도입
+- AI 추천/고급 분석 로직
+- M2 오답 카테고리 UX 전면 개편
+
 ## 2. MVP 작업 우선순위
 
 - P0: 인증/학생 프로필/커리큘럼

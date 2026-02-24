@@ -38,6 +38,79 @@ test("login to dashboard flow", async ({ page }) => {
     });
   });
 
+  await page.route("**/api/v1/students", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        students: [
+          {
+            id: "student-e2e-1",
+            name: "기본 학생",
+            schoolLevel: "middle",
+            grade: 1,
+          },
+        ],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/dashboard/overview*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        progress: {
+          recommendedPct: 30,
+          actualPct: 10,
+          coveredUnits: 1,
+          totalUnits: 10,
+        },
+        mastery: {
+          overallScorePct: 60,
+          recentAccuracyPct: 66.7,
+          difficultyWeightedAccuracyPct: 62.5,
+        },
+        summary: {
+          totalAttempts: 1,
+          totalItems: 3,
+          wrongAnswers: 1,
+          asOfDate: "2026-02-21",
+        },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/dashboard/weakness*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        weakUnits: [],
+        categoryDistribution: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/dashboard/trends*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        points: [
+          {
+            weekStart: "2026-01-26",
+            weekEnd: "2026-02-01",
+            totalItems: 3,
+            correctItems: 2,
+            accuracyPct: 66.7,
+            masteryScorePct: 65,
+          },
+        ],
+      }),
+    });
+  });
+
   await page.goto("/login");
 
   await page.getByLabel("이메일").fill(guardianEmail);

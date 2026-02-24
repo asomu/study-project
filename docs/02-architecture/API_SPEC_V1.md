@@ -1,6 +1,6 @@
 # API Spec v1 (Draft)
 
-- Version: v1.1-draft
+- Version: v1.2-draft
 - Date: 2026-02-21
 - Base path: `/api/v1`
 
@@ -118,41 +118,71 @@ query:
 - categoryKey (optional)
 - authorization: studentId must belong to authenticated guardian
 
-## 6. Dashboard
+## 6. Dashboard (M3 MVP)
 
 ### GET /dashboard/overview
 
 query:
-- studentId
-- date (default today)
+- studentId (required)
+- date (optional, `YYYY-MM-DD`, default=today)
 - authorization: studentId must belong to authenticated guardian
 
 response:
-- progress vs recommended timeline
-- overall mastery
-- weak units top N
+- progress:
+  - recommendedPct
+  - actualPct
+  - coveredUnits
+  - totalUnits
+- mastery:
+  - overallScorePct
+  - recentAccuracyPct (recent 28 days)
+  - difficultyWeightedAccuracyPct (difficulty null은 3으로 간주)
+- summary:
+  - totalAttempts
+  - totalItems
+  - wrongAnswers
+  - asOfDate
+
+rules:
+- 학기 구간
+  - 1학기: `YYYY-01-01` ~ `YYYY-06-30`
+  - 2학기: `YYYY-07-01` ~ `YYYY-12-31`
+- recommendedPct = `(학기 경과일 / 학기 총일수) * 100` (0~100 clamp)
+- actualPct = `(학기 내 시도된 고유 단원 수 / 해당 학기 전체 단원 수) * 100`
+- overallScorePct = `0.6*recentAccuracy + 0.25*consistency + 0.15*difficultyWeighted`
+- consistency = `100 - 2*stddev(weeklyAccuracyPct)` (주간 데이터 2개 미만이면 recentAccuracy 사용)
 
 ### GET /dashboard/weakness
 
 query:
-- studentId
-- period (weekly, monthly)
+- studentId (required)
+- period (`weekly|monthly`, default=`weekly`)
 - authorization: studentId must belong to authenticated guardian
 
 response:
-- unit weakness list
-- wrong category distribution
+- weakUnits[]: `{ curriculumNodeId, unitName, attempts, accuracyPct, wrongCount }`
+- categoryDistribution[]: `{ key, labelKo, count, ratio }`
+
+rules:
+- 기간 내 단원별 집계
+- 후보 조건: `attempts >= 3`
+- 정렬: `accuracyPct ASC`, tie-break `attempts DESC`, `unitName ASC`
+- 반환: top 5
 
 ### GET /dashboard/trends
 
 query:
-- studentId
-- rangeStart
-- rangeEnd
+- studentId (required)
+- rangeStart (optional, `YYYY-MM-DD`)
+- rangeEnd (optional, `YYYY-MM-DD`)
 - authorization: studentId must belong to authenticated guardian
 
 response:
-- mastery time series
+- points[]: `{ weekStart, weekEnd, totalItems, correctItems, accuracyPct, masteryScorePct }`
+
+defaults:
+- 범위 미지정 시 최근 28일
+- 주 단위 버킷(월요일 시작)으로 반환
 
 ## 7. Error Format
 

@@ -19,6 +19,9 @@ async function createAuthToken() {
 
 test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   const token = await createAuthToken();
+  let dashboardTotalAttempts = 0;
+  let dashboardTotalItems = 0;
+  let dashboardWrongAnswers = 0;
 
   const wrongAnswerState: {
     id: string;
@@ -121,6 +124,8 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   });
 
   await page.route("**/api/v1/attempts", async (route) => {
+    dashboardTotalAttempts = 1;
+
     await route.fulfill({
       status: 201,
       contentType: "application/json",
@@ -131,6 +136,8 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   });
 
   await page.route("**/api/v1/attempts/*/items", async (route) => {
+    dashboardTotalItems = 1;
+
     await route.fulfill({
       status: 201,
       contentType: "application/json",
@@ -184,6 +191,7 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
     if (request.method() === "POST" && url.pathname.endsWith("/api/v1/wrong-answers")) {
       const requestBody = (await request.postDataJSON()) as { memo?: string };
       wrongAnswerState.memo = requestBody.memo ?? null;
+      dashboardWrongAnswers = 1;
 
       await route.fulfill({
         status: 201,
@@ -205,6 +213,74 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
     }
 
     await route.fallback();
+  });
+
+  await page.route("**/api/v1/dashboard/overview*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        progress: {
+          recommendedPct: 30,
+          actualPct: dashboardTotalItems > 0 ? 100 : 0,
+          coveredUnits: dashboardTotalItems > 0 ? 1 : 0,
+          totalUnits: 1,
+        },
+        mastery: {
+          overallScorePct: dashboardTotalItems > 0 ? 68.1 : 0,
+          recentAccuracyPct: dashboardTotalItems > 0 ? 0 : 0,
+          difficultyWeightedAccuracyPct: dashboardTotalItems > 0 ? 0 : 0,
+        },
+        summary: {
+          totalAttempts: dashboardTotalAttempts,
+          totalItems: dashboardTotalItems,
+          wrongAnswers: dashboardWrongAnswers,
+          asOfDate: "2026-02-21",
+        },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/dashboard/weakness*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        weakUnits: dashboardTotalItems
+          ? [
+              {
+                curriculumNodeId: "curriculum-e2e-1",
+                unitName: "소인수분해",
+                attempts: 3,
+                accuracyPct: 33.3,
+                wrongCount: 2,
+              },
+            ]
+          : [],
+        categoryDistribution: dashboardWrongAnswers
+          ? [{ key: "calculation_mistake", labelKo: "단순 연산 실수", count: 1, ratio: 100 }]
+          : [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/dashboard/trends*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        points: [
+          {
+            weekStart: "2026-02-16",
+            weekEnd: "2026-02-22",
+            totalItems: dashboardTotalItems,
+            correctItems: 0,
+            accuracyPct: 0,
+            masteryScorePct: 0,
+          },
+        ],
+      }),
+    });
   });
 
   await page.goto("/login");
@@ -254,4 +330,9 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   await expect(page.getByText("이미지가 업로드되었습니다.")).toBeVisible();
   await expect(page.getByText("현재 카테고리:")).toContainText("misread_question");
   await expect(page.getByRole("link", { name: "업로드된 이미지 보기" })).toBeVisible();
+
+  await page.getByRole("link", { name: "대시보드" }).click();
+  await page.waitForURL("**/dashboard");
+  await expect(page.getByText("총 시도 1회 / 총 문항 1개")).toBeVisible();
+  await expect(page.getByText("소인수분해")).toBeVisible();
 });

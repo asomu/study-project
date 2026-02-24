@@ -1,8 +1,8 @@
 # Project Status
 
 - Last Updated: 2026-02-21
-- Current Phase: Build (M3 Ready)
-- Overall Progress: 82%
+- Current Phase: Build (M3 Completed / M4 Ready)
+- Overall Progress: 91%
 
 ## 1. Milestone Status
 
@@ -11,8 +11,8 @@
 | M0 설계/문서화 | COMPLETED | 100% | Team | 권한/버전/데이터소스/운영정책 리스크 반영 완료 |
 | M1 기반 구축 | COMPLETED | 100% | Team | Docker DB 런타임 검증 + 인증/학생 API/UI/테스트 게이트 완료 |
 | M2 핵심 입력 기능 | COMPLETED | 100% | Team | 입력 API 8종 + 최소 UI 2화면 + 업로드/권한/테스트 게이트 완료 |
-| M3 대시보드 MVP | NOT_STARTED | 0% | Team | M2 완료 후 시작 |
-| M4 검증/안정화 | NOT_STARTED | 0% | Team | 후반 단계 |
+| M3 대시보드 MVP | COMPLETED | 100% | Team | overview/weakness/trends API + 대시보드 실사용 UI + 테스트 게이트 완료 |
+| M4 검증/안정화 | NOT_STARTED | 0% | Team | 회귀/UX 고도화/운영 안정화 단계 |
 
 ## 2. Current Sprint Focus
 
@@ -44,19 +44,23 @@
 - [x] 소유권 체인 검증 확장(material/attempt/attemptItem/wrongAnswer)
 - [x] M2 최소 UI 2화면(`records/new`, `wrong-answers/manage`) 구현 및 보호 라우팅 연결
 - [x] M2 Hybrid TDD 게이트 통과(lint/typecheck/unit/integration/e2e smoke)
+- [x] M3 대시보드 API 3종 구현(`overview/weakness/trends`)
+- [x] M3 계산 모듈 분리(`modules/analytics`, `modules/dashboard`) 및 규칙 고정
+- [x] `/dashboard` 단일 화면 MVP 개편(필터/KPI/약점/유형/추이 SVG 차트)
+- [x] M3 테스트 확장(unit/integration/e2e) 및 품질 게이트 통과
 
 ## 3. Risks and Blocks
 
-- 현재 기능 구현 블로커 없음(M2 종료)
-- 운영 모니터링: 디자인 산출물 품질(Figma 노드/레퍼런스 확보 여부)
+- 현재 기능 구현 블로커 없음(M3 종료)
+- 운영 모니터링: M3 지표의 교육적 해석 가이드(부모/학생용 설명 문구) 보강 필요
 - 운영 모니터링: 외부 공개 시 TLS/접근제어 설정 점검
 - 운영 모니터링: 로컬 업로드 스토리지 사용량/백업 정책 점검
 
 ## 4. Next Actions
 
-1. M3 범위 확정: 대시보드 핵심 API(`overview/weakness/trends`) 계약과 계산 규칙 고정
-2. M3 시각화 구현: 진도/약점/오답유형 카드 및 차트 기본 UI 연결
-3. `study-tech-explainer` 사용 시 `docs/07-learning` 인덱스와 학습 노트를 지속 업데이트
+1. M4 회귀 강화: 대시보드 수치 검증용 시드/픽스처를 추가해 계산 회귀 테스트를 늘린다.
+2. M2 UX 백로그 처리: 오답 카테고리 선택형 UI(키 직접 입력 제거)를 적용한다.
+3. 운영 체크리스트 보강: 로컬 업로드 백업/보관 주기와 알림 기준을 문서화한다.
 
 ## 5. Change Log
 
@@ -75,3 +79,5 @@
 - 2026-02-21: Prisma config `.env` 로딩을 Node 내장 `process.loadEnvFile` 기반으로 정리
 - 2026-02-21: M2 입력 API/보호 UI/소유권 체인/로컬 이미지 업로드 구현 완료
 - 2026-02-21: M2 테스트 확장(통합 20케이스, e2e smoke 2시나리오) 및 품질 게이트 통과
+- 2026-02-21: M3 대시보드 API/집계 모듈/UI 구현 완료(overview/weakness/trends + `/dashboard` MVP 개편)
+- 2026-02-21: M3 테스트 확장(unit/integration/e2e 3시나리오) 및 품질 게이트 통과
