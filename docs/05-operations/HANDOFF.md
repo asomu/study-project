@@ -26,12 +26,17 @@
   - M3 기술 설명 학습 노트 저장 및 인덱스 반영
     - `/Users/mark/Documents/project/study-project/docs/07-learning/notes/2026-02-24-m3-dashboard-mvp-tech-explainer.md`
     - `/Users/mark/Documents/project/study-project/docs/07-learning/TECH_EXPLAINER_INDEX.md`
+  - M4 회귀 강화 Wave 1 완료
+    - 테스트 fixture 추가: `/Users/mark/Documents/project/study-project/apps/web/tests/fixtures/dashboard-fixtures.ts`
+    - Unit 확장: 대시보드 계산 함수 경계 케이스 추가
+    - Integration 확장: dashboard `weakness/trends` `401/403/400` 실패 경로 및 월간/주간 날짜 경계 검증
+    - 품질 게이트 재통과: `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `check-doc-links.sh`
 - In Progress:
-  - M4 검증/안정화 준비(회귀 테스트 강화, UX 백로그 정리)
+  - M4 검증/안정화 진행 중(Wave 2 회귀 확장 + UX 백로그 정리)
 - Blocked:
   - 현재 확인된 블로커 없음
 - Next:
-  - M4 회귀 강화: 대시보드 계산 규칙용 고정 픽스처/시드로 회귀 테스트 보강
+  - M4 회귀 강화 Wave 2: overview/trends 고정 fixture 시나리오를 추가해 계산 회귀를 더 촘촘히 검증
   - M2 UX 백로그: 오답 카테고리 입력을 선택형 UI로 개선(키 직접 입력 제거)
   - 운영 체크리스트: 로컬 업로드 파일 백업/보관/정리 주기 확정
 

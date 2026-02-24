@@ -92,6 +92,27 @@
 - AI 추천/고급 분석 로직
 - M2 오답 카테고리 UX 전면 개편
 
+## 1.4 M4 Scope Lock (Wave 1, 2026-02-24)
+
+포함 범위:
+
+- 대시보드 회귀 고정 fixture 추가
+  - `/Users/mark/Documents/project/study-project/apps/web/tests/fixtures/dashboard-fixtures.ts`
+- Unit 회귀 강화
+  - `dashboard-metrics` 계산 함수 경계 케이스(가중치 null, 일관성 표준편차, 카테고리 분포, 트렌드 버킷 경계)
+- Integration 회귀 강화
+  - `GET /api/v1/dashboard/weakness`, `GET /api/v1/dashboard/trends`의 `401/403/400` 실패 경로 확장
+  - `weekly/monthly` 날짜 경계(`today-29`, `endOfDay`, 주간 버킷 경계) 검증
+- 품질 게이트 재검증
+  - `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`
+
+비포함 범위:
+
+- 런타임 기능/API/스키마 변경
+- DB 마이그레이션 및 대규모 seed 확장
+- M2 오답 카테고리 UX 개선 본 구현
+- 운영 체크리스트(TLS/백업 정책) 문서 상세화
+
 ## 2. MVP 작업 우선순위
 
 - P0: 인증/학생 프로필/커리큘럼

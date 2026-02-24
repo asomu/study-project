@@ -1,8 +1,8 @@
 # Project Status
 
 - Last Updated: 2026-02-24
-- Current Phase: Build (M3 Completed / M4 Ready)
-- Overall Progress: 91%
+- Current Phase: Build (M4 In Progress)
+- Overall Progress: 94%
 
 ## 1. Milestone Status
 
@@ -12,7 +12,7 @@
 | M1 기반 구축 | COMPLETED | 100% | Team | Docker DB 런타임 검증 + 인증/학생 API/UI/테스트 게이트 완료 |
 | M2 핵심 입력 기능 | COMPLETED | 100% | Team | 입력 API 8종 + 최소 UI 2화면 + 업로드/권한/테스트 게이트 완료 |
 | M3 대시보드 MVP | COMPLETED | 100% | Team | overview/weakness/trends API + 대시보드 실사용 UI + 테스트 게이트 완료 |
-| M4 검증/안정화 | NOT_STARTED | 0% | Team | 회귀/UX 고도화/운영 안정화 단계 |
+| M4 검증/안정화 | IN_PROGRESS | 30% | Team | Wave 1 회귀 강화(대시보드 fixture/unit/integration) 완료 |
 
 ## 2. Current Sprint Focus
 
@@ -48,17 +48,18 @@
 - [x] M3 계산 모듈 분리(`modules/analytics`, `modules/dashboard`) 및 규칙 고정
 - [x] `/dashboard` 단일 화면 MVP 개편(필터/KPI/약점/유형/추이 SVG 차트)
 - [x] M3 테스트 확장(unit/integration/e2e) 및 품질 게이트 통과
+- [x] 대시보드 회귀 테스트 강화 완료(1차): fixture 추가 + unit/integration 실패 경로/날짜 경계 검증 확장
 
 ## 3. Risks and Blocks
 
-- 현재 기능 구현 블로커 없음(M3 종료)
+- 현재 기능 구현 블로커 없음(M4 진행 중)
 - 운영 모니터링: M3 지표의 교육적 해석 가이드(부모/학생용 설명 문구) 보강 필요
 - 운영 모니터링: 외부 공개 시 TLS/접근제어 설정 점검
 - 운영 모니터링: 로컬 업로드 스토리지 사용량/백업 정책 점검
 
 ## 4. Next Actions
 
-1. M4 회귀 강화: 대시보드 수치 검증용 시드/픽스처를 추가해 계산 회귀 테스트를 늘린다.
+1. M4 회귀 강화 Wave 2: overview/trends 계산 시나리오를 fixture 기반으로 추가 확장한다.
 2. M2 UX 백로그 처리: 오답 카테고리 선택형 UI(키 직접 입력 제거)를 적용한다.
 3. 운영 체크리스트 보강: 로컬 업로드 백업/보관 주기와 알림 기준을 문서화한다.
 
@@ -82,3 +83,5 @@
 - 2026-02-21: M3 대시보드 API/집계 모듈/UI 구현 완료(overview/weakness/trends + `/dashboard` MVP 개편)
 - 2026-02-21: M3 테스트 확장(unit/integration/e2e 3시나리오) 및 품질 게이트 통과
 - 2026-02-24: 세션 부트스트랩용 `/docs/CONTEXT_INDEX.md` 신설 및 `AGENTS.md`/`Handoff` 시작 체크리스트에 반영
+- 2026-02-24: M4 회귀 강화 Wave 1 완료(대시보드 fixture 추가, unit/integration 경계/실패경로 테스트 확장, 품질 게이트 재검증)
+- 2026-02-24: `study-code-cleanup` closeout 수행(리뷰 무결함 확인, 운영 문서 동기화, 커밋 준비 완료)

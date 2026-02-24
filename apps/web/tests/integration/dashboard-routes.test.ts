@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SchoolLevel, UserRole } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import { AUTH_COOKIE_NAME } from "@/modules/auth/constants";
 import { signAuthToken } from "@/modules/auth/jwt";
 
@@ -31,6 +31,15 @@ import { prisma } from "@/lib/prisma";
 import { GET as GET_OVERVIEW } from "@/app/api/v1/dashboard/overview/route";
 import { GET as GET_WEAKNESS } from "@/app/api/v1/dashboard/weakness/route";
 import { GET as GET_TRENDS } from "@/app/api/v1/dashboard/trends/route";
+import {
+  createOwnedStudentFixture,
+  DASHBOARD_CURRICULUM_NODES_FIXTURE,
+  DASHBOARD_FIXED_NOW,
+  DASHBOARD_MONTHLY_RANGE_END,
+  DASHBOARD_MONTHLY_RANGE_START,
+  DASHBOARD_TRENDS_ROUTE_ITEMS_FIXTURE,
+  DASHBOARD_TRENDS_ROUTE_RANGE,
+} from "../fixtures/dashboard-fixtures";
 
 const mockedFindStudent = vi.mocked(prisma.student.findFirst);
 const mockedFindCurriculumNodes = vi.mocked(prisma.curriculumNode.findMany);
@@ -48,18 +57,6 @@ async function createAuthCookie() {
   });
 
   return `${AUTH_COOKIE_NAME}=${token}`;
-}
-
-function ownedStudentFixture() {
-  return {
-    id: "student-1",
-    guardianUserId: "guardian-1",
-    name: "기본 학생",
-    schoolLevel: SchoolLevel.middle,
-    grade: 1,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
 }
 
 describe("dashboard API routes", () => {
@@ -120,6 +117,36 @@ describe("dashboard API routes", () => {
     expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
+  it("returns 401 for weakness when authentication is missing", async () => {
+    const request = new Request("http://localhost/api/v1/dashboard/weakness?studentId=student-1&period=weekly", {
+      method: "GET",
+    });
+
+    const response = await GET_WEAKNESS(request);
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe("AUTH_REQUIRED");
+  });
+
+  it("returns 403 for weakness when student is not owned", async () => {
+    const authCookie = await createAuthCookie();
+    mockedFindStudent.mockResolvedValue(null as never);
+
+    const request = new Request("http://localhost/api/v1/dashboard/weakness?studentId=student-2&period=weekly", {
+      method: "GET",
+      headers: {
+        cookie: authCookie,
+      },
+    });
+
+    const response = await GET_WEAKNESS(request);
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe("FORBIDDEN");
+  });
+
   it("returns 400 for weakness with invalid period", async () => {
     const authCookie = await createAuthCookie();
 
@@ -137,9 +164,65 @@ describe("dashboard API routes", () => {
     expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
+  it("uses monthly boundary (today-29 .. endOfDay(today)) for weakness query", async () => {
+    const authCookie = await createAuthCookie();
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(DASHBOARD_FIXED_NOW);
+      mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
+      mockedFindAttemptItems.mockResolvedValue([] as never);
+      mockedFindCategoryMaps.mockResolvedValue([] as never);
+
+      const request = new Request("http://localhost/api/v1/dashboard/weakness?studentId=student-1&period=monthly", {
+        method: "GET",
+        headers: {
+          cookie: authCookie,
+        },
+      });
+
+      const response = await GET_WEAKNESS(request);
+      expect(response.status).toBe(200);
+
+      const itemQuery = mockedFindAttemptItems.mock.calls[0]?.[0];
+      expect(itemQuery).toEqual(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            attempt: expect.objectContaining({
+              attemptDate: expect.objectContaining({
+                gte: DASHBOARD_MONTHLY_RANGE_START,
+                lte: DASHBOARD_MONTHLY_RANGE_END,
+              }),
+            }),
+          }),
+        }),
+      );
+
+      const categoryQuery = mockedFindCategoryMaps.mock.calls[0]?.[0];
+      expect(categoryQuery).toEqual(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            wrongAnswer: expect.objectContaining({
+              attemptItem: expect.objectContaining({
+                attempt: expect.objectContaining({
+                  attemptDate: expect.objectContaining({
+                    gte: DASHBOARD_MONTHLY_RANGE_START,
+                    lte: DASHBOARD_MONTHLY_RANGE_END,
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("filters weakness units by minimum attempts >= 3", async () => {
     const authCookie = await createAuthCookie();
-    mockedFindStudent.mockResolvedValue(ownedStudentFixture() as never);
+    mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
     mockedFindAttemptItems.mockResolvedValue([
       {
         curriculumNodeId: "unit-a",
@@ -186,6 +269,73 @@ describe("dashboard API routes", () => {
     expect(body.weakUnits[0]?.curriculumNodeId).toBe("unit-b");
   });
 
+  it("returns 401 for trends when authentication is missing", async () => {
+    const request = new Request("http://localhost/api/v1/dashboard/trends?studentId=student-1", {
+      method: "GET",
+    });
+
+    const response = await GET_TRENDS(request);
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe("AUTH_REQUIRED");
+  });
+
+  it("returns 403 for trends when student is not owned", async () => {
+    const authCookie = await createAuthCookie();
+    mockedFindStudent.mockResolvedValue(null as never);
+
+    const request = new Request("http://localhost/api/v1/dashboard/trends?studentId=student-2", {
+      method: "GET",
+      headers: {
+        cookie: authCookie,
+      },
+    });
+
+    const response = await GET_TRENDS(request);
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("returns 400 for trends with invalid date format", async () => {
+    const authCookie = await createAuthCookie();
+
+    const request = new Request("http://localhost/api/v1/dashboard/trends?studentId=student-1&rangeStart=2026-2-01", {
+      method: "GET",
+      headers: {
+        cookie: authCookie,
+      },
+    });
+
+    const response = await GET_TRENDS(request);
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("returns 400 for trends when rangeStart is after rangeEnd", async () => {
+    const authCookie = await createAuthCookie();
+
+    const request = new Request(
+      "http://localhost/api/v1/dashboard/trends?studentId=student-1&rangeStart=2026-02-15&rangeEnd=2026-02-01",
+      {
+        method: "GET",
+        headers: {
+          cookie: authCookie,
+        },
+      },
+    );
+
+    const response = await GET_TRENDS(request);
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe("VALIDATION_ERROR");
+  });
+
   it("returns trends default weekly buckets for recent 28 days", async () => {
     const authCookie = await createAuthCookie();
     vi.useFakeTimers();
@@ -193,7 +343,7 @@ describe("dashboard API routes", () => {
     try {
       vi.setSystemTime(new Date("2026-02-21T12:00:00.000Z"));
 
-      mockedFindStudent.mockResolvedValue(ownedStudentFixture() as never);
+      mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
       mockedFindAttemptItems.mockResolvedValue([] as never);
 
       const request = new Request("http://localhost/api/v1/dashboard/trends?studentId=student-1", {
@@ -219,28 +369,81 @@ describe("dashboard API routes", () => {
     }
   });
 
+  it("aggregates trends points for explicit weekly range including boundaries", async () => {
+    const authCookie = await createAuthCookie();
+    mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
+    mockedFindAttemptItems.mockResolvedValue([...DASHBOARD_TRENDS_ROUTE_ITEMS_FIXTURE] as never);
+
+    const request = new Request(
+      `http://localhost/api/v1/dashboard/trends?studentId=student-1&rangeStart=${DASHBOARD_TRENDS_ROUTE_RANGE.rangeStart}&rangeEnd=${DASHBOARD_TRENDS_ROUTE_RANGE.rangeEnd}`,
+      {
+        method: "GET",
+        headers: {
+          cookie: authCookie,
+        },
+      },
+    );
+
+    const response = await GET_TRENDS(request);
+    const body = (await response.json()) as {
+      points: Array<{
+        weekStart: string;
+        weekEnd: string;
+        totalItems: number;
+        correctItems: number;
+        accuracyPct: number;
+        masteryScorePct: number;
+      }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.points).toEqual([
+      {
+        weekStart: "2026-02-02",
+        weekEnd: "2026-02-08",
+        totalItems: 2,
+        correctItems: 1,
+        accuracyPct: 50,
+        masteryScorePct: 51.9,
+      },
+      {
+        weekStart: "2026-02-09",
+        weekEnd: "2026-02-15",
+        totalItems: 2,
+        correctItems: 2,
+        accuracyPct: 100,
+        masteryScorePct: 100,
+      },
+    ]);
+
+    const trendsQuery = mockedFindAttemptItems.mock.calls[0]?.[0];
+    expect(trendsQuery).toEqual(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          attempt: expect.objectContaining({
+            attemptDate: expect.objectContaining({
+              gte: new Date("2026-02-02T00:00:00.000Z"),
+              lte: new Date("2026-02-15T23:59:59.999Z"),
+            }),
+          }),
+        }),
+      }),
+    );
+  });
+
   it("aggregates overview metrics from attempt_items data", async () => {
     const authCookie = await createAuthCookie();
-    mockedFindStudent.mockResolvedValue(ownedStudentFixture() as never);
-    mockedFindCurriculumNodes.mockResolvedValue([
-      {
-        id: "node-1",
-        curriculumVersion: "2026.01",
-      },
-      {
-        id: "node-2",
-        curriculumVersion: "2026.01",
-      },
-    ] as never);
+    mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
+    mockedFindCurriculumNodes.mockResolvedValue([...DASHBOARD_CURRICULUM_NODES_FIXTURE] as never);
     mockedFindAttemptItems
       .mockResolvedValueOnce([
         {
-          curriculumNodeId: "node-1",
+          curriculumNodeId: "node-current-1",
         },
       ] as never)
       .mockResolvedValueOnce([
         {
-          curriculumNodeId: "node-1",
+          curriculumNodeId: "node-current-1",
           isCorrect: true,
           difficulty: 3,
           attempt: {
@@ -248,7 +451,7 @@ describe("dashboard API routes", () => {
           },
         },
         {
-          curriculumNodeId: "node-1",
+          curriculumNodeId: "node-current-1",
           isCorrect: false,
           difficulty: null,
           attempt: {
@@ -256,7 +459,7 @@ describe("dashboard API routes", () => {
           },
         },
         {
-          curriculumNodeId: "node-2",
+          curriculumNodeId: "node-current-2",
           isCorrect: true,
           difficulty: 5,
           attempt: {
@@ -294,7 +497,7 @@ describe("dashboard API routes", () => {
 
   it("uses asOfDate boundary when counting covered units in overview", async () => {
     const authCookie = await createAuthCookie();
-    mockedFindStudent.mockResolvedValue(ownedStudentFixture() as never);
+    mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
     mockedFindCurriculumNodes.mockResolvedValue([
       {
         id: "node-1",
@@ -339,7 +542,7 @@ describe("dashboard API routes", () => {
 
   it("counts covered units only within resolved curriculum version", async () => {
     const authCookie = await createAuthCookie();
-    mockedFindStudent.mockResolvedValue(ownedStudentFixture() as never);
+    mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
     mockedFindCurriculumNodes.mockResolvedValue([
       {
         id: "node-current",
