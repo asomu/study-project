@@ -1,5 +1,15 @@
 import { SignJWT } from "jose";
 import { expect, test } from "@playwright/test";
+import {
+  buildDashboardWave3Overview,
+  buildDashboardWave3Trends,
+  buildDashboardWave3Weakness,
+  DASHBOARD_WAVE3_FIXED_AS_OF_DATE,
+  DASHBOARD_WAVE3_FIXED_RANGE_START,
+  DASHBOARD_WAVE3_TRENDS_ACTIVE_WEEK_LABEL,
+  toCategoryLabel,
+  type DashboardWave3State,
+} from "./fixtures/dashboard-wave3-fixtures";
 
 const guardianEmail = process.env.SEED_GUARDIAN_EMAIL ?? "guardian@example.com";
 const guardianPassword = process.env.SEED_GUARDIAN_PASSWORD ?? "Guardian123!";
@@ -19,9 +29,23 @@ async function createAuthToken() {
 
 test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   const token = await createAuthToken();
-  let dashboardTotalAttempts = 0;
-  let dashboardTotalItems = 0;
-  let dashboardWrongAnswers = 0;
+
+  const dashboardState: DashboardWave3State = {
+    totalAttempts: 0,
+    totalItems: 0,
+    wrongAnswers: 0,
+    categoryKeys: ["calculation_mistake"],
+  };
+
+  const dashboardQueryHistory: {
+    overviewDates: string[];
+    weaknessPeriods: string[];
+    trendsRanges: Array<{ rangeStart: string | null; rangeEnd: string | null }>;
+  } = {
+    overviewDates: [],
+    weaknessPeriods: [],
+    trendsRanges: [],
+  };
 
   const wrongAnswerState: {
     id: string;
@@ -124,7 +148,7 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   });
 
   await page.route("**/api/v1/attempts", async (route) => {
-    dashboardTotalAttempts = 1;
+    dashboardState.totalAttempts = 1;
 
     await route.fulfill({
       status: 201,
@@ -136,7 +160,7 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   });
 
   await page.route("**/api/v1/attempts/*/items", async (route) => {
-    dashboardTotalItems = 1;
+    dashboardState.totalItems = 1;
 
     await route.fulfill({
       status: 201,
@@ -154,16 +178,12 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
 
   await page.route("**/api/v1/wrong-answers/*/categories", async (route) => {
     const requestBody = (await route.request().postDataJSON()) as { categoryKeys: string[] };
-    const labelMap: Record<string, string> = {
-      calculation_mistake: "단순 연산 실수",
-      misread_question: "문제 잘못 읽음",
-      lack_of_concept: "문제 이해 못함",
-    };
 
     wrongAnswerState.categories = requestBody.categoryKeys.map((key) => ({
       key,
-      labelKo: labelMap[key] ?? key,
+      labelKo: toCategoryLabel(key),
     }));
+    dashboardState.categoryKeys = [...requestBody.categoryKeys];
 
     await route.fulfill({
       status: 200,
@@ -191,7 +211,7 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
     if (request.method() === "POST" && url.pathname.endsWith("/api/v1/wrong-answers")) {
       const requestBody = (await request.postDataJSON()) as { memo?: string };
       wrongAnswerState.memo = requestBody.memo ?? null;
-      dashboardWrongAnswers = 1;
+      dashboardState.wrongAnswers = 1;
 
       await route.fulfill({
         status: 201,
@@ -216,70 +236,39 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   });
 
   await page.route("**/api/v1/dashboard/overview*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const asOfDate = requestUrl.searchParams.get("date") ?? DASHBOARD_WAVE3_FIXED_AS_OF_DATE;
+    dashboardQueryHistory.overviewDates.push(asOfDate);
+
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        progress: {
-          recommendedPct: 30,
-          actualPct: dashboardTotalItems > 0 ? 100 : 0,
-          coveredUnits: dashboardTotalItems > 0 ? 1 : 0,
-          totalUnits: 1,
-        },
-        mastery: {
-          overallScorePct: dashboardTotalItems > 0 ? 68.1 : 0,
-          recentAccuracyPct: dashboardTotalItems > 0 ? 0 : 0,
-          difficultyWeightedAccuracyPct: dashboardTotalItems > 0 ? 0 : 0,
-        },
-        summary: {
-          totalAttempts: dashboardTotalAttempts,
-          totalItems: dashboardTotalItems,
-          wrongAnswers: dashboardWrongAnswers,
-          asOfDate: "2026-02-21",
-        },
-      }),
+      body: JSON.stringify(buildDashboardWave3Overview(dashboardState, asOfDate)),
     });
   });
 
   await page.route("**/api/v1/dashboard/weakness*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const period = requestUrl.searchParams.get("period") ?? "weekly";
+    dashboardQueryHistory.weaknessPeriods.push(period);
+
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        weakUnits: dashboardTotalItems
-          ? [
-              {
-                curriculumNodeId: "curriculum-e2e-1",
-                unitName: "소인수분해",
-                attempts: 3,
-                accuracyPct: 33.3,
-                wrongCount: 2,
-              },
-            ]
-          : [],
-        categoryDistribution: dashboardWrongAnswers
-          ? [{ key: "calculation_mistake", labelKo: "단순 연산 실수", count: 1, ratio: 100 }]
-          : [],
-      }),
+      body: JSON.stringify(buildDashboardWave3Weakness(dashboardState)),
     });
   });
 
   await page.route("**/api/v1/dashboard/trends*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const rangeStart = requestUrl.searchParams.get("rangeStart");
+    const rangeEnd = requestUrl.searchParams.get("rangeEnd");
+    dashboardQueryHistory.trendsRanges.push({ rangeStart, rangeEnd });
+
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        points: [
-          {
-            weekStart: "2026-02-16",
-            weekEnd: "2026-02-22",
-            totalItems: dashboardTotalItems,
-            correctItems: 0,
-            accuracyPct: 0,
-            masteryScorePct: 0,
-          },
-        ],
-      }),
+      body: JSON.stringify(buildDashboardWave3Trends(dashboardState)),
     });
   });
 
@@ -321,10 +310,10 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   const firstWrongAnswerCard = page.locator("article").first();
 
   await firstWrongAnswerCard.locator('input[type="file"]').setInputFiles({
-      name: "wrong-answer.png",
-      mimeType: "image/png",
-      buffer: Buffer.from("png-data"),
-    });
+    name: "wrong-answer.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("png-data"),
+  });
   await firstWrongAnswerCard.getByRole("button", { name: "이미지 업로드" }).last().click();
 
   await expect(page.getByText("이미지가 업로드되었습니다.")).toBeVisible();
@@ -333,6 +322,24 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
 
   await page.getByRole("link", { name: "대시보드" }).click();
   await page.waitForURL("**/dashboard");
+
   await expect(page.getByText("총 시도 1회 / 총 문항 1개")).toBeVisible();
   await expect(page.getByText("소인수분해")).toBeVisible();
+  await expect(page.getByText("단순 연산 실수")).toBeVisible();
+  await expect(page.getByText("문제 잘못 읽음")).toBeVisible();
+  await expect(page.getByText(DASHBOARD_WAVE3_TRENDS_ACTIVE_WEEK_LABEL)).toBeVisible();
+
+  await page.getByLabel("기준일").fill(DASHBOARD_WAVE3_FIXED_AS_OF_DATE);
+  await page.getByLabel("약점 기간").selectOption("monthly");
+  await page.getByRole("button", { name: "대시보드 갱신" }).click();
+
+  await expect(page.getByText(`기준일 ${DASHBOARD_WAVE3_FIXED_AS_OF_DATE} 기준 최근 28일`)).toBeVisible();
+
+  expect(dashboardQueryHistory.overviewDates).toContain(DASHBOARD_WAVE3_FIXED_AS_OF_DATE);
+  expect(dashboardQueryHistory.weaknessPeriods).toContain("monthly");
+  expect(
+    dashboardQueryHistory.trendsRanges.some(
+      (item) => item.rangeStart === DASHBOARD_WAVE3_FIXED_RANGE_START && item.rangeEnd === DASHBOARD_WAVE3_FIXED_AS_OF_DATE,
+    ),
+  ).toBe(true);
 });

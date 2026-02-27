@@ -36,14 +36,19 @@
     - Unit 확장: `calculateRecommendedPct` 2학기 시작값/종료 이후 clamp 검증
     - Integration 확장: `overview/trends` 경계 계산 시나리오 및 쿼리 날짜 경계 검증
     - 품질 게이트 재통과: `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `check-doc-links.sh`
+  - M4 회귀 강화 Wave 3 완료
+    - e2e fixture 모듈 추가: `tests/e2e/fixtures/dashboard-wave3-fixtures.ts`
+    - `records -> wrong-answers -> dashboard` 흐름에서 overview/weakness/trends 데이터 반영 회귀 고정
+    - 대시보드 필터(기준일/약점기간) 변경 시 API 쿼리 파라미터 반영 검증
+    - 품질 게이트 재통과: `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `check-doc-links.sh`
 - In Progress:
-  - M4 검증/안정화 진행 중(Wave 3 회귀 확장 + UX 백로그 정리)
+  - M4 검증/안정화 진행 중(운영/UX 백로그 마무리 단계)
 - Blocked:
   - 현재 확인된 블로커 없음
 - Next:
-  - M4 회귀 강화 Wave 3: overview/trends fixture를 e2e 데이터 반영 시나리오까지 확장
   - M2 UX 백로그: 오답 카테고리 입력을 선택형 UI로 개선(키 직접 입력 제거)
   - 운영 체크리스트: 로컬 업로드 파일 백업/보관/정리 주기 확정
+  - M4 마무리: 회귀 테스트 세트를 PR/릴리즈 게이트 기준으로 확정
 
 ## Session Start Checklist
 

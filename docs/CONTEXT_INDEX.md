@@ -6,11 +6,10 @@
 
 ## 1. Quick Snapshot
 
-- Current Phase: Build (M4 In Progress / Wave 2 Completed)
-- Overall Progress: 96%
-- Current Focus: M4 회귀 강화 Wave 3, M2 UX 백로그 처리, 운영 체크리스트 보강
+- Current Phase: Build (M4 In Progress / Wave 3 Completed)
+- Overall Progress: 98%
+- Current Focus: M2 UX 백로그 처리, 운영 체크리스트 보강, M4 게이트 확정
 - Top Risks:
-  - Wave 3 전까지 e2e 데이터 반영 회귀 시나리오가 제한적임
   - M3 지표 해석 가이드 부족
   - 외부 공개 전 TLS/접근 제어 점검 필요
   - 로컬 업로드 스토리지 백업/보관 정책 보강 필요

@@ -135,6 +135,27 @@
 - M2 오답 카테고리 선택형 UI 구현
 - 운영 보안/백업 체크리스트 상세 정책 문서화
 
+## 1.6 M4 Scope Lock (Wave 3, 2026-02-27)
+
+포함 범위:
+
+- e2e 회귀 fixture 확장(`records -> wrong-answers -> dashboard` 데이터 반영 시나리오)
+  - e2e 전용 fixture 모듈 추가(`tests/e2e/fixtures/dashboard-wave3-fixtures.ts`)
+  - overview/weakness/trends 응답을 입력 상태 기반으로 동적 구성
+- e2e 회귀 강화
+  - 오답 카테고리 저장 결과가 대시보드 분포에 반영되는지 검증
+  - 대시보드 필터(기준일/약점기간) 변경 시 쿼리 파라미터 반영 검증
+  - trends range(`rangeStart=-27d`, `rangeEnd=asOfDate`) 경계 검증
+- 품질 게이트 재검증
+  - `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `check-doc-links.sh`
+
+비포함 범위:
+
+- 런타임 기능/API/스키마 변경
+- DB 마이그레이션 및 seed 정책 변경
+- M2 오답 카테고리 선택형 UI 구현
+- 운영 보안/백업 체크리스트 상세 정책 문서화
+
 ## 2. MVP 작업 우선순위
 
 - P0: 인증/학생 프로필/커리큘럼

@@ -1,8 +1,8 @@
 # Project Status
 
 - Last Updated: 2026-02-27
-- Current Phase: Build (M4 In Progress / Wave 2 Completed)
-- Overall Progress: 96%
+- Current Phase: Build (M4 In Progress / Wave 3 Completed)
+- Overall Progress: 98%
 
 ## 1. Milestone Status
 
@@ -12,7 +12,7 @@
 | M1 기반 구축 | COMPLETED | 100% | Team | Docker DB 런타임 검증 + 인증/학생 API/UI/테스트 게이트 완료 |
 | M2 핵심 입력 기능 | COMPLETED | 100% | Team | 입력 API 8종 + 최소 UI 2화면 + 업로드/권한/테스트 게이트 완료 |
 | M3 대시보드 MVP | COMPLETED | 100% | Team | overview/weakness/trends API + 대시보드 실사용 UI + 테스트 게이트 완료 |
-| M4 검증/안정화 | IN_PROGRESS | 55% | Team | Wave 1~2 회귀 강화 완료(overview/trends 계산 경계 고정), Wave 3 잔여 |
+| M4 검증/안정화 | IN_PROGRESS | 70% | Team | Wave 1~3 회귀 강화 완료(overview/trends + e2e 데이터 반영 경계 고정), 운영/UX 잔여 |
 
 ## 2. Current Sprint Focus
 
@@ -50,6 +50,7 @@
 - [x] M3 테스트 확장(unit/integration/e2e) 및 품질 게이트 통과
 - [x] 대시보드 회귀 테스트 강화 완료(1차): fixture 추가 + unit/integration 실패 경로/날짜 경계 검증 확장
 - [x] 대시보드 회귀 테스트 강화 완료(2차): overview/trends 계산 경계(기본 날짜/학기 전환/부분 주간 버킷/rangeEnd-only) 고정 검증
+- [x] 대시보드 회귀 테스트 강화 완료(3차): records->wrong-answers->dashboard e2e 데이터 반영 시나리오를 fixture 기반으로 고정 검증
 
 ## 3. Risks and Blocks
 
@@ -60,9 +61,9 @@
 
 ## 4. Next Actions
 
-1. M4 회귀 강화 Wave 3: overview/trends 고정 fixture를 e2e 데이터 반영 시나리오까지 확장한다.
-2. M2 UX 백로그 처리: 오답 카테고리 선택형 UI(키 직접 입력 제거)를 적용한다.
-3. 운영 체크리스트 보강: 로컬 업로드 백업/보관 주기와 알림 기준을 문서화한다.
+1. M2 UX 백로그 처리: 오답 카테고리 선택형 UI(키 직접 입력 제거)를 적용한다.
+2. 운영 체크리스트 보강: 로컬 업로드 백업/보관 주기와 알림 기준을 문서화한다.
+3. M4 마무리: 회귀 테스트 세트를 PR/릴리즈 게이트 기준으로 확정한다.
 
 ## 5. Change Log
 
@@ -87,3 +88,4 @@
 - 2026-02-24: M4 회귀 강화 Wave 1 완료(대시보드 fixture 추가, unit/integration 경계/실패경로 테스트 확장, 품질 게이트 재검증)
 - 2026-02-24: `study-code-cleanup` closeout 수행(리뷰 무결함 확인, 운영 문서 동기화, 커밋 준비 완료)
 - 2026-02-27: M4 회귀 강화 Wave 2 완료(overview/trends 계산 경계 fixture 확장, unit/integration 테스트 보강, 전체 품질 게이트 재검증)
+- 2026-02-27: M4 회귀 강화 Wave 3 완료(e2e fixture 기반 데이터 반영 시나리오 고정, 필터/쿼리 경계 검증, 전체 품질 게이트 재검증)
