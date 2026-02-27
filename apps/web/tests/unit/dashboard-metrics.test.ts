@@ -17,6 +17,8 @@ import {
   DASHBOARD_DIFFICULTY_ITEMS_FIXTURE,
   DASHBOARD_TREND_ITEMS_FIXTURE,
   DASHBOARD_TREND_WEEKLY_BUCKETS_FIXTURE,
+  DASHBOARD_WAVE2_RECOMMENDED_CLAMP_END,
+  DASHBOARD_WAVE2_RECOMMENDED_SECOND_SEMESTER_START,
   DASHBOARD_WEAKNESS_ROWS_FIXTURE,
 } from "../fixtures/dashboard-fixtures";
 
@@ -29,6 +31,22 @@ describe("dashboard metrics", () => {
     const result = calculateRecommendedPct(semesterStart, semesterEnd, asOfDate);
 
     expect(result).toBeCloseTo(49.7, 1);
+  });
+
+  it("returns around 0.5 at second-semester start boundary", () => {
+    const { semesterStart, semesterEnd, asOfDate, expectedPct } = DASHBOARD_WAVE2_RECOMMENDED_SECOND_SEMESTER_START;
+
+    const result = calculateRecommendedPct(semesterStart, semesterEnd, asOfDate);
+
+    expect(result).toBe(expectedPct);
+  });
+
+  it("clamps recommended progress to 100 past semester end", () => {
+    const { semesterStart, semesterEnd, asOfDateAfterEnd, expectedPct } = DASHBOARD_WAVE2_RECOMMENDED_CLAMP_END;
+
+    const result = calculateRecommendedPct(semesterStart, semesterEnd, asOfDateAfterEnd);
+
+    expect(result).toBe(expectedPct);
   });
 
   it("calculates actual progress from covered/total units", () => {

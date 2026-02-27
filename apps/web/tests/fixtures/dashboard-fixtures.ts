@@ -6,6 +6,33 @@ export const DASHBOARD_FIXED_NOW = new Date("2026-02-24T12:00:00.000Z");
 export const DASHBOARD_FIXED_AS_OF_DATE = new Date("2026-02-24T00:00:00.000Z");
 export const DASHBOARD_MONTHLY_RANGE_START = new Date("2026-01-26T00:00:00.000Z");
 export const DASHBOARD_MONTHLY_RANGE_END = new Date("2026-02-24T23:59:59.999Z");
+export const DASHBOARD_WAVE2_FIXED_NOW = new Date("2026-02-27T10:30:00.000Z");
+export const DASHBOARD_WAVE2_DEFAULT_AS_OF_DATE = "2026-02-27";
+export const DASHBOARD_WAVE2_DEFAULT_AS_OF_DATE_END = new Date("2026-02-27T23:59:59.999Z");
+export const DASHBOARD_WAVE2_DEFAULT_SEMESTER_START = new Date("2026-01-01T00:00:00.000Z");
+export const DASHBOARD_WAVE2_OVERVIEW_EMPTY_EXPECTED = {
+  coveredUnits: 0,
+  totalUnits: 0,
+  actualPct: 0,
+} as const;
+export const DASHBOARD_WAVE2_SECOND_SEMESTER_DATE = "2026-07-01";
+export const DASHBOARD_WAVE2_SECOND_SEMESTER_EXPECTED = {
+  recommendedPct: 0.5,
+  semesterStart: new Date("2026-07-01T00:00:00.000Z"),
+  asOfDateEnd: new Date("2026-07-01T23:59:59.999Z"),
+} as const;
+export const DASHBOARD_WAVE2_RECOMMENDED_SECOND_SEMESTER_START = {
+  semesterStart: new Date("2026-07-01T00:00:00.000Z"),
+  semesterEnd: new Date("2026-12-31T00:00:00.000Z"),
+  asOfDate: new Date("2026-07-01T00:00:00.000Z"),
+  expectedPct: 0.5,
+} as const;
+export const DASHBOARD_WAVE2_RECOMMENDED_CLAMP_END = {
+  semesterStart: new Date("2026-01-01T00:00:00.000Z"),
+  semesterEnd: new Date("2026-06-30T00:00:00.000Z"),
+  asOfDateAfterEnd: new Date("2026-07-05T00:00:00.000Z"),
+  expectedPct: 100,
+} as const;
 
 export function createOwnedStudentFixture() {
   return {
@@ -166,3 +193,94 @@ export const DASHBOARD_TRENDS_ROUTE_ITEMS_FIXTURE = [
     },
   },
 ] as const;
+
+export const DASHBOARD_WAVE2_TRENDS_PARTIAL_RANGE = {
+  rangeStart: "2026-02-04",
+  rangeEnd: "2026-02-18",
+} as const;
+
+export const DASHBOARD_WAVE2_TRENDS_PARTIAL_ROUTE_ITEMS_FIXTURE = [
+  {
+    curriculumNodeId: "unit-partial-1",
+    isCorrect: true,
+    difficulty: 3,
+    attempt: {
+      attemptDate: new Date("2026-02-04T00:00:00.000Z"),
+    },
+  },
+  {
+    curriculumNodeId: "unit-partial-1",
+    isCorrect: false,
+    difficulty: 5,
+    attempt: {
+      attemptDate: new Date("2026-02-08T23:59:59.999Z"),
+    },
+  },
+  {
+    curriculumNodeId: "unit-partial-2",
+    isCorrect: true,
+    difficulty: 2,
+    attempt: {
+      attemptDate: new Date("2026-02-10T00:00:00.000Z"),
+    },
+  },
+  {
+    curriculumNodeId: "unit-partial-2",
+    isCorrect: false,
+    difficulty: 4,
+    attempt: {
+      attemptDate: new Date("2026-02-14T23:59:59.999Z"),
+    },
+  },
+  {
+    curriculumNodeId: "unit-partial-3",
+    isCorrect: true,
+    difficulty: 1,
+    attempt: {
+      attemptDate: new Date("2026-02-16T00:00:00.000Z"),
+    },
+  },
+  {
+    curriculumNodeId: "unit-partial-3",
+    isCorrect: true,
+    difficulty: 5,
+    attempt: {
+      attemptDate: new Date("2026-02-18T23:59:59.999Z"),
+    },
+  },
+] as const;
+
+export const DASHBOARD_WAVE2_TRENDS_PARTIAL_EXPECTED_POINTS = [
+  {
+    weekStart: "2026-02-02",
+    weekEnd: "2026-02-08",
+    totalItems: 2,
+    correctItems: 1,
+    accuracyPct: 50,
+    masteryScorePct: 48.1,
+  },
+  {
+    weekStart: "2026-02-09",
+    weekEnd: "2026-02-15",
+    totalItems: 2,
+    correctItems: 1,
+    accuracyPct: 50,
+    masteryScorePct: 47.5,
+  },
+  {
+    weekStart: "2026-02-16",
+    weekEnd: "2026-02-22",
+    totalItems: 2,
+    correctItems: 2,
+    accuracyPct: 100,
+    masteryScorePct: 100,
+  },
+] as const;
+
+export const DASHBOARD_WAVE2_TRENDS_RANGE_END_ONLY = {
+  rangeEnd: "2026-02-24",
+  expectedRangeStart: new Date("2026-01-28T00:00:00.000Z"),
+  expectedRangeEnd: new Date("2026-02-24T23:59:59.999Z"),
+  expectedFirstWeekStart: "2026-01-26",
+  expectedLastWeekStart: "2026-02-23",
+} as const;

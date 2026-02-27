@@ -1,15 +1,16 @@
 # Context Index
 
-- Last Updated: 2026-02-24
+- Last Updated: 2026-02-27
 - Purpose: 새 세션에서 2~3분 내 프로젝트 상태를 파악하기 위한 요약 허브
 - Usage: 이 문서에서 요약을 먼저 확인하고, 필요한 항목만 링크 문서로 내려간다.
 
 ## 1. Quick Snapshot
 
-- Current Phase: Build (M3 Completed / M4 Ready)
-- Overall Progress: 91%
-- Current Focus: M4 회귀 강화, M2 UX 백로그 처리, 운영 체크리스트 보강
+- Current Phase: Build (M4 In Progress / Wave 2 Completed)
+- Overall Progress: 96%
+- Current Focus: M4 회귀 강화 Wave 3, M2 UX 백로그 처리, 운영 체크리스트 보강
 - Top Risks:
+  - Wave 3 전까지 e2e 데이터 반영 회귀 시나리오가 제한적임
   - M3 지표 해석 가이드 부족
   - 외부 공개 전 TLS/접근 제어 점검 필요
   - 로컬 업로드 스토리지 백업/보관 정책 보강 필요
@@ -44,4 +45,3 @@ Source:
   - Top Risks
   - Next Actions 우선순위
   - Bootstrap Order
-

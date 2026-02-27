@@ -39,6 +39,17 @@ import {
   DASHBOARD_MONTHLY_RANGE_START,
   DASHBOARD_TRENDS_ROUTE_ITEMS_FIXTURE,
   DASHBOARD_TRENDS_ROUTE_RANGE,
+  DASHBOARD_WAVE2_DEFAULT_AS_OF_DATE,
+  DASHBOARD_WAVE2_DEFAULT_AS_OF_DATE_END,
+  DASHBOARD_WAVE2_DEFAULT_SEMESTER_START,
+  DASHBOARD_WAVE2_FIXED_NOW,
+  DASHBOARD_WAVE2_OVERVIEW_EMPTY_EXPECTED,
+  DASHBOARD_WAVE2_SECOND_SEMESTER_DATE,
+  DASHBOARD_WAVE2_SECOND_SEMESTER_EXPECTED,
+  DASHBOARD_WAVE2_TRENDS_PARTIAL_EXPECTED_POINTS,
+  DASHBOARD_WAVE2_TRENDS_PARTIAL_RANGE,
+  DASHBOARD_WAVE2_TRENDS_PARTIAL_ROUTE_ITEMS_FIXTURE,
+  DASHBOARD_WAVE2_TRENDS_RANGE_END_ONLY,
 } from "../fixtures/dashboard-fixtures";
 
 const mockedFindStudent = vi.mocked(prisma.student.findFirst);
@@ -115,6 +126,52 @@ describe("dashboard API routes", () => {
 
     expect(response.status).toBe(400);
     expect(body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("uses default today date for overview when date query is omitted", async () => {
+    const authCookie = await createAuthCookie();
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(DASHBOARD_WAVE2_FIXED_NOW);
+      mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
+      mockedFindCurriculumNodes.mockResolvedValue([...DASHBOARD_CURRICULUM_NODES_FIXTURE] as never);
+      mockedFindAttemptItems.mockResolvedValueOnce([] as never).mockResolvedValueOnce([] as never);
+      mockedCountAttempts.mockResolvedValue(0 as never);
+      mockedCountAttemptItems.mockResolvedValue(0 as never);
+      mockedCountWrongAnswers.mockResolvedValue(0 as never);
+
+      const request = new Request("http://localhost/api/v1/dashboard/overview?studentId=student-1", {
+        method: "GET",
+        headers: {
+          cookie: authCookie,
+        },
+      });
+
+      const response = await GET_OVERVIEW(request);
+      const body = (await response.json()) as {
+        summary: { asOfDate: string };
+      };
+
+      expect(response.status).toBe(200);
+      expect(body.summary.asOfDate).toBe(DASHBOARD_WAVE2_DEFAULT_AS_OF_DATE);
+
+      const coveredUnitsQuery = mockedFindAttemptItems.mock.calls[0]?.[0];
+      expect(coveredUnitsQuery).toEqual(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            attempt: expect.objectContaining({
+              attemptDate: expect.objectContaining({
+                gte: DASHBOARD_WAVE2_DEFAULT_SEMESTER_START,
+                lte: DASHBOARD_WAVE2_DEFAULT_AS_OF_DATE_END,
+              }),
+            }),
+          }),
+        }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("returns 401 for weakness when authentication is missing", async () => {
@@ -431,6 +488,90 @@ describe("dashboard API routes", () => {
     );
   });
 
+  it("aggregates trends for partial weekly buckets in explicit range", async () => {
+    const authCookie = await createAuthCookie();
+    mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
+    mockedFindAttemptItems.mockResolvedValue([...DASHBOARD_WAVE2_TRENDS_PARTIAL_ROUTE_ITEMS_FIXTURE] as never);
+
+    const request = new Request(
+      `http://localhost/api/v1/dashboard/trends?studentId=student-1&rangeStart=${DASHBOARD_WAVE2_TRENDS_PARTIAL_RANGE.rangeStart}&rangeEnd=${DASHBOARD_WAVE2_TRENDS_PARTIAL_RANGE.rangeEnd}`,
+      {
+        method: "GET",
+        headers: {
+          cookie: authCookie,
+        },
+      },
+    );
+
+    const response = await GET_TRENDS(request);
+    const body = (await response.json()) as {
+      points: Array<{
+        weekStart: string;
+        weekEnd: string;
+        totalItems: number;
+        correctItems: number;
+        accuracyPct: number;
+        masteryScorePct: number;
+      }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.points).toEqual([...DASHBOARD_WAVE2_TRENDS_PARTIAL_EXPECTED_POINTS]);
+
+    const trendsQuery = mockedFindAttemptItems.mock.calls[0]?.[0];
+    expect(trendsQuery).toEqual(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          attempt: expect.objectContaining({
+            attemptDate: expect.objectContaining({
+              gte: new Date("2026-02-04T00:00:00.000Z"),
+              lte: new Date("2026-02-18T23:59:59.999Z"),
+            }),
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("uses rangeEnd-only default start range for trends", async () => {
+    const authCookie = await createAuthCookie();
+    mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
+    mockedFindAttemptItems.mockResolvedValue([] as never);
+
+    const request = new Request(
+      `http://localhost/api/v1/dashboard/trends?studentId=student-1&rangeEnd=${DASHBOARD_WAVE2_TRENDS_RANGE_END_ONLY.rangeEnd}`,
+      {
+        method: "GET",
+        headers: {
+          cookie: authCookie,
+        },
+      },
+    );
+
+    const response = await GET_TRENDS(request);
+    const body = (await response.json()) as {
+      points: Array<{ weekStart: string }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.points.at(0)?.weekStart).toBe(DASHBOARD_WAVE2_TRENDS_RANGE_END_ONLY.expectedFirstWeekStart);
+    expect(body.points.at(-1)?.weekStart).toBe(DASHBOARD_WAVE2_TRENDS_RANGE_END_ONLY.expectedLastWeekStart);
+
+    const trendsQuery = mockedFindAttemptItems.mock.calls[0]?.[0];
+    expect(trendsQuery).toEqual(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          attempt: expect.objectContaining({
+            attemptDate: expect.objectContaining({
+              gte: DASHBOARD_WAVE2_TRENDS_RANGE_END_ONLY.expectedRangeStart,
+              lte: DASHBOARD_WAVE2_TRENDS_RANGE_END_ONLY.expectedRangeEnd,
+            }),
+          }),
+        }),
+      }),
+    );
+  });
+
   it("aggregates overview metrics from attempt_items data", async () => {
     const authCookie = await createAuthCookie();
     mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
@@ -583,5 +724,89 @@ describe("dashboard API routes", () => {
     expect(body.progress.coveredUnits).toBe(1);
     expect(body.progress.totalUnits).toBe(1);
     expect(body.progress.actualPct).toBe(100);
+  });
+
+  it("returns zero actual progress when active curriculum nodes are empty", async () => {
+    const authCookie = await createAuthCookie();
+    mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
+    mockedFindCurriculumNodes.mockResolvedValue([] as never);
+    mockedFindAttemptItems
+      .mockResolvedValueOnce([
+        {
+          curriculumNodeId: "node-any",
+        },
+      ] as never)
+      .mockResolvedValueOnce([] as never);
+    mockedCountAttempts.mockResolvedValue(0 as never);
+    mockedCountAttemptItems.mockResolvedValue(0 as never);
+    mockedCountWrongAnswers.mockResolvedValue(0 as never);
+
+    const request = new Request("http://localhost/api/v1/dashboard/overview?studentId=student-1&date=2026-02-27", {
+      method: "GET",
+      headers: {
+        cookie: authCookie,
+      },
+    });
+
+    const response = await GET_OVERVIEW(request);
+    const body = (await response.json()) as {
+      progress: {
+        coveredUnits: number;
+        totalUnits: number;
+        actualPct: number;
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.progress).toMatchObject(DASHBOARD_WAVE2_OVERVIEW_EMPTY_EXPECTED);
+  });
+
+  it("uses second-semester boundary for overview and computes recommended progress", async () => {
+    const authCookie = await createAuthCookie();
+    mockedFindStudent.mockResolvedValue(createOwnedStudentFixture() as never);
+    mockedFindCurriculumNodes.mockResolvedValue([
+      {
+        id: "node-s2-1",
+        curriculumVersion: "2026.01",
+      },
+    ] as never);
+    mockedFindAttemptItems.mockResolvedValueOnce([] as never).mockResolvedValueOnce([] as never);
+    mockedCountAttempts.mockResolvedValue(0 as never);
+    mockedCountAttemptItems.mockResolvedValue(0 as never);
+    mockedCountWrongAnswers.mockResolvedValue(0 as never);
+
+    const request = new Request(
+      `http://localhost/api/v1/dashboard/overview?studentId=student-1&date=${DASHBOARD_WAVE2_SECOND_SEMESTER_DATE}`,
+      {
+        method: "GET",
+        headers: {
+          cookie: authCookie,
+        },
+      },
+    );
+
+    const response = await GET_OVERVIEW(request);
+    const body = (await response.json()) as {
+      progress: {
+        recommendedPct: number;
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.progress.recommendedPct).toBe(DASHBOARD_WAVE2_SECOND_SEMESTER_EXPECTED.recommendedPct);
+
+    const coveredUnitsQuery = mockedFindAttemptItems.mock.calls[0]?.[0];
+    expect(coveredUnitsQuery).toEqual(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          attempt: expect.objectContaining({
+            attemptDate: expect.objectContaining({
+              gte: DASHBOARD_WAVE2_SECOND_SEMESTER_EXPECTED.semesterStart,
+              lte: DASHBOARD_WAVE2_SECOND_SEMESTER_EXPECTED.asOfDateEnd,
+            }),
+          }),
+        }),
+      }),
+    );
   });
 });

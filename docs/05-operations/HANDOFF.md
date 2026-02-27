@@ -1,6 +1,6 @@
 # Session Handoff
 
-## Latest Update (2026-02-24)
+## Latest Update (2026-02-27)
 
 - Done:
   - pnpm 워크스페이스 + Next.js 16(App Router) 앱(`apps/web`) 부트스트랩 완료
@@ -31,12 +31,17 @@
     - Unit 확장: 대시보드 계산 함수 경계 케이스 추가
     - Integration 확장: dashboard `weakness/trends` `401/403/400` 실패 경로 및 월간/주간 날짜 경계 검증
     - 품질 게이트 재통과: `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `check-doc-links.sh`
+  - M4 회귀 강화 Wave 2 완료
+    - Fixture 확장: `overview/trends` 계산 경계(기본 날짜, 2학기 시작, 빈 커리큘럼, 부분 주간 버킷, rangeEnd-only)
+    - Unit 확장: `calculateRecommendedPct` 2학기 시작값/종료 이후 clamp 검증
+    - Integration 확장: `overview/trends` 경계 계산 시나리오 및 쿼리 날짜 경계 검증
+    - 품질 게이트 재통과: `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `check-doc-links.sh`
 - In Progress:
-  - M4 검증/안정화 진행 중(Wave 2 회귀 확장 + UX 백로그 정리)
+  - M4 검증/안정화 진행 중(Wave 3 회귀 확장 + UX 백로그 정리)
 - Blocked:
   - 현재 확인된 블로커 없음
 - Next:
-  - M4 회귀 강화 Wave 2: overview/trends 고정 fixture 시나리오를 추가해 계산 회귀를 더 촘촘히 검증
+  - M4 회귀 강화 Wave 3: overview/trends fixture를 e2e 데이터 반영 시나리오까지 확장
   - M2 UX 백로그: 오답 카테고리 입력을 선택형 UI로 개선(키 직접 입력 제거)
   - 운영 체크리스트: 로컬 업로드 파일 백업/보관/정리 주기 확정
 

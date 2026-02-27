@@ -113,6 +113,28 @@
 - M2 오답 카테고리 UX 개선 본 구현
 - 운영 체크리스트(TLS/백업 정책) 문서 상세화
 
+## 1.5 M4 Scope Lock (Wave 2, 2026-02-27)
+
+포함 범위:
+
+- 대시보드 회귀 fixture 확장(`overview/trends` 계산 경계 중심)
+  - 기본 날짜(쿼리 생략), 학기 경계(2학기 시작), 활성 커리큘럼 0건
+  - 부분 주간 버킷(mid-week range), `rangeEnd` 단독 입력 기본 범위
+- Unit 회귀 강화
+  - `calculateRecommendedPct` 2학기 시작값/학기 종료 이후 clamp 검증
+- Integration 회귀 강화
+  - `GET /api/v1/dashboard/overview`의 기본 날짜/학기 경계/빈 커리큘럼 처리 검증
+  - `GET /api/v1/dashboard/trends`의 부분 버킷/`rangeEnd` 단독 기본범위 검증
+- 품질 게이트 재검증
+  - `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `check-doc-links.sh`
+
+비포함 범위:
+
+- 런타임 기능/API/스키마 변경
+- DB 마이그레이션 및 seed 정책 변경
+- M2 오답 카테고리 선택형 UI 구현
+- 운영 보안/백업 체크리스트 상세 정책 문서화
+
 ## 2. MVP 작업 우선순위
 
 - P0: 인증/학생 프로필/커리큘럼
