@@ -1,8 +1,8 @@
 # Project Status
 
-- Last Updated: 2026-02-27
-- Current Phase: Build (M4 In Progress / Wave 3 Completed)
-- Overall Progress: 98%
+- Last Updated: 2026-02-28
+- Current Phase: Verify (M4 Completed / Release Gate Locked)
+- Overall Progress: 100%
 
 ## 1. Milestone Status
 
@@ -12,7 +12,7 @@
 | M1 기반 구축 | COMPLETED | 100% | Team | Docker DB 런타임 검증 + 인증/학생 API/UI/테스트 게이트 완료 |
 | M2 핵심 입력 기능 | COMPLETED | 100% | Team | 입력 API 8종 + 최소 UI 2화면 + 업로드/권한/테스트 게이트 완료 |
 | M3 대시보드 MVP | COMPLETED | 100% | Team | overview/weakness/trends API + 대시보드 실사용 UI + 테스트 게이트 완료 |
-| M4 검증/안정화 | IN_PROGRESS | 70% | Team | Wave 1~3 회귀 강화 완료(overview/trends + e2e 데이터 반영 경계 고정), 운영/UX 잔여 |
+| M4 검증/안정화 | COMPLETED | 100% | Team | Wave 1~3 회귀 강화 + M2 UX 백로그 처리 + 운영 체크리스트/게이트 문서 확정 완료 |
 
 ## 2. Current Sprint Focus
 
@@ -51,19 +51,22 @@
 - [x] 대시보드 회귀 테스트 강화 완료(1차): fixture 추가 + unit/integration 실패 경로/날짜 경계 검증 확장
 - [x] 대시보드 회귀 테스트 강화 완료(2차): overview/trends 계산 경계(기본 날짜/학기 전환/부분 주간 버킷/rangeEnd-only) 고정 검증
 - [x] 대시보드 회귀 테스트 강화 완료(3차): records->wrong-answers->dashboard e2e 데이터 반영 시나리오를 fixture 기반으로 고정 검증
+- [x] M2 UX 백로그 처리: 오답 카테고리 선택형 UI 적용(키 직접 입력 제거)
+- [x] 운영 체크리스트 보강: 로컬 업로드 백업/보관/정리 주기 및 알림 기준 문서화
+- [x] M4 마무리: 회귀 테스트 세트를 PR/릴리즈 게이트 기준으로 문서 확정
+- [x] lint 게이트 안정화: `test-results` 미존재 환경에서도 `pnpm lint` 통과 보장
 
 ## 3. Risks and Blocks
 
-- 현재 기능 구현 블로커 없음(M4 진행 중)
+- 현재 기능 구현 블로커 없음
 - 운영 모니터링: M3 지표의 교육적 해석 가이드(부모/학생용 설명 문구) 보강 필요
-- 운영 모니터링: 외부 공개 시 TLS/접근제어 설정 점검
-- 운영 모니터링: 로컬 업로드 스토리지 사용량/백업 정책 점검
+- 운영 모니터링: 외부 공개 전 TLS/접근제어 점검 절차는 체크리스트 기준으로 주기 검증 필요
 
 ## 4. Next Actions
 
-1. M2 UX 백로그 처리: 오답 카테고리 선택형 UI(키 직접 입력 제거)를 적용한다.
-2. 운영 체크리스트 보강: 로컬 업로드 백업/보관 주기와 알림 기준을 문서화한다.
-3. M4 마무리: 회귀 테스트 세트를 PR/릴리즈 게이트 기준으로 확정한다.
+1. M3 지표 해석 가이드(부모/학생용 설명 문구)를 제품 UX 카피로 구체화한다.
+2. 외부 공개 대비 TLS/접근제어 사전 점검을 로컬 리허설로 1회 수행한다.
+3. M5 후보(리포트/추천 메시지) 우선순위를 PRD/계획 문서에 반영한다.
 
 ## 5. Change Log
 
@@ -90,3 +93,7 @@
 - 2026-02-27: M4 회귀 강화 Wave 2 완료(overview/trends 계산 경계 fixture 확장, unit/integration 테스트 보강, 전체 품질 게이트 재검증)
 - 2026-02-27: M4 회귀 강화 Wave 3 완료(e2e fixture 기반 데이터 반영 시나리오 고정, 필터/쿼리 경계 검증, 전체 품질 게이트 재검증)
 - 2026-02-27: `study-code-cleanup` closeout 수행(심각도 리뷰 무결함, 품질 게이트 재확인, 세션 종료 기록 반영)
+- 2026-02-28: M2 UX 백로그 처리 완료(오답 카테고리 선택형 UI + 관련 unit/integration/e2e 회귀 보강)
+- 2026-02-28: lint 게이트 안정화(`test-results` 미존재 환경에서도 `pnpm lint` 통과 보장)
+- 2026-02-28: 운영 체크리스트 신설(`OPERATIONS_CHECKLIST.md`) 및 백업/보관/알림 정책 확정
+- 2026-02-28: M4 회귀 게이트 세트를 PR/릴리즈 기준으로 문서 고정, M4 상태 COMPLETED 전환

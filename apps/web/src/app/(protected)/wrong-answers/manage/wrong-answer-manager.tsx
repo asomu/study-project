@@ -1,6 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  buildWrongAnswerCategoryDraft,
+  toCategoryKeysForSave,
+  toggleCategorySelection,
+  WRONG_ANSWER_CATEGORY_OPTIONS,
+} from "@/modules/mistake-note/category-selection";
 
 type Student = {
   id: string;
@@ -46,7 +52,7 @@ export function WrongAnswerManager() {
   const [to, setTo] = useState(today());
   const [categoryKey, setCategoryKey] = useState("");
   const [wrongAnswers, setWrongAnswers] = useState<WrongAnswerItem[]>([]);
-  const [categoryDraft, setCategoryDraft] = useState<Record<string, string>>({});
+  const [categoryDraft, setCategoryDraft] = useState<Record<string, string[]>>({});
   const [uploadFiles, setUploadFiles] = useState<Record<string, File | null>>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -103,9 +109,7 @@ export function WrongAnswerManager() {
 
       const items = (payload as { wrongAnswers?: WrongAnswerItem[] })?.wrongAnswers ?? [];
       setWrongAnswers(items);
-      setCategoryDraft(
-        Object.fromEntries(items.map((item) => [item.id, item.categories.map((entry) => entry.key).join(", ")])),
-      );
+      setCategoryDraft(buildWrongAnswerCategoryDraft(items));
       setMessage(`오답 ${items.length}건을 불러왔습니다.`);
     } finally {
       setLoading(false);
@@ -122,10 +126,7 @@ export function WrongAnswerManager() {
     setErrorMessage("");
     setMessage("");
 
-    const keys = (categoryDraft[wrongAnswerId] ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
+    const keys = toCategoryKeysForSave(categoryDraft[wrongAnswerId] ?? []);
 
     const response = await fetch(`/api/v1/wrong-answers/${wrongAnswerId}/categories`, {
       method: "PUT",
@@ -144,7 +145,13 @@ export function WrongAnswerManager() {
       return;
     }
 
-    setWrongAnswers((prev) => prev.map((item) => (item.id === wrongAnswerId ? (payload as WrongAnswerItem) : item)));
+    const updatedWrongAnswer = payload as WrongAnswerItem;
+
+    setWrongAnswers((prev) => prev.map((item) => (item.id === wrongAnswerId ? updatedWrongAnswer : item)));
+    setCategoryDraft((prev) => ({
+      ...prev,
+      [wrongAnswerId]: updatedWrongAnswer.categories.map((entry) => entry.key),
+    }));
     setMessage("카테고리가 저장되었습니다.");
   }
 
@@ -219,13 +226,19 @@ export function WrongAnswerManager() {
             />
           </label>
           <label className="space-y-1 text-sm text-slate-700">
-            <span>categoryKey</span>
-            <input
+            <span>카테고리 필터</span>
+            <select
               value={categoryKey}
               onChange={(event) => setCategoryKey(event.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              placeholder="calculation_mistake"
-            />
+            >
+              <option value="">전체</option>
+              {WRONG_ANSWER_CATEGORY_OPTIONS.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {option.labelKo}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
         <button
@@ -271,19 +284,31 @@ export function WrongAnswerManager() {
             </div>
 
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <label className="space-y-1 text-sm text-slate-700">
-                <span>카테고리 키(콤마 구분)</span>
-                <input
-                  value={categoryDraft[wrongAnswer.id] ?? ""}
-                  onChange={(event) =>
-                    setCategoryDraft((prev) => ({
-                      ...prev,
-                      [wrongAnswer.id]: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                />
-              </label>
+              <fieldset className="space-y-2 text-sm text-slate-700">
+                <legend className="mb-1">카테고리 선택 (복수 가능)</legend>
+                <div className="grid gap-2">
+                  {WRONG_ANSWER_CATEGORY_OPTIONS.map((option) => (
+                    <label key={`${wrongAnswer.id}-${option.key}`} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={(categoryDraft[wrongAnswer.id] ?? []).includes(option.key)}
+                        onChange={(event) =>
+                          setCategoryDraft((prev) => ({
+                            ...prev,
+                            [wrongAnswer.id]: toggleCategorySelection(
+                              prev[wrongAnswer.id] ?? [],
+                              option.key,
+                              event.target.checked,
+                            ),
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-slate-300"
+                      />
+                      <span>{`${option.labelKo} (${option.key})`}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
               <label className="space-y-1 text-sm text-slate-700">
                 <span>이미지 업로드</span>
                 <input

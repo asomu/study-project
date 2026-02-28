@@ -1,18 +1,18 @@
 # Context Index
 
-- Last Updated: 2026-02-27
+- Last Updated: 2026-02-28
 - Purpose: 새 세션에서 2~3분 내 프로젝트 상태를 파악하기 위한 요약 허브
 - Usage: 이 문서에서 요약을 먼저 확인하고, 필요한 항목만 링크 문서로 내려간다.
 
 ## 1. Quick Snapshot
 
-- Current Phase: Build (M4 In Progress / Wave 3 Completed)
-- Overall Progress: 98%
-- Current Focus: M2 UX 백로그 처리, 운영 체크리스트 보강, M4 게이트 확정
+- Current Phase: Verify (M4 Completed / Release Gate Locked)
+- Overall Progress: 100%
+- Current Focus: M3 지표 해석 가이드 보강, 외부 공개 사전 점검, M5 후보 우선순위화
 - Top Risks:
   - M3 지표 해석 가이드 부족
-  - 외부 공개 전 TLS/접근 제어 점검 필요
-  - 로컬 업로드 스토리지 백업/보관 정책 보강 필요
+  - 외부 공개 전 TLS/접근 제어 리허설 필요
+  - 운영 체크리스트의 주기 실행 누락 가능성
 
 Source:
 - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`

@@ -156,6 +156,32 @@
 - M2 오답 카테고리 선택형 UI 구현
 - 운영 보안/백업 체크리스트 상세 정책 문서화
 
+## 1.7 M4 Closeout (2026-02-28)
+
+포함 범위:
+
+- M2 UX 백로그 마무리
+  - `wrong-answers/manage` 카테고리 입력을 선택형 UI(checkbox)로 전환
+  - 카테고리 선택 상태 유틸 모듈 분리(`category-selection`)
+  - unit/integration/e2e 회귀 보강(저장/해제/조회/반영)
+- lint 게이트 안정화
+  - `test-results` 미존재 환경에서도 `pnpm lint`가 통과하도록 스크립트 보강
+- 운영 체크리스트 확정
+  - `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md` 신설
+  - 백업/보관/정리 주기 및 알림 기준 문서화
+- PR/릴리즈 회귀 게이트 확정
+  - `TEST_AND_VALIDATION.md`에 M4 회귀 세트(대시보드 경계, 입력->대시보드 반영, 카테고리 저장/해제) 고정
+  - PR 게이트: `lint`, `typecheck`, `test`, `check-doc-links.sh`
+  - 릴리즈 게이트: PR 게이트 + `test:e2e`
+- 상태 문서 동기화
+  - `PROJECT_STATUS`, `CONTEXT_INDEX`, `HANDOFF`, `DECISION_LOG`, `INDEX`, `README` 반영
+
+비포함 범위:
+
+- 런타임 기능/API/스키마 변경
+- DB 마이그레이션 및 seed 정책 변경
+- 외부 배포 인프라(Caddy/MinIO/Redis) 본 적용
+
 ## 2. MVP 작업 우선순위
 
 - P0: 인증/학생 프로필/커리큘럼

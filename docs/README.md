@@ -15,6 +15,7 @@
 
 - 문서 인덱스: `/Users/mark/Documents/project/study-project/docs/INDEX.md`
 - 진행 상태: `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
+- 운영 체크리스트: `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`
 
 ## 운영 규칙
 

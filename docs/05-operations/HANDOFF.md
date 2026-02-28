@@ -1,6 +1,6 @@
 # Session Handoff
 
-## Latest Update (2026-02-27)
+## Latest Update (2026-02-28)
 
 - Done:
   - pnpm 워크스페이스 + Next.js 16(App Router) 앱(`apps/web`) 부트스트랩 완료
@@ -41,14 +41,25 @@
     - `records -> wrong-answers -> dashboard` 흐름에서 overview/weakness/trends 데이터 반영 회귀 고정
     - 대시보드 필터(기준일/약점기간) 변경 시 API 쿼리 파라미터 반영 검증
     - 품질 게이트 재통과: `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `check-doc-links.sh`
+  - M2 UX 백로그 처리 완료
+    - 오답 카테고리 입력 UI를 선택형(checkbox)으로 전환하고 직접 키 입력 제거
+    - unit/integration/e2e 테스트를 선택형 UI 흐름 기준으로 보강
+  - lint 게이트 안정화 완료
+    - `test-results` 미존재 환경에서도 `pnpm lint`가 실패하지 않도록 스크립트 보강
+  - 운영 체크리스트 문서 신설 완료
+    - `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`
+    - 로컬 업로드 백업/보관/정리 주기 및 알림 기준 확정
+  - M4 마무리 완료
+    - PR/릴리즈 회귀 게이트를 문서 기준으로 고정
+    - `PROJECT_STATUS`를 M4 `COMPLETED`로 전환
 - In Progress:
-  - M4 검증/안정화 진행 중(운영/UX 백로그 마무리 단계)
+  - 없음
 - Blocked:
   - 현재 확인된 블로커 없음
 - Next:
-  - M2 UX 백로그: 오답 카테고리 입력을 선택형 UI로 개선(키 직접 입력 제거)
-  - 운영 체크리스트: 로컬 업로드 파일 백업/보관/정리 주기 확정
-  - M4 마무리: 회귀 테스트 세트를 PR/릴리즈 게이트 기준으로 확정
+  - M3 지표 해석 가이드(부모/학생용 설명 문구)를 UX 텍스트로 구체화
+  - 외부 공개 대비 TLS/접근제어 사전 리허설 1회 수행
+  - M5 후보(리포트/추천 메시지) 우선순위를 PRD/개발 계획에 반영
 
 ## Session Start Checklist
 

@@ -303,7 +303,7 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   await page.getByRole("button", { name: "오답 목록 조회" }).click();
   await expect(page.getByText("오답 1건을 불러왔습니다.")).toBeVisible();
 
-  await page.getByLabel("카테고리 키(콤마 구분)").first().fill("calculation_mistake, misread_question");
+  await page.getByLabel("문제 잘못 읽음 (misread_question)").first().check();
   await page.getByRole("button", { name: "카테고리 저장" }).first().click();
   await expect(page.getByText("카테고리가 저장되었습니다.")).toBeVisible();
 

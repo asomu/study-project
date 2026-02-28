@@ -36,6 +36,7 @@
 - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md`
+- `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/templates/ADR_TEMPLATE.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/templates/MEETING_NOTE_TEMPLATE.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/templates/WORKLOG_TEMPLATE.md`
