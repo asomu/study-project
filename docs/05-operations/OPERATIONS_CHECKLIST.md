@@ -43,6 +43,8 @@
 
 ## 5. Operational Verification Commands
 
+- `pnpm verify:pr`
+- `pnpm verify:release`
 - `pnpm lint`
 - `pnpm typecheck`
 - `pnpm test`

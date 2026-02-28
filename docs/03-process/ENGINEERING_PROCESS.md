@@ -37,3 +37,9 @@
 
 - 세션 시작: `PROJECT_STATUS.md`의 Next Actions 확인
 - 세션 종료: 완료/미완료/리스크를 상태 문서와 핸드오프에 기록
+
+## 6. 검증 실행 플로우
+
+- PR 단계 기본 검증: `pnpm verify:pr`
+- 릴리즈 전 풀회귀: `pnpm verify:release`
+- 상세 시나리오 기준: `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`

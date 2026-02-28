@@ -1,6 +1,6 @@
 # Session Handoff
 
-## Latest Update (2026-02-28)
+## Latest Update (2026-03-01)
 
 - Done:
   - pnpm 워크스페이스 + Next.js 16(App Router) 앱(`apps/web`) 부트스트랩 완료
@@ -52,6 +52,10 @@
   - M4 마무리 완료
     - PR/릴리즈 회귀 게이트를 문서 기준으로 고정
     - `PROJECT_STATUS`를 M4 `COMPLETED`로 전환
+  - M4 검토/동작 검증 Test Plan 구현 완료
+    - 상세 계획 문서 신설: `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`
+    - 실행 스크립트 신설: `/Users/mark/Documents/project/study-project/scripts/run-verification-gates.sh`
+    - 루트 스크립트 추가: `pnpm verify:pr`, `pnpm verify:release`
 - In Progress:
   - 없음
 - Blocked:

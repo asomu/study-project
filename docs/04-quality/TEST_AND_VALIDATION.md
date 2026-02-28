@@ -44,6 +44,12 @@
   - `pnpm test:e2e` pass
   - 치명도 높은 버그 0건
 
+### 5.1 실행 명령 표준화
+
+- PR 스모크 게이트: `pnpm verify:pr`
+- 릴리즈 풀회귀 게이트: `pnpm verify:release`
+- 상세 계획/시나리오: `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`
+
 ## 6. M4 회귀 게이트 고정 세트 (2026-02-28)
 
 - dashboard 경계/권한 케이스

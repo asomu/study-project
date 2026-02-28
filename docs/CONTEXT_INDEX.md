@@ -1,6 +1,6 @@
 # Context Index
 
-- Last Updated: 2026-02-28
+- Last Updated: 2026-03-01
 - Purpose: 새 세션에서 2~3분 내 프로젝트 상태를 파악하기 위한 요약 허브
 - Usage: 이 문서에서 요약을 먼저 확인하고, 필요한 항목만 링크 문서로 내려간다.
 
@@ -8,7 +8,7 @@
 
 - Current Phase: Verify (M4 Completed / Release Gate Locked)
 - Overall Progress: 100%
-- Current Focus: M3 지표 해석 가이드 보강, 외부 공개 사전 점검, M5 후보 우선순위화
+- Current Focus: 2단계 검증 게이트 운영 정착, M3 지표 해석 가이드 보강, 외부 공개 사전 점검
 - Top Risks:
   - M3 지표 해석 가이드 부족
   - 외부 공개 전 TLS/접근 제어 리허설 필요

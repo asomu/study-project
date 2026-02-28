@@ -1,6 +1,6 @@
 # Project Status
 
-- Last Updated: 2026-02-28
+- Last Updated: 2026-03-01
 - Current Phase: Verify (M4 Completed / Release Gate Locked)
 - Overall Progress: 100%
 
@@ -55,6 +55,7 @@
 - [x] 운영 체크리스트 보강: 로컬 업로드 백업/보관/정리 주기 및 알림 기준 문서화
 - [x] M4 마무리: 회귀 테스트 세트를 PR/릴리즈 게이트 기준으로 문서 확정
 - [x] lint 게이트 안정화: `test-results` 미존재 환경에서도 `pnpm lint` 통과 보장
+- [x] M4 검토/동작 검증 Test Plan 운영화: 2단계 게이트(PR 스모크/릴리즈 풀회귀) 실행 스크립트와 상세 계획 문서 고정
 
 ## 3. Risks and Blocks
 
@@ -97,3 +98,4 @@
 - 2026-02-28: lint 게이트 안정화(`test-results` 미존재 환경에서도 `pnpm lint` 통과 보장)
 - 2026-02-28: 운영 체크리스트 신설(`OPERATIONS_CHECKLIST.md`) 및 백업/보관/알림 정책 확정
 - 2026-02-28: M4 회귀 게이트 세트를 PR/릴리즈 기준으로 문서 고정, M4 상태 COMPLETED 전환
+- 2026-03-01: M4 검토/동작 검증 Test Plan 구현(`M4_REVIEW_AND_TEST_PLAN.md`, `run-verification-gates.sh`, `verify:pr/release` 스크립트) 및 운영 문서 동기화
