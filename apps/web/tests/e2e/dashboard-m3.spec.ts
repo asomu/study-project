@@ -166,6 +166,41 @@ test("dashboard refreshes on student switch and shows empty-state CTA", async ({
     });
   });
 
+  await page.route("**/api/v1/dashboard/study-overview*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = requestUrl.searchParams.get("studentId");
+    const hasData = studentId === "student-e2e-1";
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student: {
+          id: studentId,
+          name: hasData ? "학습 데이터 학생" : "데이터 없음 학생",
+          schoolLevel: "middle",
+          grade: 1,
+        },
+        summary: {
+          pendingReviews: 0,
+          reviewNeededUnits: 0,
+          inProgressUnits: 0,
+          recentStudyMinutes7d: 0,
+          submittedSessions7d: 0,
+        },
+        progressSummary: {
+          planned: 0,
+          in_progress: 0,
+          review_needed: 0,
+          completed: 0,
+        },
+        recommendedActions: [],
+        reviewQueuePreview: [],
+        attentionUnits: [],
+      }),
+    });
+  });
+
   await page.goto("/login");
   await page.getByLabel("이메일 또는 아이디").fill(guardianEmail);
   await page.getByLabel("비밀번호").fill(guardianPassword);

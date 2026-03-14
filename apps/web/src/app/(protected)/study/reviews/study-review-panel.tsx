@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { StudyProgressStatus } from "@prisma/client";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ProgressStatusPill, getProgressStatusLabel } from "@/components/study/progress-status-pill";
 
@@ -59,8 +60,11 @@ function toApiErrorMessage(payload: unknown, fallback: string) {
 }
 
 export function StudyReviewPanel() {
+  const searchParams = useSearchParams();
+  const requestedStudentId = searchParams.get("studentId") ?? "";
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [hasInitializedStudentSelection, setHasInitializedStudentSelection] = useState(false);
   const [reviewQueue, setReviewQueue] = useState<ReviewQueueResponse["reviewQueue"]>([]);
   const [progressSummary, setProgressSummary] = useState<Record<StudyProgressStatus, number>>({
     planned: 0,
@@ -126,14 +130,36 @@ export function StudyReviewPanel() {
 
         const items = (payload as { students?: Student[] }).students ?? [];
         setStudents(items);
-        if (items[0]) {
-          setSelectedStudentId(items[0].id);
-        }
       })
       .catch((error: unknown) => {
         setErrorMessage(error instanceof Error ? error.message : "학생 목록을 불러오지 못했습니다.");
       });
   }, []);
+
+  useEffect(() => {
+    if (!students.length) {
+      return;
+    }
+
+    if (!hasInitializedStudentSelection) {
+      if (requestedStudentId && students.some((student) => student.id === requestedStudentId)) {
+        setSelectedStudentId(requestedStudentId);
+      } else if (students[0]) {
+        setSelectedStudentId(students[0].id);
+      }
+
+      setHasInitializedStudentSelection(true);
+      return;
+    }
+
+    if (selectedStudentId && students.some((student) => student.id === selectedStudentId)) {
+      return;
+    }
+
+    if (students[0]) {
+      setSelectedStudentId(students[0].id);
+    }
+  }, [hasInitializedStudentSelection, requestedStudentId, selectedStudentId, students]);
 
   useEffect(() => {
     if (!selectedStudentId) {

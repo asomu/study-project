@@ -1,7 +1,7 @@
 # Project Status
 
-- Last Updated: 2026-03-14
-- Current Phase: M7 Study Content Authoring Verified
+- Last Updated: 2026-03-15
+- Current Phase: M8 Guardian Study Dashboard Verified
 - Overall Progress: 100%
 
 ## 1. Milestone Status
@@ -16,6 +16,7 @@
 | M5 리포트/추천 확장 | DEFERRED | 0% | Team | 리포트 산출물/추천 API는 M6 이후 별도 단계로 유지 |
 | M6 학생 학습 루프 확장 | COMPLETED | 100% | Team | study 모듈, 학생 학습 화면, 보호자 리뷰 큐, 진도 상태 관리, 테스트/문서 동기화 완료 |
 | M7 학습 콘텐츠 Authoring UI | COMPLETED | 100% | Team | `/study/content`, authoring API, used set structural lock, 학생 보드 즉시 반영, 테스트/문서 동기화 완료 |
+| M8 보호자 통합 Study Dashboard | COMPLETED | 100% | Team | `/dashboard` study insight, `GET /dashboard/study-overview`, 리뷰 deep-link, 테스트/문서 동기화 완료 |
 
 ## 2. Current Sprint Focus
 
@@ -90,20 +91,32 @@
   - e2e: guardian authoring -> student progress/session -> guardian lock 확인
 - [x] M7 문서 동기화
   - `PRD`, `DEVELOPMENT_PLAN`, `API_SPEC_V1`, `SYSTEM_ARCHITECTURE`, `PROJECT_STATUS`, `HANDOFF`, `DECISION_LOG`, `CONTEXT_INDEX`
+- [x] M8 보호자 대시보드 통합 구현
+  - `GET /api/v1/dashboard/study-overview`
+  - `/dashboard` Study Insight 섹션, 액션 카드, 리뷰 큐 미리보기, 단원 상태 주의 목록
+  - `/dashboard?studentId=` / `/study/reviews?studentId=` deep-link preselect
+- [x] M8 규칙/테스트 고정
+  - recent 7-day summary, stalled in-progress, attention unit ordering, recommended action priority
+  - unit / route-contract / real integration / mocked e2e coverage
+- [x] M8 문서 동기화
+  - `PRD`, `DEVELOPMENT_PLAN`, `API_SPEC_V1`, `PROJECT_STATUS`, `HANDOFF`, `DECISION_LOG`, `CONTEXT_INDEX`
+- [x] M8 closeout review
+  - blocking finding 없음
+  - mocked dashboard e2e와 real smoke locator를 M8 대시보드 구조 기준으로 안정화
 
 ## 3. Risks and Blocks
 
 - 기능 구현 블로커 없음
 - 검증 블로커 없음
 - 수동 QA 미완료: iPad/Pencil 필기 입력, 회전, 새로고침 복구, PNG 크기/로딩 시간은 아직 수동 검증이 필요하다.
-- 보호자 대시보드 통합 범위: M6/M7 학습 데이터는 학생 보드와 보호자 리뷰/진도 화면에 반영되지만, 기존 보호자 분석 대시보드 통합 집계는 후속 단계다.
+- M8 추천 범위 제한: 보호자 대시보드 액션 카드는 규칙 기반이며, 주간 브리프/리포트/PDF/email digest는 아직 없다.
 - authoring 후속 범위: draft/versioning/publish workflow, bulk import/export, 다과목 확장은 아직 없다.
 
 ## 4. Next Actions
 
 1. iPad/Pencil 수동 QA를 실행하고 업로드 크기, 회전 대응, 새로고침 복구 결과를 체크리스트로 남긴다.
-2. M6/M7 학습 데이터를 기존 보호자 분석 대시보드 집계에 통합할지 범위를 정리한다.
-3. M5 deferred 범위(리포트 산출물, 추천 규칙, authoring draft/versioning)를 다시 우선순위화한다.
+2. M5 deferred 범위 중 `주간 보호자 브리프 / 다운로드 가능한 리포트 / 추천 규칙 확장`의 우선순위를 재정리한다.
+3. authoring 후속 범위(draft/versioning/publish, bulk import/export)를 운영 요구 기준으로 다시 쪼갠다.
 
 ## 5. Change Log
 
@@ -138,3 +151,12 @@
 - 2026-03-14: M7 문서/핸드오프 동기화 완료
 - 2026-03-14: M7 closeout review에서 practice set activation route의 예외 분류를 수정
   - DB unexpected error를 `404`로 숨기지 않고, not-found만 명시적으로 `404` 처리하도록 정리
+- 2026-03-15: M8 보호자 통합 Study Dashboard 구현 완료
+  - `GET /api/v1/dashboard/study-overview` 추가
+  - `/dashboard`에 study insight KPI, action card, review preview, attention unit table 통합
+  - `/dashboard?studentId=`와 `/study/reviews?studentId=` preselect 흐름 고정
+- 2026-03-15: M8 품질 게이트 통과
+  - `typecheck`, `lint`, `test:unit`, `test:route-contract`, `test:integration:real`, `test:e2e:mocked`, `build`
+- 2026-03-15: M8 closeout review 통과
+  - 추가 blocking finding 없음
+  - `test:e2e:real`까지 재검증 완료

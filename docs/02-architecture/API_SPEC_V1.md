@@ -1,7 +1,7 @@
 # API Spec v1 (Draft)
 
-- Version: v1.5-draft
-- Date: 2026-03-08
+- Version: v1.6-draft
+- Date: 2026-03-15
 - Base path: `/api/v1`
 
 ## 1. Auth
@@ -241,6 +241,42 @@ response:
 defaults:
 - 범위 미지정 시 최근 28일
 - 주 단위 버킷(월요일 시작)으로 반환
+
+### GET /dashboard/study-overview
+
+query:
+- studentId (required)
+- date (optional, `YYYY-MM-DD`, default=today)
+- authorization: `studentId` must belong to authenticated guardian
+
+response:
+- student: `{ id, name, schoolLevel, grade }`
+- summary:
+  - pendingReviews
+  - reviewNeededUnits
+  - inProgressUnits
+  - recentStudyMinutes7d
+  - submittedSessions7d
+- progressSummary: `{ planned, in_progress, review_needed, completed }`
+- recommendedActions[]:
+  - `{ kind, title, description, href?, sessionId?, curriculumNodeId?, practiceSetId? }`
+- reviewQueuePreview[]:
+  - `{ attemptId, submittedAt, elapsedSeconds, practiceSetTitle, unitName, wrongItems, hasReview }`
+- attentionUnits[]:
+  - `{ curriculumNodeId, unitName, status, lastStudiedAt, reviewedAt, practiceSetTitle, hasConcept }`
+
+rules:
+- 현재 학기 단원 + `StudentUnitProgress` 기준으로 `progressSummary`, `attentionUnits`를 계산한다.
+- 최근 활동 기준은 최근 7일이다.
+- `recentStudyMinutes7d`는 최근 7일 제출된 practice session의 `elapsedSeconds` 합계를 분 단위로 내린 값이다.
+- `pendingReviews`는 제출 완료 + `studyReview` 미존재 session 수다.
+- `attentionUnits`는 `completed`를 제외하고 `review_needed -> in_progress -> planned` 우선순위로 정렬하며 최대 5개만 반환한다.
+- `recommendedActions`는 아래 우선순위를 고정하고 최대 3개만 반환한다.
+  - 미리뷰 제출 세션
+  - `review_needed` 단원
+  - 최근 7일 창 밖으로 밀린 `in_progress` 단원
+  - 연습 세트가 연결된 `planned` 단원
+- action/review preview CTA는 `/study/reviews?studentId=...` deep-link를 사용한다.
 
 ## 6.1 Student Study Loop (M6)
 

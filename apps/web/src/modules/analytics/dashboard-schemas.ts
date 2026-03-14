@@ -11,6 +11,8 @@ export const dashboardOverviewQuerySchema = z.object({
     .optional(),
 });
 
+export const dashboardStudyOverviewQuerySchema = dashboardOverviewQuerySchema;
+
 export const dashboardWeaknessQuerySchema = z.object({
   studentId: z.string().trim().min(1),
   period: z.enum(["weekly", "monthly"]).default("weekly"),
@@ -31,11 +33,19 @@ export const dashboardTrendsQuerySchema = z.object({
 });
 
 export type DashboardOverviewQuery = z.infer<typeof dashboardOverviewQuerySchema>;
+export type DashboardStudyOverviewQuery = z.infer<typeof dashboardStudyOverviewQuerySchema>;
 export type DashboardWeaknessQuery = z.infer<typeof dashboardWeaknessQuerySchema>;
 export type DashboardTrendsQuery = z.infer<typeof dashboardTrendsQuerySchema>;
 
 export function parseDashboardOverviewQuery(url: URL) {
   return dashboardOverviewQuerySchema.safeParse({
+    studentId: url.searchParams.get("studentId"),
+    date: url.searchParams.get("date") ?? undefined,
+  });
+}
+
+export function parseDashboardStudyOverviewQuery(url: URL) {
+  return dashboardStudyOverviewQuerySchema.safeParse({
     studentId: url.searchParams.get("studentId"),
     date: url.searchParams.get("date") ?? undefined,
   });

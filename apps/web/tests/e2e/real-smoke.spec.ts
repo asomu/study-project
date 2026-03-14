@@ -174,7 +174,7 @@ test("real smoke: login -> records -> wrong-answers -> dashboard", async ({ page
   await expect(page.getByText("총 시도 1회 / 총 문항 3개")).toBeVisible();
   await expect(page.getByText("누적 오답 수")).toBeVisible();
   await expect(page.getByText("2건")).toBeVisible();
-  await expect(page.getByText("소인수분해")).toBeVisible();
+  await expect(page.getByRole("cell", { name: "소인수분해" }).first()).toBeVisible();
   await expect(page.getByText("문제 잘못 읽음")).toBeVisible();
   await expect(page.getByText(/진도 단원:\s*1\s*\/\s*\d+/)).toBeVisible();
 });

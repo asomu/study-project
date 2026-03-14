@@ -44,6 +44,11 @@
 - 개념 자료 create/update/delete
 - 학생 보드/세션 즉시 반영
 
+9. M8: 보호자 통합 Study Dashboard
+- 기존 `/dashboard`에 M6/M7 학습 루프 데이터 통합
+- 규칙 기반 다음 액션 + 리뷰 큐 미리보기 + 단원 상태 주의 목록
+- `/study/reviews?studentId=` deep-link 흐름 고정
+
 ## 1.1 M1 Scope Lock (2026-02-20)
 
 포함 범위:
@@ -332,6 +337,39 @@
 - iPad 수동 QA 문서화
 - 보호자 분석 대시보드와 M6/M7 학습 데이터 통합
 - 추천 메시지/리포트 산출물(M5 유지)
+
+## 1.13 M8 Scope Lock (2026-03-15)
+
+포함 범위:
+
+- 기존 `/dashboard` 확장
+  - `Study Insight` 섹션 추가
+  - KPI 카드 4개: 리뷰 대기 세션, 복습 필요 단원, 최근 7일 학습 시간, 최근 7일 제출 세션 수
+  - `지금 필요한 액션`, `리뷰 대기 미리보기`, `단원 상태 주의 목록` 추가
+- M8 dashboard API 구현
+  - `GET /api/v1/dashboard/study-overview`
+- 규칙 기반 집계/추천 고정
+  - 최근 활동 기준: 최근 7일
+  - `pendingReviews = submittedAt != null && studyReview == null`
+  - `attentionUnits`: `review_needed -> in_progress -> planned` 정렬, 최대 5개
+  - `recommendedActions`: 미리뷰 제출 세션 -> `review_needed` 단원 -> 7일 이상 정체 `in_progress` -> `planned` 단원 순서, 최대 3개
+- deep-link 흐름 정리
+  - `/dashboard?studentId=` preselect
+  - `/study/reviews?studentId=` preselect
+  - dashboard action/review preview CTA -> `/study/reviews?studentId=...`
+- Hybrid TDD 확장
+  - unit: summary/action priority/stalled 기준
+  - route-contract: role/ownership/date/empty shape
+  - real integration: student submit -> pending review -> guardian review -> dashboard 갱신
+  - e2e: dashboard insight -> review queue preselect
+
+비포함 범위:
+
+- Prisma schema migration
+- downloadable weekly report / PDF / email digest
+- LLM 코멘트 생성
+- 복습 스케줄 자동화(1일/3일/7일 큐)
+- iPad 수동 QA 문서화
 
 ## 2. MVP 작업 우선순위
 

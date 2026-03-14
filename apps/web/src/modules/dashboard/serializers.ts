@@ -1,4 +1,10 @@
+import type { StudyProgressStatus } from "@prisma/client";
 import type { CategoryDistribution, TrendPoint, WeakUnit } from "@/modules/analytics/dashboard-metrics";
+import type {
+  DashboardRecommendedAction,
+  DashboardStudyProgressItem,
+  DashboardStudyReviewQueueItem,
+} from "@/modules/dashboard/study-overview";
 
 export type DashboardOverviewResponse = {
   progress: {
@@ -27,6 +33,26 @@ export type DashboardWeaknessResponse = {
 
 export type DashboardTrendsResponse = {
   points: TrendPoint[];
+};
+
+export type DashboardStudyOverviewResponse = {
+  student: {
+    id: string;
+    name: string;
+    schoolLevel: "elementary" | "middle" | "high";
+    grade: number;
+  };
+  summary: {
+    pendingReviews: number;
+    reviewNeededUnits: number;
+    inProgressUnits: number;
+    recentStudyMinutes7d: number;
+    submittedSessions7d: number;
+  };
+  progressSummary: Record<StudyProgressStatus, number>;
+  recommendedActions: DashboardRecommendedAction[];
+  reviewQueuePreview: DashboardStudyReviewQueueItem[];
+  attentionUnits: Array<Omit<DashboardStudyProgressItem, "sortOrder">>;
 };
 
 function normalizePct(value: number) {
@@ -69,6 +95,36 @@ export function serializeDashboardTrends(payload: DashboardTrendsResponse): Dash
       ...point,
       accuracyPct: normalizePct(point.accuracyPct),
       masteryScorePct: normalizePct(point.masteryScorePct),
+    })),
+  };
+}
+
+export function serializeDashboardStudyOverview(payload: DashboardStudyOverviewResponse): DashboardStudyOverviewResponse {
+  return {
+    student: payload.student,
+    summary: {
+      pendingReviews: payload.summary.pendingReviews,
+      reviewNeededUnits: payload.summary.reviewNeededUnits,
+      inProgressUnits: payload.summary.inProgressUnits,
+      recentStudyMinutes7d: payload.summary.recentStudyMinutes7d,
+      submittedSessions7d: payload.summary.submittedSessions7d,
+    },
+    progressSummary: payload.progressSummary,
+    recommendedActions: payload.recommendedActions.map((action) => ({
+      ...action,
+    })),
+    reviewQueuePreview: payload.reviewQueuePreview.map((item) => ({
+      ...item,
+    })),
+    attentionUnits: payload.attentionUnits.map((item) => ({
+      curriculumNodeId: item.curriculumNodeId,
+      unitName: item.unitName,
+      status: item.status,
+      lastStudiedAt: item.lastStudiedAt,
+      reviewedAt: item.reviewedAt,
+      hasConcept: item.hasConcept,
+      practiceSetId: item.practiceSetId,
+      practiceSetTitle: item.practiceSetTitle,
     })),
   };
 }

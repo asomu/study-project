@@ -287,6 +287,37 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
     });
   });
 
+  await page.route("**/api/v1/dashboard/study-overview*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student: {
+          id: "student-e2e-1",
+          name: "테스트 학생",
+          schoolLevel: "middle",
+          grade: 1,
+        },
+        summary: {
+          pendingReviews: 0,
+          reviewNeededUnits: 0,
+          inProgressUnits: 0,
+          recentStudyMinutes7d: 0,
+          submittedSessions7d: 0,
+        },
+        progressSummary: {
+          planned: 0,
+          in_progress: 0,
+          review_needed: 0,
+          completed: 0,
+        },
+        recommendedActions: [],
+        reviewQueuePreview: [],
+        attentionUnits: [],
+      }),
+    });
+  });
+
   await page.goto("/login");
 
   await page.getByLabel("이메일 또는 아이디").fill(guardianEmail);

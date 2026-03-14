@@ -132,3 +132,10 @@
 - Decision: guardian/admin용 학습 콘텐츠 운영은 `/study/content` 단일 화면과 `Study` 모듈 내부 write API(`PracticeSet`, `ConceptLesson`)로 구현하고, 학생 조회 API를 그대로 재사용 가능한 데이터 형태로 유지한다.
 - Rationale: practice set / concept lesson authoring은 운영 공백을 메우는 것이 목적이므로, 별도 authoring 서비스나 draft 시스템까지 확장하기보다 현재 `Study` 도메인 안에서 검증 규칙과 즉시 반영 경로를 고정하는 편이 구현 복잡도와 회귀 리스크를 가장 낮춘다.
 - Consequence: used `PracticeSet`은 attempt 발생 이후 구조적으로 immutable 취급하며 메타데이터와 `isActive`만 수정할 수 있고, authoring 조회는 학생 화면과 달리 현재 날짜 제약 없이 선택 학기의 최신 `curriculumVersion`을 기준으로 동작해야 한다. draft/versioning/publish workflow와 bulk import/export는 후속 범위로 남는다.
+
+## ADR-0020: M8 보호자 대시보드 통합은 additive endpoint + 규칙 기반 action priority로 고정
+
+- Date: 2026-03-15
+- Decision: M8은 기존 `/dashboard`를 유지한 채 `GET /api/v1/dashboard/study-overview`를 추가하는 방식으로 학습 루프 데이터를 통합하고, 추천은 `미리뷰 제출 세션 -> review_needed 단원 -> stalled in_progress -> planned` 고정 규칙으로만 제공한다.
+- Rationale: 기존 `overview/weakness/trends` response shape를 깨지 않으면서 보호자가 바로 개입할 actionable surface를 빠르게 넣는 것이 우선이고, 주간 리포트/LLM 코멘트까지 동시에 도입하면 정책 복잡도와 회귀 리스크가 커진다.
+- Consequence: guardian dashboard는 분석 카드와 study insight를 병행 유지하며, deep-link는 `/study/reviews?studentId=`로 단순화한다. 추천은 rule-based이므로 explainable하지만, 주간 브리프/PDF/email digest와 richer recommendation은 M5 deferred 범위로 남는다.
