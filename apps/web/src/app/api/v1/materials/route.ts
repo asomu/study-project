@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createMaterialSchema } from "@/modules/assessment/schemas";
 import { assertStudentOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
+import { isGuardianRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
 import { apiError } from "@/modules/shared/api-error";
+import { logAccessDenied } from "@/modules/shared/structured-log";
 
 export async function POST(request: Request) {
   try {
@@ -12,6 +14,14 @@ export async function POST(request: Request) {
 
     if (!session) {
       return apiError(401, "AUTH_REQUIRED", "Authentication is required");
+    }
+
+    if (!isGuardianRole(session.role)) {
+      logAccessDenied("materials_requires_guardian_role", {
+        userId: session.userId,
+        role: session.role,
+      });
+      return apiError(403, "FORBIDDEN", "Guardian role is required");
     }
 
     const payload = await request.json().catch(() => null);

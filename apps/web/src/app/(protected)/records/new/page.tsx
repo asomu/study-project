@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { getAuthSessionFromCookies } from "@/modules/auth/session";
 import { RecordEntryPanel } from "@/app/(protected)/records/new/record-entry-panel";
+import { isGuardianRole } from "@/modules/auth/roles";
 
 export default async function NewRecordPage() {
   const session = await getAuthSessionFromCookies();
@@ -10,8 +11,12 @@ export default async function NewRecordPage() {
     redirect("/login");
   }
 
+  if (!isGuardianRole(session.role)) {
+    redirect("/student/dashboard");
+  }
+
   return (
-    <AppShell title="학습 기록 입력" subtitle="M2 핵심 입력" userEmail={session.email}>
+    <AppShell title="학습 기록 입력" subtitle="Guardian Workflow" session={session}>
       <RecordEntryPanel />
     </AppShell>
   );

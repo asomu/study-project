@@ -1,5 +1,6 @@
 import type { Prisma, Student } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { logOwnershipDenied } from "@/modules/shared/structured-log";
 
 export class OwnershipError extends Error {
   constructor(message = "Requested resource does not belong to authenticated guardian") {
@@ -15,6 +16,11 @@ type BaseOwnershipParams = {
 
 type StudentOwnershipParams = BaseOwnershipParams & {
   studentId: string;
+};
+
+type StudentLoginOwnershipParams = {
+  loginUserId: string;
+  tx?: Prisma.TransactionClient;
 };
 
 type MaterialOwnershipParams = BaseOwnershipParams & {
@@ -96,7 +102,28 @@ export async function assertStudentOwnership(params: StudentOwnershipParams): Pr
   const student = await getOwnedStudent(params);
 
   if (!student) {
+    logOwnershipDenied("student", params.studentId, params.guardianUserId);
     throw new OwnershipError("Requested student does not belong to authenticated guardian");
+  }
+
+  return student;
+}
+
+export async function getStudentForLogin({ loginUserId, tx }: StudentLoginOwnershipParams) {
+  const client = getClient(tx);
+
+  return client.student.findFirst({
+    where: {
+      loginUserId,
+    },
+  });
+}
+
+export async function assertStudentLoginOwnership(params: StudentLoginOwnershipParams): Promise<Student> {
+  const student = await getStudentForLogin(params);
+
+  if (!student) {
+    throw new OwnershipError("Authenticated student account is not linked to a student profile");
   }
 
   return student;
@@ -122,6 +149,7 @@ export async function assertMaterialOwnership(params: MaterialOwnershipParams): 
   const material = await getOwnedMaterial(params);
 
   if (!material) {
+    logOwnershipDenied("material", params.materialId, params.guardianUserId);
     throw new OwnershipError("Requested material does not belong to authenticated guardian");
   }
 
@@ -149,6 +177,7 @@ export async function assertAttemptOwnership(params: AttemptOwnershipParams): Pr
   const attempt = await getOwnedAttempt(params);
 
   if (!attempt) {
+    logOwnershipDenied("attempt", params.attemptId, params.guardianUserId);
     throw new OwnershipError("Requested attempt does not belong to authenticated guardian");
   }
 
@@ -182,6 +211,7 @@ export async function assertAttemptItemOwnership(params: AttemptItemOwnershipPar
   const attemptItem = await getOwnedAttemptItem(params);
 
   if (!attemptItem) {
+    logOwnershipDenied("attempt_item", params.attemptItemId, params.guardianUserId);
     throw new OwnershipError("Requested attempt item does not belong to authenticated guardian");
   }
 
@@ -226,6 +256,7 @@ export async function assertWrongAnswerOwnership(params: WrongAnswerOwnershipPar
   const wrongAnswer = await getOwnedWrongAnswer(params);
 
   if (!wrongAnswer) {
+    logOwnershipDenied("wrong_answer", params.wrongAnswerId, params.guardianUserId);
     throw new OwnershipError("Requested wrong answer does not belong to authenticated guardian");
   }
 

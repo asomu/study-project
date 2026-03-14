@@ -5,8 +5,9 @@
 권장: Hybrid TDD
 
 - 도메인 로직: TDD 우선
-- UI 컴포넌트: 상태/상호작용 중심 테스트
-- E2E: 핵심 사용자 여정 스모크 + 주요 회귀
+- Route handler/API 계약: route-contract 테스트
+- DB 연동 흐름: real integration 테스트
+- 브라우저 UI: mocked regression + real smoke
 
 ## 2. 왜 Hybrid TDD인가
 
@@ -19,17 +20,21 @@
 1. Unit
 - 성취도 계산, 카테고리 집계, 우선순위 로직
 
-2. Integration
-- API + DB + 파일 업로드 흐름
+2. Route-contract
+- Next route handler의 요청/응답/에러 코드 계약 검증
+- Prisma/외부 의존성은 mock 처리
 
-3. E2E
-- 로그인 -> 입력 -> 오답 업로드 -> 대시보드 반영
+3. Real Integration
+- PostgreSQL + Prisma + migration/seed 기준으로 API + DB + 업로드 흐름 검증
+
+4. E2E
+- mocked UI regression: 핵심 화면 상호작용/쿼리 파라미터 회귀
+- real smoke: 로그인 -> 입력 -> 오답 관리 -> 대시보드 반영
 
 ## 4. 도구
 
-- Unit/Integration: Vitest, Testing Library, Supertest
+- Unit/Route-contract/Real Integration: Vitest
 - E2E: Playwright
-- Mocking: MSW
 - Quality: ESLint, Prettier, TypeScript strict mode
 
 ## 5. 품질 게이트
@@ -37,6 +42,7 @@
 - PR 기준
   - `pnpm lint` pass
   - `pnpm typecheck` pass
+  - `pnpm build` pass
   - `pnpm test` pass (unit + integration)
   - `bash scripts/check-doc-links.sh` pass
 - 릴리즈 기준
@@ -49,6 +55,7 @@
 - PR 스모크 게이트: `pnpm verify:pr`
 - 릴리즈 풀회귀 게이트: `pnpm verify:release`
 - 상세 계획/시나리오: `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`
+- 수동 사용자 검증 체크리스트: `/Users/mark/Documents/project/study-project/docs/04-quality/USER_E2E_MANUAL_CHECKLIST.md`
 
 ## 6. M4 회귀 게이트 고정 세트 (2026-02-28)
 
@@ -67,6 +74,7 @@
 ## 7. 오답 기능 검증 포인트
 
 - 이미지 업로드 실패/재시도
+- MIME 허용이더라도 파일 시그니처가 다르면 업로드 거부
 - 카테고리 복수 선택 정확성
 - 오답 수정/삭제 후 분석 반영 일관성
 
@@ -79,6 +87,17 @@
 
 ## 9. FR-테스트 추적 규칙
 
-- FR-001/003/004/005/006은 Unit + Integration으로 기본 검증한다.
-- FR-002/007/008/009는 Integration + E2E 스모크를 포함한다.
+- FR-001/003/004/005/006은 Unit + Route-contract + Real Integration으로 기본 검증한다.
+- FR-002/007/008은 Route-contract + Real Integration + E2E 스모크를 포함한다.
 - PR마다 변경된 FR ID를 PR 설명에 기록하고, 대응 테스트를 연결한다.
+
+## 10. 분류 규칙
+
+- `tests/integration`: mocked route-contract
+- `tests/real-integration`: Prisma + PostgreSQL real integration
+- `tests/e2e/*.spec.ts`: mocked UI regression
+- `tests/e2e/real-smoke.spec.ts`: 실서버/실DB smoke
+
+## 11. Deferred Scope
+
+- 리포트 산출물과 약점 우선순위 추천은 M5 계약/테스트 케이스로만 유지하고 현재 릴리즈 게이트에는 포함하지 않는다.

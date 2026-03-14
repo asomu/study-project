@@ -12,6 +12,7 @@ import {
 } from "@/modules/analytics/dashboard-metrics";
 import { parseDashboardOverviewQuery } from "@/modules/analytics/dashboard-schemas";
 import { assertStudentOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
+import { isGuardianRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
 import {
   addDaysUtc,
@@ -24,6 +25,7 @@ import {
 } from "@/modules/dashboard/date-range";
 import { serializeDashboardOverview } from "@/modules/dashboard/serializers";
 import { apiError } from "@/modules/shared/api-error";
+import { logAccessDenied } from "@/modules/shared/structured-log";
 
 export async function GET(request: Request) {
   try {
@@ -31,6 +33,14 @@ export async function GET(request: Request) {
 
     if (!session) {
       return apiError(401, "AUTH_REQUIRED", "Authentication is required");
+    }
+
+    if (!isGuardianRole(session.role)) {
+      logAccessDenied("guardian_dashboard_overview_requires_guardian_role", {
+        userId: session.userId,
+        role: session.role,
+      });
+      return apiError(403, "FORBIDDEN", "Guardian role is required");
     }
 
     const requestUrl = new URL(request.url);

@@ -1,21 +1,22 @@
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/app/(public)/login/login-form";
+import { getRoleHomePath } from "@/modules/auth/roles";
 import { getAuthSessionFromCookies } from "@/modules/auth/session";
 
 export default async function LoginPage() {
   const session = await getAuthSessionFromCookies();
 
   if (session) {
-    redirect("/dashboard");
+    redirect(getRoleHomePath(session.role));
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-slate-50 to-white px-4 py-12">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.14),_transparent_25%),linear-gradient(180deg,_#f8fafc_0%,_#fffef9_100%)] px-4 py-12">
       <div className="mx-auto w-full max-w-md space-y-4">
         <div className="space-y-2 text-center">
-          <p className="text-sm font-semibold text-sky-700">M1 Foundation</p>
+          <p className="font-mono text-xs tracking-[0.28em] text-sky-700 uppercase">Shared Access</p>
           <h1 className="text-2xl font-bold text-slate-900">중학생 수학 성취 대시보드</h1>
-          <p className="text-sm text-slate-600">보호자 계정으로 로그인해서 학생 학습 기록을 관리하세요.</p>
+          <p className="text-sm text-slate-600">보호자는 이메일로, 학생은 발급받은 아이디로 로그인합니다.</p>
         </div>
         <LoginForm />
       </div>

@@ -1,0 +1,75 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: study
+          POSTGRES_PASSWORD: study
+          POSTGRES_DB: study_project
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U study -d study_project"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://study:study@localhost:5432/study_project?schema=public
+      JWT_SECRET: dev_secret_32_characters_minimum_123
+      JWT_EXPIRES_IN: 7d
+      APP_URL: http://127.0.0.1:3000
+      SEED_GUARDIAN_EMAIL: guardian@example.com
+      SEED_GUARDIAN_PASSWORD: Guardian123!
+      UPLOAD_DIR: public/uploads/test-wrong-answers
+      UPLOAD_MAX_BYTES: "5242880"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare runtime directories
+        run: |
+          mkdir -p apps/web/public/uploads/wrong-answers
+          mkdir -p apps/web/public/uploads/test-wrong-answers
+          mkdir -p backups/wrong-answers
+
+      - name: Apply migrations
+        run: pnpm -C apps/web exec prisma migrate deploy
+
+      - name: Seed database
+        run: pnpm -C apps/web prisma:seed
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Check doc links
+        run: bash scripts/check-doc-links.sh

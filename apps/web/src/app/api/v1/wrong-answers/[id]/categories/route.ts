@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { assertWrongAnswerOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
+import { isGuardianRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
 import { serializeWrongAnswer } from "@/modules/mistake-note/serializers";
 import { updateWrongAnswerCategoriesSchema } from "@/modules/mistake-note/schemas";
 import { apiError } from "@/modules/shared/api-error";
+import { logAccessDenied } from "@/modules/shared/structured-log";
 
 type RouteContext = {
   params: Promise<{ id: string }> | { id: string };
@@ -34,6 +36,14 @@ export async function PUT(request: Request, context: RouteContext) {
 
     if (!session) {
       return apiError(401, "AUTH_REQUIRED", "Authentication is required");
+    }
+
+    if (!isGuardianRole(session.role)) {
+      logAccessDenied("wrong_answer_categories_requires_guardian_role", {
+        userId: session.userId,
+        role: session.role,
+      });
+      return apiError(403, "FORBIDDEN", "Guardian role is required");
     }
 
     const wrongAnswerId = await readWrongAnswerId(context);

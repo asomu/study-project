@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { assertStudentOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
+import { isGuardianRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
 import { apiError } from "@/modules/shared/api-error";
+import { logAccessDenied } from "@/modules/shared/structured-log";
 
 const createStudentSchema = z.object({
   name: z.string().trim().min(1).max(50),
@@ -18,6 +20,14 @@ export async function GET(request: Request) {
 
     if (!session) {
       return apiError(401, "AUTH_REQUIRED", "Authentication is required");
+    }
+
+    if (!isGuardianRole(session.role)) {
+      logAccessDenied("students_read_requires_guardian_role", {
+        userId: session.userId,
+        role: session.role,
+      });
+      return apiError(403, "FORBIDDEN", "Guardian role is required");
     }
 
     const requestUrl = new URL(request.url);
@@ -61,6 +71,14 @@ export async function POST(request: Request) {
 
     if (!session) {
       return apiError(401, "AUTH_REQUIRED", "Authentication is required");
+    }
+
+    if (!isGuardianRole(session.role)) {
+      logAccessDenied("students_create_requires_guardian_role", {
+        userId: session.userId,
+        role: session.role,
+      });
+      return apiError(403, "FORBIDDEN", "Guardian role is required");
     }
 
     const payload = await request.json().catch(() => null);

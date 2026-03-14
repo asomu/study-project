@@ -16,7 +16,9 @@
 - 문서 인덱스: `/Users/mark/Documents/project/study-project/docs/INDEX.md`
 - 진행 상태: `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - 운영 체크리스트: `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`
+- 데모 운영 런북: `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`
 - 검증 플랜: `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`
+- 수동 사용자 E2E 체크리스트: `/Users/mark/Documents/project/study-project/docs/04-quality/USER_E2E_MANUAL_CHECKLIST.md`
 
 ## 운영 규칙
 

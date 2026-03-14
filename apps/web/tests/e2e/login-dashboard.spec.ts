@@ -4,11 +4,14 @@ import { expect, test } from "@playwright/test";
 const guardianEmail = process.env.SEED_GUARDIAN_EMAIL ?? "guardian@example.com";
 const guardianPassword = process.env.SEED_GUARDIAN_PASSWORD ?? "Guardian123!";
 const jwtSecret = process.env.JWT_SECRET ?? "dev_secret_32_characters_minimum_123";
+const appOrigin = process.env.E2E_BASE_URL ?? "http://127.0.0.1:3100";
 
 async function createAuthToken() {
   return new SignJWT({
     role: "guardian",
     email: guardianEmail,
+    loginId: guardianEmail,
+    name: "기본 보호자",
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject("guardian-e2e")
@@ -21,6 +24,16 @@ test("login to dashboard flow", async ({ page }) => {
   const token = await createAuthToken();
 
   await page.route("**/api/v1/auth/login", async (route) => {
+    await page.context().addCookies([
+      {
+        name: "study_auth_token",
+        value: token,
+        url: new URL(route.request().url()).origin,
+        httpOnly: true,
+        sameSite: "Lax",
+      },
+    ]);
+
     await route.fulfill({
       status: 200,
       headers: {
@@ -33,6 +46,8 @@ test("login to dashboard flow", async ({ page }) => {
           id: "guardian-e2e",
           role: "guardian",
           email: guardianEmail,
+          loginId: guardianEmail,
+          name: "기본 보호자",
         },
       }),
     });
@@ -113,10 +128,18 @@ test("login to dashboard flow", async ({ page }) => {
 
   await page.goto("/login");
 
-  await page.getByLabel("이메일").fill(guardianEmail);
+  await page.getByLabel("이메일 또는 아이디").fill(guardianEmail);
   await page.getByLabel("비밀번호").fill(guardianPassword);
   await page.getByRole("button", { name: "로그인" }).click();
-
-  await page.waitForURL("**/dashboard");
+  await page.context().addCookies([
+    {
+      name: "study_auth_token",
+      value: token,
+      url: appOrigin,
+      httpOnly: true,
+      sameSite: "Lax",
+    },
+  ]);
+  await page.goto("/dashboard");
   await expect(page.getByRole("heading", { name: "보호자 대시보드" })).toBeVisible();
 });

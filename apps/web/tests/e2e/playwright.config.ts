@@ -6,12 +6,14 @@ export default defineConfig({
   testDir: ".",
   timeout: 45_000,
   retries: 0,
+  fullyParallel: false,
+  workers: 1,
   use: {
     baseURL,
     headless: true,
   },
   webServer: {
-    command: "pnpm dev --port 3100",
+    command: "rm -rf .next-playwright && pnpm exec next dev --webpack --port 3100",
     cwd: process.cwd(),
     url: `${baseURL}/login`,
     timeout: 120_000,
@@ -24,6 +26,10 @@ export default defineConfig({
       APP_URL: process.env.APP_URL ?? baseURL,
       SEED_GUARDIAN_EMAIL: process.env.SEED_GUARDIAN_EMAIL ?? "guardian@example.com",
       SEED_GUARDIAN_PASSWORD: process.env.SEED_GUARDIAN_PASSWORD ?? "Guardian123!",
+      NEXT_DIST_DIR: process.env.NEXT_DIST_DIR ?? ".next-playwright",
+      UPLOAD_DIR: process.env.UPLOAD_DIR ?? "public/uploads/test-wrong-answers",
+      STUDY_UPLOAD_DIR: process.env.STUDY_UPLOAD_DIR ?? "public/uploads/test-study-work",
+      UPLOAD_MAX_BYTES: process.env.UPLOAD_MAX_BYTES ?? "5242880",
     },
   },
 });

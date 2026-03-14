@@ -1,6 +1,9 @@
-# Web App (M1 Foundation)
+# Web App
 
-Next.js 16(App Router) 기반 M1 코어 애플리케이션입니다.
+Next.js 16(App Router) 기반 중학생 수학 성취 대시보드 애플리케이션입니다.
+
+- 보호자: `/signup` -> `/dashboard`
+- 학생: 보호자 초대코드로 `/student/activate` -> `/student/dashboard`
 
 ## Quick Start
 
@@ -40,13 +43,50 @@ pnpm -C apps/web dev
 
 - email: `guardian@example.com`
 - password: `Guardian123!`
+- 이 계정은 보호자 seed 계정이며, 학생 로그인 계정은 기본으로 생성되지 않습니다.
+
+## Demo Commands
+
+데모용 샘플 데이터를 기본 seed와 분리해서 주입할 수 있습니다.
+
+```bash
+pnpm -C apps/web demo:seed
+pnpm -C apps/web demo:clear
+```
+
+- `demo:seed`는 기존 `기본 학생` 범위의 학습 데이터만 지우고, 최근 4주 데모용 기록/오답/대시보드 데이터를 다시 채웁니다.
+- `demo:clear`는 같은 학생 범위의 데모 학습 데이터와 업로드 파일만 정리합니다.
+- `DEMO_REFERENCE_DATE=YYYY-MM-DD pnpm -C apps/web demo:seed`로 기준일을 고정할 수 있습니다.
+
+## LAN Demo Start
+
+같은 공유기 내부 네트워크에서 임시 데모를 열 때는 개발 서버 대신 production start를 사용합니다.
+
+```bash
+pnpm -C apps/web build
+pnpm -C apps/web start:lan
+```
+
+- 공유 주소 형식: `http://<LAN_IP>:3000/login`
+- 이 앱은 Next.js + API + Prisma 구조라 VS Code `Live Server` 같은 정적 서버 확장으로는 동작하지 않습니다.
+- 운영자용 시연 절차는 `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`를 기준으로 합니다.
 
 ## Quality Gate Commands
 
 ```bash
 pnpm -C apps/web lint
 pnpm -C apps/web typecheck
+pnpm -C apps/web build
 pnpm -C apps/web test:unit
+pnpm -C apps/web test:route-contract
+pnpm -C apps/web test:integration:real
 pnpm -C apps/web test:integration
+pnpm -C apps/web test:e2e:mocked
+pnpm -C apps/web test:e2e:real
 pnpm -C apps/web test:e2e
 ```
+
+## Notes
+
+- `POST /api/v1/auth/login`의 `accessToken` 응답 필드는 v1 호환성 때문에 유지되지만, 웹 클라이언트는 HttpOnly 쿠키만 사용합니다.
+- `pnpm test:integration:real`과 `pnpm test:e2e:real`은 PostgreSQL + migration/seed가 준비된 상태를 전제로 합니다.

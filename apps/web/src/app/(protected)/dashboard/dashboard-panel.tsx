@@ -13,6 +13,7 @@ type Student = {
   name: string;
   schoolLevel: "elementary" | "middle" | "high";
   grade: number;
+  loginUserId?: string | null;
 };
 
 type OverviewResponse = {
@@ -102,6 +103,8 @@ export function DashboardPanel() {
     () => students.find((student) => student.id === selectedStudentId) ?? null,
     [selectedStudentId, students],
   );
+  const activeStudentCount = students.filter((student) => Boolean(student.loginUserId)).length;
+  const inactiveStudentCount = students.length - activeStudentCount;
 
   const hasAnyData = (overview?.summary.totalItems ?? 0) > 0;
 
@@ -192,6 +195,44 @@ export function DashboardPanel() {
 
   return (
     <div className="space-y-6">
+      <section className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+        <article className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="font-mono text-xs tracking-[0.26em] text-teal-700 uppercase">Guardian Control</p>
+          <h2 className="mt-2 text-xl font-semibold text-slate-950">학생 학습 흐름과 계정 상태를 함께 관리합니다</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            보호자 대시보드는 분석 화면을 유지하면서 학생 계정 연결 상태까지 보여줍니다. 아직 미활성 학생이 있으면
+            학생 관리 화면에서 초대코드를 발급하세요.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href="/students/manage"
+              className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
+            >
+              학생 관리로 이동
+            </Link>
+            <Link
+              href="/records/new"
+              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-400 hover:text-sky-700"
+            >
+              학습 기록 입력
+            </Link>
+          </div>
+        </article>
+        <article className="rounded-[1.75rem] border border-slate-200 bg-slate-950 p-5 shadow-sm">
+          <p className="font-mono text-xs tracking-[0.26em] text-teal-300 uppercase">Account Status</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs text-slate-400">활성 학생 계정</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{activeStudentCount}명</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs text-slate-400">미활성 학생 계정</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{inactiveStudentCount}명</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold text-slate-900">대시보드 필터</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-4">

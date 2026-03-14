@@ -1,14 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getRoleHomePath } from "@/modules/auth/roles";
 
 const defaultEmail = process.env.NEXT_PUBLIC_DEFAULT_LOGIN_EMAIL ?? "";
 const defaultPassword = process.env.NEXT_PUBLIC_DEFAULT_LOGIN_PASSWORD ?? "";
 
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState(defaultEmail);
+  const [identifier, setIdentifier] = useState(defaultEmail);
   const [password, setPassword] = useState(defaultPassword);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -25,7 +27,7 @@ export function LoginForm() {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          email,
+          identifier,
           password,
         }),
       });
@@ -39,7 +41,9 @@ export function LoginForm() {
         return;
       }
 
-      router.replace("/dashboard");
+      const payload = (await response.json()) as { user: { role: "guardian" | "admin" | "student" } };
+
+      router.replace(getRoleHomePath(payload.user.role));
       router.refresh();
     } finally {
       setSubmitting(false);
@@ -47,18 +51,18 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-[1.75rem] border border-slate-200 bg-white/92 p-5 shadow-sm">
       <div className="space-y-1">
-        <label htmlFor="email" className="text-sm font-medium text-slate-700">
-          이메일
+        <label htmlFor="identifier" className="text-sm font-medium text-slate-700">
+          이메일 또는 아이디
         </label>
         <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          id="identifier"
+          name="identifier"
+          type="text"
+          autoComplete="username"
+          value={identifier}
+          onChange={(event) => setIdentifier(event.target.value)}
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
           required
         />
@@ -86,6 +90,14 @@ export function LoginForm() {
       >
         {submitting ? "로그인 중..." : "로그인"}
       </button>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
+        <Link href="/signup" className="font-semibold text-sky-700 hover:text-sky-800">
+          보호자 회원가입
+        </Link>
+        <Link href="/student/activate" className="font-semibold text-amber-700 hover:text-amber-800">
+          학생 계정 활성화
+        </Link>
+      </div>
     </form>
   );
 }

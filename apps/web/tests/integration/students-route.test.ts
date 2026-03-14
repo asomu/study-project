@@ -25,6 +25,20 @@ async function createAuthCookie() {
     sub: "guardian-1",
     role: UserRole.guardian,
     email: "guardian@example.com",
+    loginId: "guardian@example.com",
+    name: "기본 보호자",
+  });
+
+  return `${AUTH_COOKIE_NAME}=${token}`;
+}
+
+async function createStudentAuthCookie() {
+  const token = await signAuthToken({
+    sub: "student-user-1",
+    role: UserRole.student,
+    loginId: "student-math",
+    name: "학생 1",
+    studentId: "student-1",
   });
 
   return `${AUTH_COOKIE_NAME}=${token}`;
@@ -73,6 +87,21 @@ describe("/api/v1/students", () => {
     expect(response.status).toBe(200);
     expect(body.students).toHaveLength(1);
     expect(body.students[0]?.id).toBe("student-1");
+  });
+
+  it("returns 403 when student role requests guardian student list", async () => {
+    const authCookie = await createStudentAuthCookie();
+
+    const request = new Request("http://localhost/api/v1/students", {
+      method: "GET",
+      headers: { cookie: authCookie },
+    });
+
+    const response = await GET(request);
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe("FORBIDDEN");
   });
 
   it("returns 403 for not-owned student query", async () => {

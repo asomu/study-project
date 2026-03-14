@@ -16,7 +16,8 @@
 작업 완료 조건:
 
 - 기능 동작 확인
-- 단위/통합 테스트 통과
+- 단위/route-contract/real integration 테스트 통과
+- build 통과
 - E2E 스모크 통과
 - 리뷰 완료
 - 상태 문서 업데이트 완료
@@ -42,4 +43,6 @@
 
 - PR 단계 기본 검증: `pnpm verify:pr`
 - 릴리즈 전 풀회귀: `pnpm verify:release`
+- `verify:pr`는 migrate/seed + lint + typecheck + build + test + doc-links + 조건부 mocked e2e를 수행한다.
+- `verify:release`는 migrate/seed + lint + typecheck + build + test + full e2e(mocked + real smoke) + doc-links + 운영 체크를 수행한다.
 - 상세 시나리오 기준: `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`

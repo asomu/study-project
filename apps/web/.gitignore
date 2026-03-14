@@ -17,8 +17,10 @@
 
 # next.js
 /.next/
+/.next-playwright/
 /out/
 /public/uploads/wrong-answers/*
+/public/uploads/test-wrong-answers/*
 
 # production
 /build

@@ -1,44 +1,59 @@
 # Technical Stack Baseline
 
-- Baseline Date: 2026-02-20
+- Baseline Date: 2026-03-07
 
-## 1. Application
+## 1. 현재 구현됨
+
+### Application
 
 - Language: TypeScript
-- Frontend/Backend: Next.js 16 (App Router)
-- UI: Tailwind CSS 4 + shadcn/ui
-- Charts: Recharts
-- Forms/Validation: React Hook Form + Zod
+- Frontend/Backend: Next.js 16 (App Router) + React 19
+- UI: Tailwind CSS 4 + 커스텀 컴포넌트
+- Client State/Data Fetching: React state/effect + browser `fetch`
+- Validation: Zod
+- Charts: 커스텀 SVG/CSS 차트
 
-## 2. Data
+### Data
 
 - Primary DB: PostgreSQL
 - ORM: Prisma
-- Cache/Queue: Redis + BullMQ (비동기 분석 확장 시)
-- Object Storage: MinIO (로컬 S3 호환)
+- Upload Storage: 로컬 파일시스템(`public/uploads/wrong-answers`)
 
-## 3. Infra (Mac mini Local)
+### Infra (Mac mini Local)
 
 - Container runtime: Docker + Docker Compose
-- Reverse proxy/TLS: Caddy
-- Observability: OpenTelemetry + Loki/Grafana (단계적 도입)
+- Local DB runtime: `infra/docker/docker-compose.local.yml`의 PostgreSQL
+- CI/CD: GitHub Actions 품질/릴리즈 게이트 + Mac mini 수동 배포
 
-## 4. Testing & Quality
+### Testing & Quality
 
-- Unit/Integration: Vitest + Testing Library
-- E2E: Playwright
+- Unit: Vitest
+- Route-contract tests: Vitest + mocked Prisma route tests
+- Real integration tests: Vitest + Prisma + PostgreSQL
+- Browser regression: Playwright mocked UI regression + real smoke
 - Lint/Format: ESLint + Prettier
-- Type check: tsc --noEmit
+- Type check: `tsc --noEmit`
 
-## 5. 배포 전략
+## 2. 후속 도입 후보 (현재 미적용)
 
-- 1단계: 로컬 네트워크 접근 중심
-- 2단계: 외부 호스팅 이전 가능 구조
-  - App/DB/Storage/Queue를 컨테이너 단위 분리
-  - 환경변수 및 시크릿 분리 관리
+- UI toolkit: `shadcn/ui`
+- Form library: React Hook Form
+- Chart library: Recharts
+- Cache/Queue: Redis + BullMQ
+- Object Storage: MinIO
+- Reverse proxy/TLS: Caddy
+- Observability: OpenTelemetry + Loki/Grafana
+- Worker app / production compose 분리
 
-## 6. 설계 원칙
+## 3. 배포 전략
 
-- MVP는 모듈형 모놀리식으로 시작
-- 데이터 모델은 초/중/고 + 과목 확장 고려
-- 분석 로직은 서비스 계층에 캡슐화
+- 1단계: Mac mini 로컬/self-hosted + 수동 배포
+- 2단계: 외부 공개 필요 시 reverse proxy/TLS/접근제어를 추가한다.
+- 3단계: 실제 병목이 확인되면 queue/object storage/worker를 순차 도입한다.
+
+## 4. 설계 원칙
+
+- 릴리즈 하드닝 단계에서는 실제 구현된 lean stack을 기준 문서로 유지한다.
+- MVP는 모듈형 모놀리식으로 유지한다.
+- 데이터 모델은 초/중/고 + 과목 확장을 고려한다.
+- 분석 로직은 서비스 계층에 캡슐화하고, 캐시/배치는 실제 병목이 생길 때만 도입한다.

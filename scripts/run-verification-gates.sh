@@ -33,6 +33,19 @@ run_in_root() {
   )
 }
 
+prepare_runtime_directories() {
+  run_in_root mkdir -p \
+    apps/web/public/uploads/wrong-answers \
+    apps/web/public/uploads/test-wrong-answers \
+    backups/wrong-answers
+}
+
+prepare_database() {
+  prepare_runtime_directories
+  run_in_root pnpm -C apps/web exec prisma migrate deploy
+  run_in_root pnpm -C apps/web prisma:seed
+}
+
 require_mode() {
   if [[ -z "$MODE" ]]; then
     echo "[ERROR] --mode is required."
@@ -48,18 +61,25 @@ require_mode() {
 }
 
 resolve_changed_files() {
-  local output=""
+  local ref_output=""
+  local working_tree_output=""
+  local staged_output=""
+  local untracked_output=""
 
   if git -C "$PROJECT_ROOT" rev-parse --verify "$BASE_REF" >/dev/null 2>&1 && \
     git -C "$PROJECT_ROOT" rev-parse --verify "$HEAD_REF" >/dev/null 2>&1; then
-    output="$(git -C "$PROJECT_ROOT" diff --name-only "$BASE_REF...$HEAD_REF" || true)"
+    ref_output="$(git -C "$PROJECT_ROOT" diff --name-only "$BASE_REF...$HEAD_REF" || true)"
   elif git -C "$PROJECT_ROOT" rev-parse --verify HEAD~1 >/dev/null 2>&1; then
-    output="$(git -C "$PROJECT_ROOT" diff --name-only HEAD~1...HEAD || true)"
+    ref_output="$(git -C "$PROJECT_ROOT" diff --name-only HEAD~1...HEAD || true)"
   else
-    output="$(git -C "$PROJECT_ROOT" diff --name-only HEAD || true)"
+    ref_output="$(git -C "$PROJECT_ROOT" diff --name-only HEAD || true)"
   fi
 
-  printf '%s\n' "$output"
+  working_tree_output="$(git -C "$PROJECT_ROOT" diff --name-only || true)"
+  staged_output="$(git -C "$PROJECT_ROOT" diff --name-only --cached || true)"
+  untracked_output="$(git -C "$PROJECT_ROOT" ls-files --others --exclude-standard || true)"
+
+  printf '%s\n%s\n%s\n%s\n' "$ref_output" "$working_tree_output" "$staged_output" "$untracked_output" | sed '/^$/d' | sort -u
 }
 
 run_pr_mode() {
@@ -67,8 +87,10 @@ run_pr_mode() {
   local run_records_e2e="false"
   local run_dashboard_e2e="false"
 
+  prepare_database
   run_in_root pnpm lint
   run_in_root pnpm typecheck
+  run_in_root pnpm build
   run_in_root pnpm test
   run_in_root bash scripts/check-doc-links.sh
 
@@ -103,8 +125,10 @@ run_release_mode() {
   local size_kb
   local threshold_kb=$((2 * 1024 * 1024))
 
+  prepare_database
   run_in_root pnpm lint
   run_in_root pnpm typecheck
+  run_in_root pnpm build
   run_in_root pnpm test
   run_in_root pnpm test:e2e
   run_in_root bash scripts/check-doc-links.sh

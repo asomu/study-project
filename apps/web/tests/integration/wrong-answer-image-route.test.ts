@@ -22,6 +22,8 @@ async function createAuthCookie() {
     sub: "guardian-1",
     role: UserRole.guardian,
     email: "guardian@example.com",
+    loginId: "guardian@example.com",
+    name: "기본 보호자",
   });
 
   return `${AUTH_COOKIE_NAME}=${token}`;
@@ -104,5 +106,26 @@ describe("POST /api/v1/wrong-answers/[id]/image", () => {
 
     expect(response.status).toBe(413);
     expect(body.error.code).toBe("PAYLOAD_TOO_LARGE");
+  });
+
+  it("returns 415 when declared image mime type has an invalid file signature", async () => {
+    const authCookie = await createAuthCookie();
+    const formData = new FormData();
+
+    formData.set("file", new File([Buffer.from("not-a-real-png")], "fake.png", { type: "image/png" }));
+
+    const request = new Request("http://localhost/api/v1/wrong-answers/wa-1/image", {
+      method: "POST",
+      headers: {
+        cookie: authCookie,
+      },
+      body: formData,
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ id: "wa-1" }) });
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(415);
+    expect(body.error.code).toBe("UNSUPPORTED_MEDIA_TYPE");
   });
 });

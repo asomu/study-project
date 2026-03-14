@@ -27,6 +27,23 @@
 - 로컬 배포 안정화
 - 사용자 피드백 반영
 
+6. M5: 리포트/추천 확장
+- 리포트 산출물
+- 약점 우선순위 추천
+- 필요 시 배치/캐시 계층 도입 검토
+
+7. M6: 학생 학습 루프 확장
+- 내장 문제세트 + 자동채점
+- 학생 진도/개념 보드
+- 학생 오답노트 self-service
+- 보호자 리뷰 큐 + 단원 상태 관리
+
+8. M7: 학습 콘텐츠 Authoring UI
+- `/study/content` 운영 화면
+- 연습 세트 create/update/activation
+- 개념 자료 create/update/delete
+- 학생 보드/세션 즉시 반영
+
 ## 1.1 M1 Scope Lock (2026-02-20)
 
 포함 범위:
@@ -181,6 +198,140 @@
 - 런타임 기능/API/스키마 변경
 - DB 마이그레이션 및 seed 정책 변경
 - 외부 배포 인프라(Caddy/MinIO/Redis) 본 적용
+
+## 1.8 Release Hardening Alignment (2026-03-07)
+
+포함 범위:
+
+- 스택/아키텍처/구조 문서를 실제 구현 기준으로 정렬
+- `AttemptItem(attemptId, problemNo)` DB 유니크 제약 추가
+- 업로드 MIME + 파일 시그니처 검증 추가
+- 구조화 로그(인증 실패/소유권 거부/업로드 실패) 추가
+- real integration / real e2e smoke 테스트 추가
+- GitHub Actions 품질/릴리즈 게이트 추가
+- 수동 배포 절차를 운영 체크리스트에 명령 단위로 고정
+
+비포함 범위:
+
+- Redis/MinIO/Caddy/관측성 스택 도입
+- 리포트 산출물/추천 메시지 구현
+- 분산 아키텍처 전환
+
+## 1.9 M5 Scope Direction (2026-03-07)
+
+포함 범위 후보:
+
+- 다운로드/공유 가능한 리포트 산출물
+- 약점 우선순위 추천 규칙(`accuracy + recentness + repeat-error count`)
+- 필요 시 `mastery_snapshots` 활용 여부 검토
+
+비포함 범위:
+
+- MVP 릴리즈 하드닝 게이트 재정의
+- Redis/MinIO 도입을 위한 선행 인프라 작업
+
+## 1.10 Private Beta Actual-use Expansion (2026-03-07)
+
+포함 범위:
+
+- `/` 랜딩 페이지 + 공용 로그인 흐름 정리
+- 보호자 회원가입(`/signup`)
+- 학생 초대코드 발급/학생 첫 활성화(`/student/activate`)
+- 보호자 대시보드와 학생 대시보드 분리
+- 학생 관리 화면(`/students/manage`)
+- shared loginId 기반 계정 모델(`User.loginId`, `Student.loginUserId`, `StudentInvite`)
+- 역할 기반 페이지/API 가드 강화
+
+비포함 범위:
+
+- 비밀번호 재설정, 이메일 인증, 다중 보호자 연결
+- 추천 문제/문제은행/iPad 필기 입력
+- 공개 인터넷 배포/TLS reverse proxy 본 적용
+
+## 1.11 M6 Scope Lock (2026-03-08)
+
+포함 범위:
+
+- 신규 `Study` 모듈 추가 + 기존 `Assessment`를 실행 기록 저장소로 재사용
+- Prisma 확장
+  - `PracticeSet`, `PracticeProblem`, `ConceptLesson`, `StudyWorkArtifact`, `StudyReview`, `StudentUnitProgress`
+  - `Material.sourceType`, `Attempt.sourceType|startedAt|submittedAt|elapsedSeconds|practiceSetId`, `AttemptItem.practiceProblemId|studentAnswer`
+- 학생 API 구현
+  - `GET /api/v1/student/study/board`
+  - `GET /api/v1/student/study/concepts/{curriculumNodeId}`
+  - `GET /api/v1/student/study/sessions`
+  - `POST /api/v1/student/study/sessions`
+  - `POST /api/v1/student/study/sessions/{id}/submit`
+  - `GET /api/v1/student/wrong-answers`
+  - `PUT /api/v1/student/wrong-answers/{id}`
+  - `POST /api/v1/student/wrong-answers/{id}/image`
+- 보호자 API 구현
+  - `GET /api/v1/study/reviews`
+  - `POST /api/v1/study/reviews/{sessionId}`
+  - `GET /api/v1/study/progress`
+  - `PUT /api/v1/study/progress/{curriculumNodeId}`
+- 학생 UI 확장
+  - `/student/dashboard` 학습 런치패드
+  - `/student/study/session` 학습 세션 + 타이머 + 캔버스
+  - `/student/progress` 단원 상태 + 개념 자료
+  - `/student/wrong-answers` 학생 오답노트
+- 보호자 UI 확장
+  - `/study/reviews` 학습 리뷰 큐
+- v1 캔버스 정책
+  - 서버 저장은 PNG snapshot 1장/세션
+  - 브라우저 `localStorage` 임시 복구 지원
+- Hybrid TDD 확장
+  - unit: 채점/시간 정규화/daily mission/상태 전이/review queue
+  - route-contract: role/ownership/state transition
+  - real integration: 학생 제출 -> 오답 -> 보호자 리뷰 -> 보드 반영
+  - e2e: 학생 학습 -> 보호자 리뷰 -> 학생 피드백 확인
+
+비포함 범위:
+
+- OCR/서술형 자동 채점
+- 필기 stroke replay / 공동 편집
+- 개념/문제 authoring UI
+- 추천 메시지/리포트 산출물(M5 유지)
+
+## 1.12 M7 Scope Lock (2026-03-14)
+
+포함 범위:
+
+- 보호자/관리자 공용 내부 운영 화면 `/study/content`
+  - `연습 세트`, `개념 자료` 2개 탭
+  - 상단 필터: `schoolLevel`, `grade`, `semester`
+- M7 authoring API 구현
+  - `GET /api/v1/study/content`
+  - `POST /api/v1/study/content/practice-sets`
+  - `PUT /api/v1/study/content/practice-sets/{id}`
+  - `PUT /api/v1/study/content/practice-sets/{id}/activation`
+  - `PUT /api/v1/study/content/concepts/{curriculumNodeId}`
+  - `DELETE /api/v1/study/content/concepts/{curriculumNodeId}`
+- 연습 세트 authoring 규칙
+  - 세트 단위 전체 문제 배열 저장
+  - `single_choice`, `short_answer`, `difficulty`, `skillTags` 검증 고정
+  - attempt가 존재하는 used set은 구조 수정 금지, 메타데이터만 허용
+  - hard delete 없이 `isActive` 토글만 지원
+- 개념 자료 authoring 규칙
+  - `curriculumNodeId`당 1개 lesson 유지
+  - 지원 block: `headline`, `visual_hint`, `steps`, `table`
+  - delete 시 학생 진도/개념 보드에서 즉시 사라져야 함
+- 학생 연동 유지
+  - `/student/study/board`, `/student/study/session`, `/student/progress`는 authored content를 즉시 반영
+- Hybrid TDD 확장
+  - unit: skillTags normalize, structural edit guard, concept block validation
+  - route-contract: guardian/admin 허용, student `403`, invalid payload `400`, used set `409`
+  - real integration: create/deactivate/delete -> student board/progress 반영
+  - e2e: guardian authoring -> student progress/session -> guardian lock 확인
+
+비포함 범위:
+
+- Prisma schema migration 추가
+- subject 다과목 확장
+- authoring draft/versioning/publish workflow
+- iPad 수동 QA 문서화
+- 보호자 분석 대시보드와 M6/M7 학습 데이터 통합
+- 추천 메시지/리포트 산출물(M5 유지)
 
 ## 2. MVP 작업 우선순위
 

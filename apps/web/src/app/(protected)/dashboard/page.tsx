@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { DashboardPanel } from "@/app/(protected)/dashboard/dashboard-panel";
+import { isGuardianRole } from "@/modules/auth/roles";
 import { getAuthSessionFromCookies } from "@/modules/auth/session";
 
 export default async function DashboardPage() {
@@ -10,8 +11,12 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  if (!isGuardianRole(session.role)) {
+    redirect("/student/dashboard");
+  }
+
   return (
-    <AppShell title="보호자 대시보드" subtitle="M3 대시보드 MVP" userEmail={session.email}>
+    <AppShell title="보호자 대시보드" subtitle="Guardian Dashboard" session={session}>
       <DashboardPanel />
     </AppShell>
   );

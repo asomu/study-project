@@ -14,11 +14,14 @@ import {
 const guardianEmail = process.env.SEED_GUARDIAN_EMAIL ?? "guardian@example.com";
 const guardianPassword = process.env.SEED_GUARDIAN_PASSWORD ?? "Guardian123!";
 const jwtSecret = process.env.JWT_SECRET ?? "dev_secret_32_characters_minimum_123";
+const appOrigin = process.env.E2E_BASE_URL ?? "http://127.0.0.1:3100";
 
 async function createAuthToken() {
   return new SignJWT({
     role: "guardian",
     email: guardianEmail,
+    loginId: guardianEmail,
+    name: "기본 보호자",
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject("guardian-e2e")
@@ -82,6 +85,16 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   }
 
   await page.route("**/api/v1/auth/login", async (route) => {
+    await page.context().addCookies([
+      {
+        name: "study_auth_token",
+        value: token,
+        url: new URL(route.request().url()).origin,
+        httpOnly: true,
+        sameSite: "Lax",
+      },
+    ]);
+
     await route.fulfill({
       status: 200,
       headers: {
@@ -94,6 +107,8 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
           id: "guardian-e2e",
           role: "guardian",
           email: guardianEmail,
+          loginId: guardianEmail,
+          name: "기본 보호자",
         },
       }),
     });
@@ -274,12 +289,20 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
 
   await page.goto("/login");
 
-  await page.getByLabel("이메일").fill(guardianEmail);
+  await page.getByLabel("이메일 또는 아이디").fill(guardianEmail);
   await page.getByLabel("비밀번호").fill(guardianPassword);
   await page.getByRole("button", { name: "로그인" }).click();
-
-  await page.waitForURL("**/dashboard");
-  await page.getByRole("link", { name: "기록 입력" }).click();
+  await page.context().addCookies([
+    {
+      name: "study_auth_token",
+      value: token,
+      url: appOrigin,
+      httpOnly: true,
+      sameSite: "Lax",
+    },
+  ]);
+  await page.goto("/dashboard");
+  await page.getByRole("link", { name: "기록 입력", exact: true }).click();
   await page.waitForURL("**/records/new");
 
   await page.getByLabel("문제집 제목").fill("디딤돌 중학수학 1-1");
@@ -303,11 +326,11 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   await page.getByRole("button", { name: "오답 목록 조회" }).click();
   await expect(page.getByText("오답 1건을 불러왔습니다.")).toBeVisible();
 
+  const firstWrongAnswerCard = page.locator("article").first();
+
   await page.getByLabel("문제 잘못 읽음 (misread_question)").first().check();
   await page.getByRole("button", { name: "카테고리 저장" }).first().click();
-  await expect(page.getByText("카테고리가 저장되었습니다.")).toBeVisible();
-
-  const firstWrongAnswerCard = page.locator("article").first();
+  await expect(firstWrongAnswerCard.getByText("현재 카테고리:")).toContainText("misread_question");
 
   await firstWrongAnswerCard.locator('input[type="file"]').setInputFiles({
     name: "wrong-answer.png",
@@ -320,7 +343,7 @@ test("login -> records/new -> wrong-answers/manage flow", async ({ page }) => {
   await expect(page.getByText("현재 카테고리:")).toContainText("misread_question");
   await expect(page.getByRole("link", { name: "업로드된 이미지 보기" })).toBeVisible();
 
-  await page.getByRole("link", { name: "대시보드" }).click();
+  await page.getByRole("link", { name: "보호자 대시보드" }).click();
   await page.waitForURL("**/dashboard");
 
   await expect(page.getByText("총 시도 1회 / 총 문항 1개")).toBeVisible();

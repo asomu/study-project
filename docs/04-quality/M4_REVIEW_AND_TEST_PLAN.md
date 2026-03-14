@@ -1,8 +1,8 @@
 # M4 Review and Verification Test Plan
 
-- Version: v1.0
-- Last Updated: 2026-03-01
-- Baseline: 2026-02-28 (`M4 Completed / Release Gate Locked`)
+- Version: v1.1
+- Last Updated: 2026-03-07
+- Baseline: 2026-03-07 (`M4 Completed / Release Hardening Applied`)
 - Scope: `/Users/mark/Documents/project/study-project/apps/web`
 
 ## 1. 목표
@@ -10,12 +10,13 @@
 - 운영 방식은 2단계로 고정한다.
   - PR 단계: 스모크 게이트
   - 릴리즈 단계: 풀회귀 게이트
-- PRD FR-001~FR-009 범위에서 기능 회귀, 권한/소유권 리스크, 운영 점검 누락을 조기에 차단한다.
+- PRD FR-001~FR-008 범위에서 기능 회귀, 권한/소유권 리스크, 운영 점검 누락을 조기에 차단한다.
 
 ## 2. 범위와 성공 기준
 
 검증 기준 문서:
 - `/Users/mark/Documents/project/study-project/docs/04-quality/TEST_AND_VALIDATION.md`
+- `/Users/mark/Documents/project/study-project/docs/04-quality/USER_E2E_MANUAL_CHECKLIST.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`
 - `/Users/mark/Documents/project/study-project/docs/03-process/ENGINEERING_PROCESS.md`
@@ -59,8 +60,14 @@
 기본 실행 세트:
 1. `pnpm lint`
 2. `pnpm typecheck`
-3. `pnpm test`
-4. `bash scripts/check-doc-links.sh`
+3. `pnpm build`
+4. `pnpm test`
+5. `bash scripts/check-doc-links.sh`
+
+`pnpm test` 구성:
+- `test:unit`
+- `test:route-contract`
+- `test:integration:real`
 
 추가 E2E 규칙(변경 경로 기반):
 - `apps/web/src/app/api/v1/**` 또는 `apps/web/src/app/(protected)/**` 변경 시:
@@ -77,9 +84,14 @@
 필수 실행 세트:
 1. `pnpm lint`
 2. `pnpm typecheck`
-3. `pnpm test`
-4. `pnpm test:e2e`
-5. `bash scripts/check-doc-links.sh`
+3. `pnpm build`
+4. `pnpm test`
+5. `pnpm test:e2e`
+6. `bash scripts/check-doc-links.sh`
+
+`pnpm test:e2e` 구성:
+- mocked UI regression 3종
+- real smoke 1종(`login -> records/new -> wrong-answers/manage -> dashboard`)
 
 운영 체크 세트:
 1. `test -d apps/web/public/uploads/wrong-answers`
@@ -118,10 +130,12 @@
 - `tests/e2e/records-wrong-answers.spec.ts`
 - 기대결과: 다중 선택 저장, 빈 배열 해제, 조회 반영 일치
 
-7. FR-007/008/009 대시보드/리포트/약점 우선순위
+7. FR-007/008 대시보드/추이
 - `tests/unit/dashboard-metrics.test.ts`
 - `tests/integration/dashboard-routes.test.ts`
+- `tests/real-integration/records-dashboard-real.test.ts`
 - `tests/e2e/dashboard-m3.spec.ts`
+- `tests/e2e/real-smoke.spec.ts`
 - `tests/e2e/records-wrong-answers.spec.ts`
 - 기대결과: overview/weakness/trends 경계, 기간/필터/쿼리 파라미터 반영, 회귀 없음
 
@@ -158,6 +172,7 @@
 
 1. 기준 브랜치는 `main`으로 둔다.
 2. 검증은 로컬 환경 기준으로 수행한다.
-3. DB 스키마/마이그레이션 변경은 본 플랜 범위에서 제외한다.
+3. `verify:pr`/`verify:release`는 `prisma migrate deploy` + `prisma:seed`를 선행 실행한다.
 4. 문서 변경이 포함되면 `check-doc-links.sh`를 항상 실행한다.
 5. 릴리즈 판정 예외는 두지 않고 필수 게이트 전부 통과 시에만 `Go`로 판단한다.
+6. M5 deferred 기능(리포트 산출물/추천 메시지)은 본 게이트 범위에서 제외한다.

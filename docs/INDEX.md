@@ -31,6 +31,7 @@
 - `/Users/mark/Documents/project/study-project/docs/04-quality/TEST_AND_VALIDATION.md`
 - `/Users/mark/Documents/project/study-project/docs/04-quality/REVIEW_PLAN.md`
 - `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`
+- `/Users/mark/Documents/project/study-project/docs/04-quality/USER_E2E_MANUAL_CHECKLIST.md`
 
 ## 5. Continuity
 
@@ -38,6 +39,7 @@
 - `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`
+- `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/templates/ADR_TEMPLATE.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/templates/MEETING_NOTE_TEMPLATE.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/templates/WORKLOG_TEMPLATE.md`

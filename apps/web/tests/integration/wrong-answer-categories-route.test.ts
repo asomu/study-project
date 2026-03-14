@@ -67,6 +67,8 @@ async function createAuthCookie() {
     sub: "guardian-1",
     role: UserRole.guardian,
     email: "guardian@example.com",
+    loginId: "guardian@example.com",
+    name: "기본 보호자",
   });
 
   return `${AUTH_COOKIE_NAME}=${token}`;

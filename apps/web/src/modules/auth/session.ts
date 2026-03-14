@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME } from "@/modules/auth/constants";
 import { verifyAuthToken } from "@/modules/auth/jwt";
 import type { AuthSession } from "@/modules/auth/types";
+import { logAuthFailure } from "@/modules/shared/structured-log";
 
 function extractCookieValue(cookieHeader: string, key: string) {
   const parts = cookieHeader.split(";");
@@ -27,6 +28,9 @@ function toSessionPayload(payload: Awaited<ReturnType<typeof verifyAuthToken>>):
     userId: payload.sub,
     role: payload.role,
     email: payload.email,
+    loginId: payload.loginId,
+    name: payload.name,
+    studentId: payload.studentId,
   };
 }
 
@@ -45,6 +49,12 @@ export async function getAuthSessionFromRequest(request: NextRequest | Request):
 
   const payload = await verifyAuthToken(token);
 
+  if (!payload) {
+    logAuthFailure("invalid_request_cookie_token", {
+      path: request.url,
+    });
+  }
+
   return toSessionPayload(payload);
 }
 
@@ -57,6 +67,10 @@ export async function getAuthSessionFromCookies() {
   }
 
   const payload = await verifyAuthToken(token);
+
+  if (!payload) {
+    logAuthFailure("invalid_cookie_store_token");
+  }
 
   return toSessionPayload(payload);
 }

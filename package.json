@@ -11,7 +11,9 @@
     "test": "pnpm -C apps/web test",
     "test:unit": "pnpm -C apps/web test:unit",
     "test:integration": "pnpm -C apps/web test:integration",
+    "test:integration:real": "pnpm -C apps/web test:integration:real",
     "test:e2e": "pnpm -C apps/web test:e2e",
+    "test:e2e:real": "pnpm -C apps/web test:e2e:real",
     "verify:pr": "bash scripts/run-verification-gates.sh --mode pr",
     "verify:release": "bash scripts/run-verification-gates.sh --mode release"
   }

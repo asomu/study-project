@@ -8,6 +8,8 @@ describe("JWT auth helpers", () => {
       sub: "guardian-1",
       role: UserRole.guardian,
       email: "guardian@example.com",
+      loginId: "guardian@example.com",
+      name: "기본 보호자",
     });
 
     const payload = await verifyAuthToken(token);
@@ -16,6 +18,8 @@ describe("JWT auth helpers", () => {
       sub: "guardian-1",
       role: UserRole.guardian,
       email: "guardian@example.com",
+      loginId: "guardian@example.com",
+      name: "기본 보호자",
     });
   });
 

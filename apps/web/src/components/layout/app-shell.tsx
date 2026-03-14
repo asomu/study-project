@@ -1,29 +1,50 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LogoutButton } from "@/components/layout/logout-button";
+import { isGuardianRole } from "@/modules/auth/roles";
+import type { AuthSession } from "@/modules/auth/types";
 
 type AppShellProps = {
   title: string;
   subtitle: string;
-  userEmail?: string;
+  session: AuthSession;
   children: ReactNode;
 };
 
-export function AppShell({ title, subtitle, userEmail, children }: AppShellProps) {
-  const navItems = [
-    { href: "/dashboard", label: "대시보드" },
-    { href: "/records/new", label: "기록 입력" },
-    { href: "/wrong-answers/manage", label: "오답 관리" },
-  ];
+export function AppShell({ title, subtitle, session, children }: AppShellProps) {
+  const navItems = isGuardianRole(session.role)
+    ? [
+        { href: "/dashboard", label: "보호자 대시보드" },
+        { href: "/students/manage", label: "학생 관리" },
+        { href: "/study/content", label: "학습 콘텐츠" },
+        { href: "/study/reviews", label: "학습 리뷰" },
+        { href: "/records/new", label: "기록 입력" },
+        { href: "/wrong-answers/manage", label: "오답 관리" },
+      ]
+    : [
+        { href: "/student/dashboard", label: "학생 대시보드" },
+        { href: "/student/study/session", label: "학습하기" },
+        { href: "/student/progress", label: "진도/개념" },
+        { href: "/student/wrong-answers", label: "학생 오답노트" },
+      ];
+  const roleLabel = isGuardianRole(session.role) ? "Guardian" : "Student";
+  const identity = session.email ?? session.loginId;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-slate-50">
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-4xl items-start justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-slate-600">{subtitle}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-slate-600">{subtitle}</p>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold tracking-[0.12em] text-slate-500 uppercase">
+                {roleLabel}
+              </span>
+            </div>
             <h1 className="text-lg font-semibold text-slate-900 sm:text-xl">{title}</h1>
-            {userEmail ? <p className="text-xs text-slate-500">{userEmail}</p> : null}
+            <p className="text-xs text-slate-500">
+              {session.name} · {identity}
+            </p>
             <nav className="flex flex-wrap gap-2 text-xs font-medium text-slate-600">
               {navItems.map((item) => (
                 <Link

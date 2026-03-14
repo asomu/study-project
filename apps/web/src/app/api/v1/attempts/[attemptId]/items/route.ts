@@ -1,9 +1,12 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAttemptItemsSchema } from "@/modules/assessment/schemas";
 import { assertAttemptOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
+import { isGuardianRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
 import { apiError } from "@/modules/shared/api-error";
+import { logAccessDenied, logUnexpectedError } from "@/modules/shared/structured-log";
 
 type RouteContext = {
   params: Promise<{ attemptId: string }> | { attemptId: string };
@@ -20,6 +23,14 @@ export async function POST(request: Request, context: RouteContext) {
 
     if (!session) {
       return apiError(401, "AUTH_REQUIRED", "Authentication is required");
+    }
+
+    if (!isGuardianRole(session.role)) {
+      logAccessDenied("attempt_items_requires_guardian_role", {
+        userId: session.userId,
+        role: session.role,
+      });
+      return apiError(403, "FORBIDDEN", "Guardian role is required");
     }
 
     const attemptId = await readAttemptId(context);
@@ -118,9 +129,22 @@ export async function POST(request: Request, context: RouteContext) {
         return apiError(403, "FORBIDDEN", "Attempt ownership verification failed");
       }
 
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return apiError(
+          400,
+          "VALIDATION_ERROR",
+          "problemNo already exists for attempt",
+          parsed.data.items.map((item) => item.problemNo),
+        );
+      }
+
+      logUnexpectedError("attempt_items.unexpected_error", error, {
+        attemptId,
+      });
       throw error;
     }
-  } catch {
+  } catch (error) {
+    logUnexpectedError("attempt_items.route_error", error);
     return apiError(500, "INTERNAL_SERVER_ERROR", "Unexpected server error");
   }
 }

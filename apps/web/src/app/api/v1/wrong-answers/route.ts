@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { assertAttemptItemOwnership, assertStudentOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
+import { isGuardianRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
 import { createWrongAnswerSchema, parseDateOnly, parseListWrongAnswersQuery } from "@/modules/mistake-note/schemas";
 import { serializeWrongAnswer } from "@/modules/mistake-note/serializers";
 import { apiError } from "@/modules/shared/api-error";
+import { logAccessDenied } from "@/modules/shared/structured-log";
 
 const wrongAnswerInclude = {
   categories: {
@@ -31,6 +33,14 @@ export async function GET(request: Request) {
 
     if (!session) {
       return apiError(401, "AUTH_REQUIRED", "Authentication is required");
+    }
+
+    if (!isGuardianRole(session.role)) {
+      logAccessDenied("wrong_answers_read_requires_guardian_role", {
+        userId: session.userId,
+        role: session.role,
+      });
+      return apiError(403, "FORBIDDEN", "Guardian role is required");
     }
 
     const requestUrl = new URL(request.url);
@@ -111,6 +121,14 @@ export async function POST(request: Request) {
 
     if (!session) {
       return apiError(401, "AUTH_REQUIRED", "Authentication is required");
+    }
+
+    if (!isGuardianRole(session.role)) {
+      logAccessDenied("wrong_answers_write_requires_guardian_role", {
+        userId: session.userId,
+        role: session.role,
+      });
+      return apiError(403, "FORBIDDEN", "Guardian role is required");
     }
 
     const payload = await request.json().catch(() => null);

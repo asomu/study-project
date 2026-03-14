@@ -13,7 +13,7 @@ function getJwtSecret() {
 }
 
 function normalizeRole(role: unknown): UserRole | null {
-  if (role === UserRole.guardian || role === UserRole.admin) {
+  if (role === UserRole.guardian || role === UserRole.admin || role === UserRole.student) {
     return role;
   }
 
@@ -23,7 +23,13 @@ function normalizeRole(role: unknown): UserRole | null {
 export async function signAuthToken(payload: AuthTokenPayload) {
   const expiresIn = process.env.JWT_EXPIRES_IN ?? "7d";
 
-  return new SignJWT({ role: payload.role, email: payload.email })
+  return new SignJWT({
+    role: payload.role,
+    email: payload.email,
+    loginId: payload.loginId,
+    name: payload.name,
+    studentId: payload.studentId,
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.sub)
     .setIssuedAt()
@@ -40,7 +46,10 @@ export async function verifyAuthToken(token: string): Promise<AuthTokenPayload |
     const role = normalizeRole(payload.role);
     const sub = payload.sub;
 
-    if (!sub || !role) {
+    const loginId = typeof payload.loginId === "string" ? payload.loginId : null;
+    const name = typeof payload.name === "string" ? payload.name : null;
+
+    if (!sub || !role || !loginId || !name) {
       return null;
     }
 
@@ -48,6 +57,9 @@ export async function verifyAuthToken(token: string): Promise<AuthTokenPayload |
       sub,
       role,
       email: typeof payload.email === "string" ? payload.email : undefined,
+      loginId,
+      name,
+      studentId: typeof payload.studentId === "string" ? payload.studentId : undefined,
     };
   } catch {
     return null;

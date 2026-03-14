@@ -1,18 +1,21 @@
 # Context Index
 
-- Last Updated: 2026-03-01
+- Last Updated: 2026-03-14
 - Purpose: 새 세션에서 2~3분 내 프로젝트 상태를 파악하기 위한 요약 허브
 - Usage: 이 문서에서 요약을 먼저 확인하고, 필요한 항목만 링크 문서로 내려간다.
 
 ## 1. Quick Snapshot
 
-- Current Phase: Verify (M4 Completed / Release Gate Locked)
+- Current Phase: M7 Study Content Authoring Verified
 - Overall Progress: 100%
-- Current Focus: 2단계 검증 게이트 운영 정착, M3 지표 해석 가이드 보강, 외부 공개 사전 점검
+- Current Focus:
+  - M7 authoring 운영 흐름을 안정적으로 유지
+  - 수동 iPad QA와 보호자 대시보드 통합 범위 정리
+  - M5 deferred 재우선순위화 준비
 - Top Risks:
-  - M3 지표 해석 가이드 부족
-  - 외부 공개 전 TLS/접근 제어 리허설 필요
-  - 운영 체크리스트의 주기 실행 누락 가능성
+  - iPad/Pencil 필기 입력은 아직 수동 검증이 필요하다.
+  - M6/M7 학습 데이터는 학생 보드/보호자 리뷰 큐에는 반영되지만 기존 보호자 분석 대시보드 통합 집계는 후속 단계다.
+  - authoring은 v1 폼 기반이라 draft/versioning/publish workflow와 bulk import/export는 아직 없다.
 
 Source:
 - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
@@ -29,13 +32,14 @@ Source:
 
 | What You Need | Read This | Why |
 | --- | --- | --- |
-| 제품 범위 확인 | `/Users/mark/Documents/project/study-project/docs/01-product/PRD.md` | 현재 요청이 MVP 범위인지 판단 |
-| API/데이터 계약 확인 | `/Users/mark/Documents/project/study-project/docs/02-architecture/API_SPEC_V1.md` | 구현/테스트 기준 계약 확인 |
-| 현재 진행률/다음 액션 | `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` | 세션 우선순위 결정 |
-| 결정 히스토리 | `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` | 왜 이렇게 설계했는지 추적 |
-| 세션 연속성 | `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md` | 직전 세션 완료/미완료 파악 |
-| 일정/범위 락 | `/Users/mark/Documents/project/study-project/docs/03-process/DEVELOPMENT_PLAN.md` | 마일스톤 범위 이탈 방지 |
-| 테스트 전략 | `/Users/mark/Documents/project/study-project/docs/04-quality/TEST_AND_VALIDATION.md` | Hybrid TDD 게이트 확인 |
+| 제품 범위 확인 | `/Users/mark/Documents/project/study-project/docs/01-product/PRD.md` | 현재 요청이 구현 범위와 일치하는지 판단 |
+| API/데이터 계약 확인 | `/Users/mark/Documents/project/study-project/docs/02-architecture/API_SPEC_V1.md` | M7 포함 API 계약과 권한 규칙 확인 |
+| 현재 진행률/다음 액션 | `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` | 세션 우선순위와 남은 리스크 확인 |
+| 결정 히스토리 | `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` | Study 모듈/캔버스 저장 정책 등 설계 이유 추적 |
+| 세션 연속성 | `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md` | 직전 세션에서 끝낸 일과 다음 액션 파악 |
+| 일정/범위 락 | `/Users/mark/Documents/project/study-project/docs/03-process/DEVELOPMENT_PLAN.md` | M5 deferred와 M7 완료 범위 확인 |
+| 테스트 전략 | `/Users/mark/Documents/project/study-project/docs/04-quality/TEST_AND_VALIDATION.md` | Hybrid TDD 게이트와 수동 QA 잔여 항목 확인 |
+| 기술 설명 학습 | `/Users/mark/Documents/project/study-project/docs/07-learning/TECH_EXPLAINER_INDEX.md` | 구현 기술을 복습용 노트로 따라가기 |
 
 ## 4. Maintenance Rule
 
