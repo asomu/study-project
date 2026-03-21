@@ -3,5 +3,6 @@ process.env.JWT_EXPIRES_IN ??= "7d";
 process.env.APP_URL ??= "http://localhost:3000";
 process.env.DATABASE_URL ??= "postgresql://study:study@localhost:5432/study_project?schema=public";
 process.env.UPLOAD_DIR ??= "public/uploads/test-wrong-answers";
+process.env.WRONG_NOTE_UPLOAD_DIR ??= "public/uploads/test-wrong-notes";
 process.env.STUDY_UPLOAD_DIR ??= "public/uploads/test-study-work";
 process.env.UPLOAD_MAX_BYTES ??= "5242880";

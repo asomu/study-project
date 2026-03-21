@@ -104,6 +104,12 @@ export async function createSeedStudentAuthCookie() {
 }
 
 export async function resetSeedStudentScopedData() {
+  await prisma.wrongNote.deleteMany({
+    where: {
+      studentId: SEEDED_STUDENT_ID,
+    },
+  });
+
   await prisma.studyReview.deleteMany({
     where: {
       studentId: SEEDED_STUDENT_ID,
@@ -218,6 +224,7 @@ export async function resetSeedStudentAccountState() {
 export async function clearTestUploadDirectory() {
   const uploadDirs = [
     resolve(process.cwd(), process.env.UPLOAD_DIR ?? "public/uploads/test-wrong-answers"),
+    resolve(process.cwd(), process.env.WRONG_NOTE_UPLOAD_DIR ?? "public/uploads/test-wrong-notes"),
     resolve(process.cwd(), process.env.STUDY_UPLOAD_DIR ?? "public/uploads/test-study-work"),
   ];
 

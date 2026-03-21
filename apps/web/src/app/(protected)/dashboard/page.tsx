@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <AppShell title="보호자 대시보드" subtitle="Guardian Dashboard" session={session}>
+    <AppShell title="오답 대시보드" subtitle="Guardian Wrong Note Dashboard" session={session}>
       <DashboardPanel />
     </AppShell>
   );

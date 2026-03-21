@@ -47,6 +47,12 @@ enum StudyProgressStatus {
   completed
 }
 
+enum WrongNoteReason {
+  calculation_mistake
+  misread_question
+  lack_of_concept
+}
+
 model User {
   id                   String          @id @default(uuid())
   role                 UserRole
@@ -65,6 +71,7 @@ model User {
   createdStudentInvites StudentInvite[] @relation("StudentInvitesCreatedByGuardian")
   studyReviews         StudyReview[]   @relation("GuardianStudyReviews")
   unitProgressUpdates  StudentUnitProgress[] @relation("ProgressUpdatedByGuardian")
+  wrongNoteFeedback    WrongNote[]     @relation("GuardianWrongNoteFeedback")
 
   @@map("users")
 }
@@ -96,6 +103,7 @@ model Student {
   mastery        MasterySnapshot[]
   studyReviews   StudyReview[]
   unitProgress   StudentUnitProgress[]
+  wrongNotes     WrongNote[]
 
   @@index([guardianUserId])
   @@map("students")
@@ -140,6 +148,7 @@ model CurriculumNode {
   practiceProblems  PracticeProblem[]
   conceptLesson     ConceptLesson?
   unitProgress      StudentUnitProgress[]
+  wrongNotes        WrongNote[]
 
   @@index([schoolLevel, subject, grade, semester])
   @@index([curriculumVersion, schoolLevel, subject])
@@ -246,6 +255,31 @@ model WrongAnswerCategoryMap {
 
   @@id([wrongAnswerId, categoryId])
   @@map("wrong_answer_category_map")
+}
+
+model WrongNote {
+  id                      String          @id @default(uuid())
+  studentId               String          @map("student_id")
+  curriculumNodeId        String          @map("curriculum_node_id")
+  reason                  WrongNoteReason
+  imagePath               String          @map("image_path")
+  studentMemo             String?         @map("student_memo")
+  guardianFeedback        String?         @map("guardian_feedback")
+  guardianFeedbackByUserId String?        @map("guardian_feedback_by_user_id")
+  guardianFeedbackAt      DateTime?       @map("guardian_feedback_at")
+  deletedAt               DateTime?       @map("deleted_at")
+  createdAt               DateTime        @default(now()) @map("created_at")
+  updatedAt               DateTime        @updatedAt @map("updated_at")
+  student                 Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  curriculumNode          CurriculumNode  @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
+  guardianFeedbackBy      User?           @relation("GuardianWrongNoteFeedback", fields: [guardianFeedbackByUserId], references: [id], onDelete: SetNull)
+
+  @@index([studentId, createdAt])
+  @@index([studentId, reason, createdAt])
+  @@index([curriculumNodeId, createdAt])
+  @@index([studentId, guardianFeedbackAt])
+  @@index([deletedAt])
+  @@map("wrong_notes")
 }
 
 model MasterySnapshot {

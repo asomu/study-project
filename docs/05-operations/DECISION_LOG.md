@@ -139,3 +139,22 @@
 - Decision: M8은 기존 `/dashboard`를 유지한 채 `GET /api/v1/dashboard/study-overview`를 추가하는 방식으로 학습 루프 데이터를 통합하고, 추천은 `미리뷰 제출 세션 -> review_needed 단원 -> stalled in_progress -> planned` 고정 규칙으로만 제공한다.
 - Rationale: 기존 `overview/weakness/trends` response shape를 깨지 않으면서 보호자가 바로 개입할 actionable surface를 빠르게 넣는 것이 우선이고, 주간 리포트/LLM 코멘트까지 동시에 도입하면 정책 복잡도와 회귀 리스크가 커진다.
 - Consequence: guardian dashboard는 분석 카드와 study insight를 병행 유지하며, deep-link는 `/study/reviews?studentId=`로 단순화한다. 추천은 rule-based이므로 explainable하지만, 주간 브리프/PDF/email digest와 richer recommendation은 M5 deferred 범위로 남는다.
+
+## ADR-0021: wrong-answer 이미지 업로드는 iPad 기본 포맷(HEIC/HEIF)까지 허용
+
+- Date: 2026-03-17
+- Decision: guardian/student wrong-answer 이미지 업로드는 기존 `jpeg/png/webp`에 더해 `heic/heif` MIME과 시그니처를 허용한다.
+- Rationale: 실제 학생 사용 환경이 iPad 중심이므로, 기본 사진 포맷을 지원하지 않으면 학생 오답노트 업로드가 현장 사용성에서 막힌다.
+- Consequence: 업로드 입력 `accept`와 API spec을 같이 갱신해야 하며, 업로드 제한은 기존처럼 `UPLOAD_MAX_BYTES` 기본 5MB를 유지한다.
+
+## ADR-0022: 현재 제품의 오답 소스 오브 트루스는 WrongNote 전용 모델로 분리
+
+- Date: 2026-03-21
+- Decision: 학생 사진 업로드형 오답노트는 기존 `WrongAnswer` 파이프라인을 확장하지 않고, 별도 1급 엔티티 `WrongNote`와 전용 학생/보호자 대시보드로 재구성한다.
+- Rationale: 제품의 핵심 목표가 "학생이 틀린 문제를 바로 올리고, 단원/오류유형별로 누적 통계와 피드백을 본다"로 재정의되면서, `Attempt/Study` 중심 모델에 종속된 기존 구조보다 직접 업로드/직접 피드백에 최적화된 단순 모델이 더 명확하고 회귀 리스크가 낮다.
+- Consequence:
+  - 신규 대시보드 통계와 카드 탐색은 `WrongNote`만 기준으로 계산한다.
+  - `WrongNote`는 `studentId`, `curriculumNodeId`, `reason`, `imagePath`, `studentMemo`, `guardianFeedback*`, `deletedAt`을 가진다.
+  - 학생 홈 `/student/dashboard`와 보호자 홈 `/dashboard`는 오답노트 전용 워크스페이스로 교체한다.
+  - 기존 `wrong-answers/manage`, `student/wrong-answers`는 신규 대시보드로 연결한다.
+  - 레거시 `WrongAnswer` 데이터는 마이그레이션하지 않고 코드베이스 내 레거시 경로로만 남긴다.

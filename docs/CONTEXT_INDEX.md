@@ -1,23 +1,23 @@
 # Context Index
 
-- Last Updated: 2026-03-15
-- Purpose: 새 세션에서 2~3분 내 프로젝트 상태를 파악하기 위한 요약 허브
-- Usage: 이 문서에서 요약을 먼저 확인하고, 필요한 항목만 링크 문서로 내려간다.
+- Last Updated: 2026-03-21
+- Purpose: 새 세션에서 2~3분 내 현재 제품 상태를 파악하기 위한 요약 허브
 
 ## 1. Quick Snapshot
 
-- Current Phase: M8 Guardian Study Dashboard Verified
+- Current Phase: M9 Wrong Note-first Service Verified
 - Overall Progress: 100%
 - Current Focus:
-  - M8 study insight 운영 흐름을 안정적으로 유지
-  - 수동 iPad QA 실행
-  - M5 deferred와 authoring 후속 범위 재우선순위화
+  - WrongNote 기반 학생/보호자 대시보드 운영 안정화
+  - 모바일 업로드/상세 드로어 수동 QA
+  - 후속 범위(OCR/자동 피드백/리포트) 우선순위 정리
 - Top Risks:
-  - iPad/Pencil 필기 입력은 아직 수동 검증이 필요하다.
-  - 보호자 대시보드 액션 카드는 규칙 기반이며, 주간 브리프/리포트/PDF/email digest는 아직 없다.
-  - authoring은 v1 폼 기반이라 draft/versioning/publish workflow와 bulk import/export는 아직 없다.
+  - OCR, 자동 피드백, 재도전 상태 추적은 아직 없다.
+  - 레거시 `wrong-answer`/`study` 기능이 코드베이스에 남아 있어 추가 정리 판단이 필요하다.
+  - 현재 분석은 `WrongNote` 누적 데이터 기준이며, 리포트/PDF 산출물은 아직 없다.
 
 Source:
+
 - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 
 ## 2. Session Bootstrap Order (Required)
@@ -32,19 +32,20 @@ Source:
 
 | What You Need | Read This | Why |
 | --- | --- | --- |
-| 제품 범위 확인 | `/Users/mark/Documents/project/study-project/docs/01-product/PRD.md` | 현재 요청이 구현 범위와 일치하는지 판단 |
-| API/데이터 계약 확인 | `/Users/mark/Documents/project/study-project/docs/02-architecture/API_SPEC_V1.md` | M8 포함 API 계약과 권한 규칙 확인 |
-| 현재 진행률/다음 액션 | `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` | 세션 우선순위와 남은 리스크 확인 |
-| 결정 히스토리 | `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` | Study 모듈/캔버스 저장 정책 등 설계 이유 추적 |
-| 세션 연속성 | `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md` | 직전 세션에서 끝낸 일과 다음 액션 파악 |
-| 일정/범위 락 | `/Users/mark/Documents/project/study-project/docs/03-process/DEVELOPMENT_PLAN.md` | M5 deferred와 M8 완료 범위 확인 |
-| 테스트 전략 | `/Users/mark/Documents/project/study-project/docs/04-quality/TEST_AND_VALIDATION.md` | Hybrid TDD 게이트와 수동 QA 잔여 항목 확인 |
-| 기술 설명 학습 | `/Users/mark/Documents/project/study-project/docs/07-learning/TECH_EXPLAINER_INDEX.md` | 구현 기술을 복습용 노트로 따라가기 |
+| 현재 제품 범위 | `/Users/mark/Documents/project/study-project/docs/01-product/PRD.md` | 오답노트 전용 제품 목표와 수용 기준 확인 |
+| API/데이터 계약 | `/Users/mark/Documents/project/study-project/docs/02-architecture/API_SPEC_V1.md` | wrong-note 학생/보호자 API와 권한 규칙 확인 |
+| 시스템 구조 | `/Users/mark/Documents/project/study-project/docs/02-architecture/SYSTEM_ARCHITECTURE.md` | `WrongNote` 중심 모듈 경계와 레거시 경계 확인 |
+| 데이터 모델 | `/Users/mark/Documents/project/study-project/docs/02-architecture/DATA_MODEL.md` | `wrong_notes` 스키마와 파생 통계 규칙 확인 |
+| 현재 진행률/다음 액션 | `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` | 이번 세션 우선순위와 리스크 확인 |
+| 결정 히스토리 | `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` | WrongNote 전환 결정 이유 추적 |
+| 세션 연속성 | `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md` | 직전 세션 완료 항목과 다음 액션 확인 |
+| 일정/범위 락 | `/Users/mark/Documents/project/study-project/docs/03-process/DEVELOPMENT_PLAN.md` | M9 범위와 검증 계획 확인 |
+| 테스트 전략 | `/Users/mark/Documents/project/study-project/docs/04-quality/TEST_AND_VALIDATION.md` | Hybrid TDD 게이트와 E2E 기준 확인 |
 
 ## 4. Maintenance Rule
 
-- 아래 중 하나가 바뀌면 이 문서의 Snapshot을 같은 세션에 갱신한다.
+- 아래 중 하나가 바뀌면 같은 세션에 이 문서 Snapshot을 갱신한다.
   - Current Phase / Progress
   - Top Risks
-  - Next Actions 우선순위
+  - Current Focus
   - Bootstrap Order

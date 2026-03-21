@@ -36,8 +36,11 @@ run_in_root() {
 prepare_runtime_directories() {
   run_in_root mkdir -p \
     apps/web/public/uploads/wrong-answers \
+    apps/web/public/uploads/wrong-notes \
     apps/web/public/uploads/test-wrong-answers \
-    backups/wrong-answers
+    apps/web/public/uploads/test-wrong-notes \
+    backups/wrong-answers \
+    backups/wrong-notes
 }
 
 prepare_database() {
@@ -84,8 +87,7 @@ resolve_changed_files() {
 
 run_pr_mode() {
   local changed_files
-  local run_records_e2e="false"
-  local run_dashboard_e2e="false"
+  local run_wrong_note_e2e="false"
 
   prepare_database
   run_in_root pnpm lint
@@ -97,31 +99,23 @@ run_pr_mode() {
   changed_files="$(resolve_changed_files)"
 
   if [[ -n "$changed_files" ]]; then
-    if printf '%s\n' "$changed_files" | grep -Eq '^apps/web/src/app/api/v1/|^apps/web/src/app/\(protected\)/'; then
-      run_records_e2e="true"
-    fi
-
-    if printf '%s\n' "$changed_files" | grep -Eq '^apps/web/src/app/api/v1/dashboard/|^apps/web/src/modules/analytics/|^apps/web/src/modules/dashboard/|^apps/web/src/app/\(protected\)/dashboard/'; then
-      run_dashboard_e2e="true"
+    if printf '%s\n' "$changed_files" | grep -Eq '^apps/web/src/app/api/v1/(student/)?wrong-notes|^apps/web/src/components/wrong-notes/|^apps/web/src/modules/wrong-note/|^apps/web/src/app/\(protected\)/(dashboard|student/dashboard)/'; then
+      run_wrong_note_e2e="true"
     fi
   fi
 
-  if [[ "$run_records_e2e" == "true" ]]; then
-    run_in_root pnpm -C apps/web exec playwright test --config tests/e2e/playwright.config.ts tests/e2e/records-wrong-answers.spec.ts
+  if [[ "$run_wrong_note_e2e" == "true" ]]; then
+    run_in_root pnpm -C apps/web exec playwright test --config tests/e2e/playwright.config.ts tests/e2e/wrong-note-dashboard.spec.ts
   else
-    echo "[SKIP] Targeted records E2E not required by changed paths."
-  fi
-
-  if [[ "$run_dashboard_e2e" == "true" ]]; then
-    run_in_root pnpm -C apps/web exec playwright test --config tests/e2e/playwright.config.ts tests/e2e/dashboard-m3.spec.ts
-  else
-    echo "[SKIP] Targeted dashboard E2E not required by changed paths."
+    echo "[SKIP] Targeted wrong-note E2E not required by changed paths."
   fi
 }
 
 run_release_mode() {
   local upload_dir="$PROJECT_ROOT/apps/web/public/uploads/wrong-answers"
+  local wrong_note_upload_dir="$PROJECT_ROOT/apps/web/public/uploads/wrong-notes"
   local backup_dir="$PROJECT_ROOT/backups/wrong-answers"
+  local wrong_note_backup_dir="$PROJECT_ROOT/backups/wrong-notes"
   local size_kb
   local threshold_kb=$((2 * 1024 * 1024))
 
@@ -139,9 +133,21 @@ run_release_mode() {
     exit 1
   fi
 
+  echo "[CHECK] test -d apps/web/public/uploads/wrong-notes"
+  if [[ ! -d "$wrong_note_upload_dir" ]]; then
+    echo "[ERROR] Wrong-note upload directory not found: $wrong_note_upload_dir"
+    exit 1
+  fi
+
   echo "[CHECK] test -d backups/wrong-answers"
   if [[ ! -d "$backup_dir" ]]; then
     echo "[ERROR] Backup directory not found: $backup_dir"
+    exit 1
+  fi
+
+  echo "[CHECK] test -d backups/wrong-notes"
+  if [[ ! -d "$wrong_note_backup_dir" ]]; then
+    echo "[ERROR] Wrong-note backup directory not found: $wrong_note_backup_dir"
     exit 1
   fi
 

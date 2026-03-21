@@ -28,6 +28,7 @@ export default defineConfig({
       SEED_GUARDIAN_PASSWORD: process.env.SEED_GUARDIAN_PASSWORD ?? "Guardian123!",
       NEXT_DIST_DIR: process.env.NEXT_DIST_DIR ?? ".next-playwright",
       UPLOAD_DIR: process.env.UPLOAD_DIR ?? "public/uploads/test-wrong-answers",
+      WRONG_NOTE_UPLOAD_DIR: process.env.WRONG_NOTE_UPLOAD_DIR ?? "public/uploads/test-wrong-notes",
       STUDY_UPLOAD_DIR: process.env.STUDY_UPLOAD_DIR ?? "public/uploads/test-study-work",
       UPLOAD_MAX_BYTES: process.env.UPLOAD_MAX_BYTES ?? "5242880",
     },

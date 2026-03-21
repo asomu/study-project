@@ -7,14 +7,19 @@ export const allowedImageMimeToExtension = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
+  "image/heic": "heic",
+  "image/heif": "heif",
 } as const;
 
 export type AllowedImageMime = keyof typeof allowedImageMimeToExtension;
+export const supportedImageMimeDescription = "jpeg, png, webp, heic, and heif";
 
 const jpegSignature = Buffer.from([0xff, 0xd8, 0xff]);
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const webpRiffSignature = Buffer.from("RIFF");
 const webpFormatSignature = Buffer.from("WEBP");
+const heifBoxTypeSignature = Buffer.from("ftyp");
+const heifBrands = new Set(["heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "mif1", "msf1"]);
 
 function normalizeRelativePath(pathValue: string) {
   return pathValue.replace(/\\/g, "/").replace(/^\.?\//, "").replace(/\/+$/, "");
@@ -22,6 +27,10 @@ function normalizeRelativePath(pathValue: string) {
 
 export function getUploadDirectory() {
   return normalizeRelativePath(process.env.UPLOAD_DIR ?? "public/uploads/wrong-answers");
+}
+
+export function getWrongNoteUploadDirectory() {
+  return normalizeRelativePath(process.env.WRONG_NOTE_UPLOAD_DIR ?? "public/uploads/wrong-notes");
 }
 
 export function getStudyArtifactUploadDirectory() {
@@ -59,6 +68,14 @@ export function hasValidImageSignature(mimeType: AllowedImageMime, buffer: Buffe
     );
   }
 
+  if (mimeType === "image/heic" || mimeType === "image/heif") {
+    return (
+      buffer.length >= 12 &&
+      buffer.subarray(4, 8).equals(heifBoxTypeSignature) &&
+      heifBrands.has(buffer.subarray(8, 12).toString("ascii"))
+    );
+  }
+
   return false;
 }
 
@@ -77,6 +94,19 @@ export async function saveWrongAnswerImage(buffer: Buffer, mimeType: AllowedImag
   const absoluteUploadDir = resolve(process.cwd(), uploadDir);
   const extension = allowedImageMimeToExtension[mimeType];
   const fileName = `${wrongAnswerId}-${Date.now()}-${randomUUID()}.${extension}`;
+  const absolutePath = join(absoluteUploadDir, fileName);
+
+  await mkdir(absoluteUploadDir, { recursive: true });
+  await writeFile(absolutePath, buffer);
+
+  return toPublicPath(uploadDir, fileName);
+}
+
+export async function saveWrongNoteImage(buffer: Buffer, mimeType: AllowedImageMime, wrongNoteId: string) {
+  const uploadDir = getWrongNoteUploadDirectory();
+  const absoluteUploadDir = resolve(process.cwd(), uploadDir);
+  const extension = allowedImageMimeToExtension[mimeType];
+  const fileName = `${wrongNoteId}-${Date.now()}-${randomUUID()}.${extension}`;
   const absolutePath = join(absoluteUploadDir, fileName);
 
   await mkdir(absoluteUploadDir, { recursive: true });

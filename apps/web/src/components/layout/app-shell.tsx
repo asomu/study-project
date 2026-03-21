@@ -14,19 +14,10 @@ type AppShellProps = {
 export function AppShell({ title, subtitle, session, children }: AppShellProps) {
   const navItems = isGuardianRole(session.role)
     ? [
-        { href: "/dashboard", label: "보호자 대시보드" },
+        { href: "/dashboard", label: "오답 대시보드" },
         { href: "/students/manage", label: "학생 관리" },
-        { href: "/study/content", label: "학습 콘텐츠" },
-        { href: "/study/reviews", label: "학습 리뷰" },
-        { href: "/records/new", label: "기록 입력" },
-        { href: "/wrong-answers/manage", label: "오답 관리" },
       ]
-    : [
-        { href: "/student/dashboard", label: "학생 대시보드" },
-        { href: "/student/study/session", label: "학습하기" },
-        { href: "/student/progress", label: "진도/개념" },
-        { href: "/student/wrong-answers", label: "학생 오답노트" },
-      ];
+    : [{ href: "/student/dashboard", label: "오답노트 홈" }];
   const roleLabel = isGuardianRole(session.role) ? "Guardian" : "Student";
   const identity = session.email ?? session.loginId;
 

@@ -16,7 +16,7 @@ export default async function StudentDashboardPage() {
   }
 
   return (
-    <AppShell title="학생 대시보드" subtitle="Student Dashboard" session={session}>
+    <AppShell title="오답노트 홈" subtitle="Student Wrong Note Home" session={session}>
       <StudentDashboardPanel />
     </AppShell>
   );
