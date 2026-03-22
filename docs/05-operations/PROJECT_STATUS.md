@@ -180,3 +180,10 @@
   - guardian dashboard에서 문제집 템플릿 카탈로그와 학생 배정 목록을 분리해, 배정되지 않은 템플릿도 수정/활성 관리 가능하게 정리
   - workbook progress dashboard가 선택 학년에 맞는 문제집이 없을 때 다른 학년 문제집으로 fallback하지 않도록 수정
   - workbook integration test, mocked/real e2e, build, lint, link check 재검증 완료
+- 2026-03-22: 현재 제품 기술 학습 문서 동기화
+  - `docs/01-product/TECH_STACK.md`를 현재 구현 기준으로 갱신
+  - `docs/07-learning/notes/2026-03-22-current-product-tech-explainer.md` 추가
+  - `docs/07-learning/TECH_EXPLAINER_INDEX.md` 갱신
+- 2026-03-22: 기술 스택 심화 학습 문서 보강
+  - `JWT + 권한 흐름`, `Prisma 데이터 모델`, `Workbook progress matrix` 심화 노트 추가
+  - `docs/07-learning/TECH_EXPLAINER_INDEX.md`에 후속 학습 순서 반영
