@@ -72,6 +72,13 @@ export function logUploadFailure(reason: string, context: LogContext = {}) {
   });
 }
 
+export function logStorageInfo(reason: string, context: LogContext = {}) {
+  writeStructuredLog("info", "storage.info", {
+    reason,
+    ...context,
+  });
+}
+
 export function logUnexpectedError(event: string, error: unknown, context: LogContext = {}) {
   writeStructuredLog("error", event, {
     ...context,

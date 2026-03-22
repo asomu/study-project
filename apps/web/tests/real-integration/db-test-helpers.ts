@@ -4,9 +4,15 @@ import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AUTH_COOKIE_NAME } from "@/modules/auth/constants";
 import { signAuthToken } from "@/modules/auth/jwt";
+import { getWrongNoteStorageRoot } from "@/modules/mistake-note/upload";
 
 export const SEEDED_STUDENT_ID = "11111111-1111-4111-8111-111111111111";
 export const SEEDED_CURRICULUM_NODE_ID = "22222222-2222-4222-8222-222222222222";
+export const SEEDED_GRADE2_CURRICULUM_NODE_ID = "14141414-1414-4414-8414-141414141414";
+export const SEEDED_GRADE1_STUDENT_WORKBOOK_ID = "71717171-7171-4717-8717-717171717171";
+export const SEEDED_GRADE2_STUDENT_WORKBOOK_ID = "92929292-9292-4929-8929-929292929292";
+export const SEEDED_GRADE1_WORKBOOK_STAGE_ID = "81818181-8181-4818-8818-818181818181";
+export const SEEDED_GRADE2_WORKBOOK_STAGE_ID = "93939393-9393-4939-8939-939393939393";
 
 export async function getSeedGuardian() {
   const guardianEmail = process.env.SEED_GUARDIAN_EMAIL ?? "guardian@example.com";
@@ -104,6 +110,14 @@ export async function createSeedStudentAuthCookie() {
 }
 
 export async function resetSeedStudentScopedData() {
+  await prisma.studentWorkbookProgress.deleteMany({
+    where: {
+      studentWorkbook: {
+        studentId: SEEDED_STUDENT_ID,
+      },
+    },
+  });
+
   await prisma.wrongNote.deleteMany({
     where: {
       studentId: SEEDED_STUDENT_ID,
@@ -224,7 +238,7 @@ export async function resetSeedStudentAccountState() {
 export async function clearTestUploadDirectory() {
   const uploadDirs = [
     resolve(process.cwd(), process.env.UPLOAD_DIR ?? "public/uploads/test-wrong-answers"),
-    resolve(process.cwd(), process.env.WRONG_NOTE_UPLOAD_DIR ?? "public/uploads/test-wrong-notes"),
+    getWrongNoteStorageRoot(),
     resolve(process.cwd(), process.env.STUDY_UPLOAD_DIR ?? "public/uploads/test-study-work"),
   ];
 

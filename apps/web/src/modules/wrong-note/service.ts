@@ -1,10 +1,12 @@
 import type { Prisma, WrongNoteReason } from "@prisma/client";
 import { Subject } from "@prisma/client";
 import { addDaysUtc, endOfDayUtc, startOfDayUtc } from "@/modules/dashboard/date-range";
+import type { WrongNoteChartBar } from "@/modules/wrong-note/contracts";
 import { WRONG_NOTE_REASON_OPTIONS } from "@/modules/wrong-note/constants";
 
 type WrongNoteFilterParams = {
   studentId: string;
+  grade?: number;
   semester?: number;
   curriculumNodeId?: string;
   reason?: WrongNoteReason;
@@ -18,6 +20,20 @@ type WrongNoteTopUnitInput = Array<{
   unitName: string;
 }>;
 
+type WrongNoteUnitChartNode = {
+  id: string;
+  unitName: string;
+  unitCode: string;
+  sortOrder: number;
+};
+
+type WrongNoteUnitChartGroup = {
+  curriculumNodeId: string;
+  _count: {
+    _all: number;
+  };
+};
+
 export function normalizeOptionalText(value: string | null | undefined) {
   if (value === undefined || value === null) {
     return null;
@@ -28,14 +44,17 @@ export function normalizeOptionalText(value: string | null | undefined) {
 }
 
 export function buildWrongNoteWhere(filters: WrongNoteFilterParams): Prisma.WrongNoteWhereInput {
+  const curriculumNodeWhere: Prisma.CurriculumNodeWhereInput = {
+    ...(filters.grade ? { grade: filters.grade } : {}),
+    ...(filters.semester ? { semester: filters.semester } : {}),
+  };
+
   return {
     studentId: filters.studentId,
     deletedAt: null,
-    ...(filters.semester
+    ...(Object.keys(curriculumNodeWhere).length
       ? {
-          curriculumNode: {
-            semester: filters.semester,
-          },
+          curriculumNode: curriculumNodeWhere,
         }
       : {}),
     ...(filters.curriculumNodeId
@@ -140,15 +159,62 @@ export function buildWrongNoteTopUnits(items: WrongNoteTopUnitInput, limit = 5) 
     .slice(0, limit);
 }
 
+export function buildWrongNoteReasonChartBars(reasonCounts: Record<WrongNoteReason, number>): WrongNoteChartBar[] {
+  return WRONG_NOTE_REASON_OPTIONS.map((option) => ({
+    key: option.key,
+    label: option.labelKo,
+    value: reasonCounts[option.key],
+    meta: {
+      reason: option.key,
+    },
+  }));
+}
+
+export function buildWrongNoteUnitChartBars(nodes: WrongNoteUnitChartNode[], groups: WrongNoteUnitChartGroup[]): WrongNoteChartBar[] {
+  const countsByNodeId = groups.reduce<Map<string, number>>((result, group) => {
+    result.set(group.curriculumNodeId, group._count._all);
+    return result;
+  }, new Map());
+
+  return [...nodes]
+    .sort((left, right) => {
+      if (left.sortOrder !== right.sortOrder) {
+        return left.sortOrder - right.sortOrder;
+      }
+
+      return left.unitCode.localeCompare(right.unitCode, "ko");
+    })
+    .map((node) => ({
+      key: node.id,
+      label: node.unitName,
+      value: countsByNodeId.get(node.id) ?? 0,
+      meta: {
+        curriculumNodeId: node.id,
+        unitCode: node.unitCode,
+      },
+    }));
+}
+
+export function buildWrongNoteChartStats(bars: WrongNoteChartBar[]) {
+  return bars.reduce(
+    (result, bar) => ({
+      maxValue: Math.max(result.maxValue, bar.value),
+      totalCount: result.totalCount + bar.value,
+    }),
+    {
+      maxValue: 0,
+      totalCount: 0,
+    },
+  );
+}
+
 export function getWrongNoteRecent30DaysStart(asOfDate = startOfDayUtc(new Date())) {
   return addDaysUtc(asOfDate, -29);
 }
 
 export function getWrongNoteCurriculumNodeWhere(params: {
-  student: {
-    schoolLevel: "elementary" | "middle" | "high";
-    grade: number;
-  };
+  schoolLevel: "elementary" | "middle" | "high";
+  grade: number;
   curriculumNodeId: string;
   semester: number;
   asOfDate?: Date;
@@ -157,9 +223,9 @@ export function getWrongNoteCurriculumNodeWhere(params: {
 
   return {
     id: params.curriculumNodeId,
-    schoolLevel: params.student.schoolLevel,
+    schoolLevel: params.schoolLevel,
     subject: Subject.math,
-    grade: params.student.grade,
+    grade: params.grade,
     semester: params.semester,
     activeFrom: {
       lte: asOfDate,

@@ -64,7 +64,12 @@ export async function GET(request: Request, context: RouteContext) {
         return apiError(404, "NOT_FOUND", "Wrong note not found");
       }
 
-      return NextResponse.json(serializeWrongNote(wrongNote));
+      return NextResponse.json(
+        serializeWrongNote(wrongNote, {
+          kind: "guardian",
+          studentId: parsed.data.studentId,
+        }),
+      );
     } catch (error) {
       if (error instanceof OwnershipError) {
         return apiError(403, "FORBIDDEN", "Student ownership verification failed");

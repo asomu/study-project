@@ -4,9 +4,11 @@ import { isStudentRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
 import {
   allowedImageMimeToExtension,
+  buildStudentWrongNoteImageUrl,
   getUploadMaxBytes,
   hasValidImageSignature,
   isSupportedImageMime,
+  readWrongNoteImageFile,
   saveWrongNoteImage,
   supportedImageMimeDescription,
 } from "@/modules/mistake-note/upload";
@@ -22,6 +24,71 @@ type RouteContext = {
 async function readWrongNoteId(context: RouteContext) {
   const params = await context.params;
   return params.id;
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  try {
+    const session = await getAuthSessionFromRequest(request);
+
+    if (!session) {
+      return apiError(401, "AUTH_REQUIRED", "Authentication is required");
+    }
+
+    if (!isStudentRole(session.role)) {
+      logAccessDenied("student_wrong_note_image_get_requires_student_role", {
+        userId: session.userId,
+        role: session.role,
+      });
+      return apiError(403, "FORBIDDEN", "Student role is required");
+    }
+
+    const wrongNoteId = await readWrongNoteId(context);
+
+    if (!wrongNoteId) {
+      return apiError(400, "VALIDATION_ERROR", "wrongNote id is required");
+    }
+
+    try {
+      const student = await assertStudentLoginOwnership({
+        loginUserId: session.userId,
+      });
+      const wrongNote = await prisma.wrongNote.findFirst({
+        where: {
+          id: wrongNoteId,
+          studentId: student.id,
+          deletedAt: null,
+        },
+        select: {
+          imagePath: true,
+        },
+      });
+
+      if (!wrongNote) {
+        return apiError(404, "NOT_FOUND", "Wrong note not found");
+      }
+
+      const file = await readWrongNoteImageFile(wrongNote.imagePath);
+
+      if (!file) {
+        return apiError(404, "NOT_FOUND", "Wrong note image not found");
+      }
+
+      return new Response(file.buffer, {
+        headers: {
+          "content-type": file.contentType,
+          "cache-control": "private, no-store",
+        },
+      });
+    } catch (error) {
+      if (error instanceof OwnershipError) {
+        return apiError(403, "FORBIDDEN", "Student profile linkage verification failed");
+      }
+
+      throw error;
+    }
+  } catch {
+    return apiError(500, "INTERNAL_SERVER_ERROR", "Unexpected server error");
+  }
 }
 
 export async function POST(request: Request, context: RouteContext) {
@@ -58,6 +125,7 @@ export async function POST(request: Request, context: RouteContext) {
         },
         select: {
           id: true,
+          studentId: true,
         },
       });
 
@@ -111,7 +179,7 @@ export async function POST(request: Request, context: RouteContext) {
         return apiError(415, "UNSUPPORTED_MEDIA_TYPE", "File signature does not match declared image type");
       }
 
-      const imagePath = await saveWrongNoteImage(fileBuffer, fileCandidate.type, wrongNoteId);
+      const imagePath = await saveWrongNoteImage(fileBuffer, fileCandidate.type, wrongNote.studentId, wrongNoteId);
 
       await prisma.wrongNote.update({
         where: {
@@ -122,7 +190,9 @@ export async function POST(request: Request, context: RouteContext) {
         },
       });
 
-      return Response.json({ imagePath });
+      return Response.json({
+        imagePath: buildStudentWrongNoteImageUrl(wrongNoteId),
+      });
     } catch (error) {
       if (error instanceof OwnershipError) {
         return apiError(403, "FORBIDDEN", "Student profile linkage verification failed");

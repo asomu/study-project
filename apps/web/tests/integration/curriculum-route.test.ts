@@ -35,7 +35,7 @@ describe("GET /api/v1/curriculum", () => {
     mockedFindMany.mockResolvedValue([
       {
         id: "node-1",
-        curriculumVersion: "2026.01",
+        curriculumVersion: "2022.12",
         schoolLevel: SchoolLevel.middle,
         subject: Subject.math,
         grade: 1,
@@ -44,15 +44,15 @@ describe("GET /api/v1/curriculum", () => {
         unitName: "소인수분해",
         parentId: null,
         sortOrder: 1,
-        activeFrom: new Date("2026-01-01T00:00:00.000Z"),
+        activeFrom: new Date("2025-03-01T00:00:00.000Z"),
         activeTo: null,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+        createdAt: new Date("2025-03-01T00:00:00.000Z"),
+        updatedAt: new Date("2025-03-01T00:00:00.000Z"),
       },
     ] as never);
 
     const request = new Request(
-      "http://localhost/api/v1/curriculum?schoolLevel=middle&grade=1&semester=1&asOfDate=2026-02-21&curriculumVersion=2026.01",
+      "http://localhost/api/v1/curriculum?schoolLevel=middle&grade=1&semester=1&asOfDate=2026-03-22&curriculumVersion=2022.12",
       {
         method: "GET",
       },
@@ -62,11 +62,11 @@ describe("GET /api/v1/curriculum", () => {
     const body = (await response.json()) as { meta: { curriculumVersion: string } };
 
     expect(response.status).toBe(200);
-    expect(body.meta.curriculumVersion).toBe("2026.01");
+    expect(body.meta.curriculumVersion).toBe("2022.12");
     expect(mockedFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          curriculumVersion: "2026.01",
+          curriculumVersion: "2022.12",
         }),
       }),
     );

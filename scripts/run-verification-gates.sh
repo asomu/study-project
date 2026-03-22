@@ -33,14 +33,66 @@ run_in_root() {
   )
 }
 
+resolve_runtime_path() {
+  local path_value="$1"
+  local base_dir="${2:-$PROJECT_ROOT}"
+
+  if [[ "$path_value" == "~/"* ]]; then
+    printf '%s\n' "$HOME/${path_value#"~/"}"
+    return
+  fi
+
+  if [[ "$path_value" = /* ]]; then
+    printf '%s\n' "$path_value"
+    return
+  fi
+
+  printf '%s\n' "$base_dir/$path_value"
+}
+
+resolve_app_data_root() {
+  if [[ -n "${APP_DATA_ROOT:-}" ]]; then
+    resolve_runtime_path "$APP_DATA_ROOT" "$PROJECT_ROOT/apps/web"
+    return
+  fi
+
+  printf '%s\n' "$HOME/Library/Application Support/study-project"
+}
+
+resolve_app_backup_root() {
+  if [[ -n "${APP_BACKUP_ROOT:-}" ]]; then
+    resolve_runtime_path "$APP_BACKUP_ROOT" "$PROJECT_ROOT/apps/web"
+    return
+  fi
+
+  printf '%s\n' "$HOME/Library/Application Support/study-project-backups"
+}
+
+resolve_wrong_note_storage_root() {
+  if [[ -n "${WRONG_NOTE_STORAGE_ROOT:-}" ]]; then
+    resolve_runtime_path "$WRONG_NOTE_STORAGE_ROOT" "$PROJECT_ROOT/apps/web"
+    return
+  fi
+
+  printf '%s\n' "$(resolve_app_data_root)/wrong-notes"
+}
+
 prepare_runtime_directories() {
+  local wrong_note_storage_root
+  local wrong_note_backup_root
+
+  wrong_note_storage_root="$(resolve_wrong_note_storage_root)"
+  wrong_note_backup_root="$(resolve_app_backup_root)"
+
   run_in_root mkdir -p \
     apps/web/public/uploads/wrong-answers \
-    apps/web/public/uploads/wrong-notes \
     apps/web/public/uploads/test-wrong-answers \
-    apps/web/public/uploads/test-wrong-notes \
+    apps/web/public/uploads/test-study-work \
+    apps/web/.tmp/test-data/wrong-notes \
+    apps/web/.tmp/test-backups \
     backups/wrong-answers \
-    backups/wrong-notes
+    "$wrong_note_storage_root" \
+    "$wrong_note_backup_root"
 }
 
 prepare_database() {
@@ -113,9 +165,11 @@ run_pr_mode() {
 
 run_release_mode() {
   local upload_dir="$PROJECT_ROOT/apps/web/public/uploads/wrong-answers"
-  local wrong_note_upload_dir="$PROJECT_ROOT/apps/web/public/uploads/wrong-notes"
+  local wrong_note_storage_root
+  wrong_note_storage_root="$(resolve_wrong_note_storage_root)"
   local backup_dir="$PROJECT_ROOT/backups/wrong-answers"
-  local wrong_note_backup_dir="$PROJECT_ROOT/backups/wrong-notes"
+  local wrong_note_backup_root
+  wrong_note_backup_root="$(resolve_app_backup_root)"
   local size_kb
   local threshold_kb=$((2 * 1024 * 1024))
 
@@ -125,6 +179,7 @@ run_release_mode() {
   run_in_root pnpm build
   run_in_root pnpm test
   run_in_root pnpm test:e2e
+  run_in_root pnpm -C apps/web run wrong-note:storage:audit -- --json
   run_in_root bash scripts/check-doc-links.sh
 
   echo "[CHECK] test -d apps/web/public/uploads/wrong-answers"
@@ -133,9 +188,9 @@ run_release_mode() {
     exit 1
   fi
 
-  echo "[CHECK] test -d apps/web/public/uploads/wrong-notes"
-  if [[ ! -d "$wrong_note_upload_dir" ]]; then
-    echo "[ERROR] Wrong-note upload directory not found: $wrong_note_upload_dir"
+  echo "[CHECK] test -d $wrong_note_storage_root"
+  if [[ ! -d "$wrong_note_storage_root" ]]; then
+    echo "[ERROR] Wrong-note storage directory not found: $wrong_note_storage_root"
     exit 1
   fi
 
@@ -145,9 +200,9 @@ run_release_mode() {
     exit 1
   fi
 
-  echo "[CHECK] test -d backups/wrong-notes"
-  if [[ ! -d "$wrong_note_backup_dir" ]]; then
-    echo "[ERROR] Wrong-note backup directory not found: $wrong_note_backup_dir"
+  echo "[CHECK] test -d $wrong_note_backup_root"
+  if [[ ! -d "$wrong_note_backup_root" ]]; then
+    echo "[ERROR] Wrong-note backup directory not found: $wrong_note_backup_root"
     exit 1
   fi
 
@@ -157,6 +212,15 @@ run_release_mode() {
 
   if (( size_kb > threshold_kb )); then
     echo "[HOLD] Upload directory exceeds 2GB threshold. Release should be conditionally held."
+    exit 3
+  fi
+
+  echo "[CHECK] du -sk $wrong_note_storage_root"
+  size_kb="$(du -sk "$wrong_note_storage_root" | awk '{print $1}')"
+  echo "[INFO] Wrong-note storage size: ${size_kb}KB (threshold: ${threshold_kb}KB)"
+
+  if (( size_kb > threshold_kb )); then
+    echo "[HOLD] Wrong-note storage exceeds 2GB threshold. Release should be conditionally held."
     exit 3
   fi
 }

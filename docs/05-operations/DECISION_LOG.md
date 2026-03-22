@@ -158,3 +158,61 @@
   - 학생 홈 `/student/dashboard`와 보호자 홈 `/dashboard`는 오답노트 전용 워크스페이스로 교체한다.
   - 기존 `wrong-answers/manage`, `student/wrong-answers`는 신규 대시보드로 연결한다.
   - 레거시 `WrongAnswer` 데이터는 마이그레이션하지 않고 코드베이스 내 레거시 경로로만 남긴다.
+
+## ADR-0023: WrongNote는 학생 현재 학년이 아니라 선택한 대상 학년으로 분류할 수 있다
+
+- Date: 2026-03-21
+- Decision: WrongNote 업로드/수정/필터는 학생 프로필의 현재 학년에 고정하지 않고, 같은 학교급 안의 다른 학년을 대상 학년으로 선택할 수 있게 한다.
+- Rationale: 실제 학생은 선행 학습으로 상위 학년 단원을 풀 수 있으므로, 현재 학년만 허용하면 오답 데이터가 왜곡되고 실사용 입력이 막힌다.
+- Consequence:
+  - 학생/보호자 UI는 `대상 학년 -> 학기 -> 단원` 순서로 선택한다.
+  - `POST/PATCH /student/wrong-notes`와 list filter는 `grade`를 함께 다룬다.
+  - 서버 검증은 `student.schoolLevel` 안의 허용 학년인지 확인하고, `curriculum_nodes.grade/semester`로 최종 검증한다.
+  - `WrongNote` 테이블 스키마는 유지하고, 대상 학년은 연결된 `curriculum_node`에서 파생한다.
+
+## ADR-0024: WrongNote 분포 시각화는 전용 chart endpoint + 가로 bar 차트로 고정
+
+- Date: 2026-03-21
+- Decision: 학생/보호자 wrong-note 대시보드의 분포 시각화는 dashboard summary와 분리된 전용 `GET */wrong-notes/chart` endpoint로 제공하고, UI는 `그래프 기준 / 대상 학년 / 학기` 콤보박스로 바뀌는 가로 bar 차트로 고정한다.
+- Rationale: 기존 정적 `topUnits` 카드만으로는 학생/보호자가 선행 학년과 학기 조건을 바꿔가며 분포를 탐색하기 어렵고, 목록 필터와 별개 상태의 빠른 시각화 surface가 필요했다.
+- Consequence:
+  - `dimension=unit|reason`, `grade`, `semester`를 받는 학생/보호자 chart endpoint를 유지한다.
+  - `dimension=unit`은 선택 학년/학기의 전체 단원을 0건까지 포함한다.
+  - `dimension=reason`은 3개 오류유형 고정 순서를 유지한다.
+  - 기존 dashboard response의 `topUnits`는 호환용 additive field로만 남고, 기본 UI는 chart endpoint를 사용한다.
+
+## ADR-0025: WrongNote 이미지는 repo 밖 앱 데이터 루트에 저장하고 guarded image API로만 노출
+
+- Date: 2026-03-22
+- Decision: Mac mini 단일 호스트 운영에서는 wrong-note 이미지를 git repo 내부 `public/uploads/wrong-notes`에 두지 않고, `~/Library/Application Support/study-project/wrong-notes`에 저장하며 브라우저 노출은 학생/보호자 ownership 검증을 거친 image API로만 수행한다.
+- Rationale: 코드/배포 산출물과 사용자 업로드 데이터를 같은 디렉터리에 두면 정리 작업, 테스트 cleanup, 브랜치 이동 시 실제 학생 이미지가 유실되기 쉽고, 정적 공개 경로는 권한 제어도 약하다. 로컬 디스크만 사용하는 조건에서도 "repo 밖 앱 데이터 루트 + DB storage key + guarded stream" 구조가 가장 운영 친화적이다.
+- Consequence:
+  - `wrong_notes.image_path`는 공개 URL이 아니라 storage key를 저장한다.
+  - API 응답 `imagePath`는 `/api/v1/student/wrong-notes/{id}/image` 또는 `/api/v1/wrong-notes/{id}/image?studentId=...` URL이다.
+  - 테스트는 `apps/web/.tmp/test-data/wrong-notes`를 사용해 운영 저장소와 완전히 분리한다.
+  - legacy `/uploads/wrong-notes/...` 값은 read-only 호환만 유지한다.
+  - 파일 누락/고아 파일은 audit script로 점검하고, 앱 데이터 루트 전체는 backup script로 보존한다.
+
+## ADR-0026: 중등 수학 단원 시드는 현재 적용 학년별 버전으로 유지한다
+
+- Date: 2026-03-22
+- Decision: wrong-note 단원 선택용 `curriculum_nodes`는 2026-03-22 기준 현재 적용 버전을 학년별로 나눠 유지한다. 중1/중2는 `2022.12`, 중3은 `2015.09`를 active catalog로 사용한다.
+- Rationale: 2022 개정 교육과정은 중학교 전 학년에 동시에 적용되지 않고 2025-03-01(중1), 2026-03-01(중2), 2027-03-01(중3) 순으로 시행된다. 모든 학년을 단일 `2026.01` 또는 레거시 샘플로 두면 현재 학년별 콤보박스 단원 선택이 실제 운영 커리큘럼과 어긋난다.
+- Consequence:
+  - `/api/v1/curriculum`의 `asOfDate` 조회는 현재 날짜 기준으로 학년별 상이한 버전을 반환할 수 있다.
+  - wrong-note 업로드/상세/필터/차트의 단원 콤보박스는 2026-03-22 현재 수업 기준에 맞는 단원 집합을 사용한다.
+  - 단원 granularity는 성취기준 코드가 아니라 학생 입력 UX에 맞는 대표 단원명으로 정규화한다.
+  - 중3의 2022 개정 전환이 시작되는 2027년에는 seed와 authoring version selection 규칙을 다시 점검해야 한다.
+
+## ADR-0027: 문제집 진도는 Workbook 전용 도메인으로 분리하고 오답노트에는 optional linkage만 둔다
+
+- Date: 2026-03-22
+- Decision: 문제집 진도 관리 기능은 legacy `student_unit_progress`를 재사용하지 않고 `WorkbookTemplate`, `WorkbookTemplateStage`, `StudentWorkbook`, `StudentWorkbookProgress` 전용 도메인으로 구현하며, `WrongNote`에는 `studentWorkbookId`, `workbookTemplateStageId` optional linkage만 추가한다.
+- Rationale: 현재 제품의 핵심 흐름은 "보호자가 직접 문제집 구조를 입력하고, 학생이 그 문제집의 단원별 단계 상태를 관리한다"는 workbook-specific UX다. 기존 학습 진도 모델은 study session 흐름과 결합되어 있어 문제집 단계 구조와 학생/보호자 공통 matrix UX를 자연스럽게 표현하기 어렵다. 전용 Workbook 도메인으로 분리하면 권한, API shape, summary/bar/matrix 계산 규칙을 명확하게 고정할 수 있다.
+- Consequence:
+  - 보호자 UI에서 문제집 템플릿을 직접 등록하고 학생에게 배정한다.
+  - 진도 상태는 `not_started | in_progress | completed` 3단계만 사용한다.
+  - matrix는 전체 row를 미리 생성하지 않고, 없는 조합을 `not_started`로 해석한다.
+  - 학생과 보호자는 둘 다 workbook progress 상태를 수정할 수 있다.
+  - wrong-note workbook linkage는 optional이며, workbook을 선택한 경우 stage 선택은 required다.
+  - 템플릿이 배정된 뒤에는 단계 구조 편집을 막고 제목/출판사/활성 상태만 수정한다.

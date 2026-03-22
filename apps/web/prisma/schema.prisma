@@ -53,25 +53,33 @@ enum WrongNoteReason {
   lack_of_concept
 }
 
+enum WorkbookProgressStatus {
+  not_started
+  in_progress
+  completed
+}
+
 model User {
-  id                   String          @id @default(uuid())
-  role                 UserRole
-  loginId              String          @unique @map("login_id")
-  email                String?         @unique
-  name                 String
-  isActive             Boolean         @default(true) @map("is_active")
-  passwordHash         String          @map("password_hash")
-  acceptedTermsAt      DateTime?       @map("accepted_terms_at")
-  lastLoginAt          DateTime?       @map("last_login_at")
-  createdAt            DateTime        @default(now()) @map("created_at")
-  updatedAt            DateTime        @updatedAt @map("updated_at")
-  students             Student[]       @relation("GuardianStudents")
-  studentProfile       Student?        @relation("StudentLogin")
-  credentialIdentifiers UserCredentialIdentifier[]
-  createdStudentInvites StudentInvite[] @relation("StudentInvitesCreatedByGuardian")
-  studyReviews         StudyReview[]   @relation("GuardianStudyReviews")
-  unitProgressUpdates  StudentUnitProgress[] @relation("ProgressUpdatedByGuardian")
-  wrongNoteFeedback    WrongNote[]     @relation("GuardianWrongNoteFeedback")
+  id                      String                     @id @default(uuid())
+  role                    UserRole
+  loginId                 String                     @unique @map("login_id")
+  email                   String?                    @unique
+  name                    String
+  isActive                Boolean                    @default(true) @map("is_active")
+  passwordHash            String                     @map("password_hash")
+  acceptedTermsAt         DateTime?                  @map("accepted_terms_at")
+  lastLoginAt             DateTime?                  @map("last_login_at")
+  createdAt               DateTime                   @default(now()) @map("created_at")
+  updatedAt               DateTime                   @updatedAt @map("updated_at")
+  students                Student[]                  @relation("GuardianStudents")
+  studentProfile          Student?                   @relation("StudentLogin")
+  credentialIdentifiers   UserCredentialIdentifier[]
+  createdStudentInvites   StudentInvite[]            @relation("StudentInvitesCreatedByGuardian")
+  studyReviews            StudyReview[]              @relation("GuardianStudyReviews")
+  unitProgressUpdates     StudentUnitProgress[]      @relation("ProgressUpdatedByGuardian")
+  wrongNoteFeedback       WrongNote[]                @relation("GuardianWrongNoteFeedback")
+  workbookTemplates       WorkbookTemplate[]         @relation("GuardianWorkbookTemplates")
+  workbookProgressUpdates StudentWorkbookProgress[]  @relation("WorkbookProgressUpdatedBy")
 
   @@map("users")
 }
@@ -87,38 +95,39 @@ model UserCredentialIdentifier {
 }
 
 model Student {
-  id             String          @id @default(uuid())
-  guardianUserId String          @map("guardian_user_id")
-  loginUserId    String?         @unique @map("login_user_id")
-  name           String
-  schoolLevel    SchoolLevel     @map("school_level")
-  grade          Int
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-  guardian       User            @relation("GuardianStudents", fields: [guardianUserId], references: [id], onDelete: Cascade)
-  loginUser      User?           @relation("StudentLogin", fields: [loginUserId], references: [id], onDelete: SetNull)
-  materials      Material[]
-  attempts       Attempt[]
-  invites        StudentInvite[]
-  mastery        MasterySnapshot[]
-  studyReviews   StudyReview[]
-  unitProgress   StudentUnitProgress[]
-  wrongNotes     WrongNote[]
+  id               String                @id @default(uuid())
+  guardianUserId   String                @map("guardian_user_id")
+  loginUserId      String?               @unique @map("login_user_id")
+  name             String
+  schoolLevel      SchoolLevel           @map("school_level")
+  grade            Int
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+  guardian         User                  @relation("GuardianStudents", fields: [guardianUserId], references: [id], onDelete: Cascade)
+  loginUser        User?                 @relation("StudentLogin", fields: [loginUserId], references: [id], onDelete: SetNull)
+  materials        Material[]
+  attempts         Attempt[]
+  invites          StudentInvite[]
+  mastery          MasterySnapshot[]
+  studyReviews     StudyReview[]
+  unitProgress     StudentUnitProgress[]
+  wrongNotes       WrongNote[]
+  studentWorkbooks StudentWorkbook[]
 
   @@index([guardianUserId])
   @@map("students")
 }
 
 model StudentInvite {
-  id                    String   @id @default(uuid())
-  studentId             String   @map("student_id")
-  codeHash              String   @unique @map("code_hash")
-  expiresAt             DateTime @map("expires_at")
-  usedAt                DateTime? @map("used_at")
-  createdByGuardianUserId String @map("created_by_guardian_user_id")
-  createdAt             DateTime @default(now()) @map("created_at")
-  student               Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  createdByGuardian     User     @relation("StudentInvitesCreatedByGuardian", fields: [createdByGuardianUserId], references: [id], onDelete: Cascade)
+  id                      String    @id @default(uuid())
+  studentId               String    @map("student_id")
+  codeHash                String    @unique @map("code_hash")
+  expiresAt               DateTime  @map("expires_at")
+  usedAt                  DateTime? @map("used_at")
+  createdByGuardianUserId String    @map("created_by_guardian_user_id")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  student                 Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdByGuardian       User      @relation("StudentInvitesCreatedByGuardian", fields: [createdByGuardianUserId], references: [id], onDelete: Cascade)
 
   @@index([studentId, createdAt])
   @@index([expiresAt, usedAt])
@@ -126,22 +135,22 @@ model StudentInvite {
 }
 
 model CurriculumNode {
-  id                String           @id @default(uuid())
-  curriculumVersion String           @map("curriculum_version")
-  schoolLevel       SchoolLevel      @map("school_level")
+  id                String                    @id @default(uuid())
+  curriculumVersion String                    @map("curriculum_version")
+  schoolLevel       SchoolLevel               @map("school_level")
   subject           Subject
   grade             Int
   semester          Int
-  unitCode          String           @map("unit_code")
-  unitName          String           @map("unit_name")
-  parentId          String?          @map("parent_id")
-  sortOrder         Int              @default(0) @map("sort_order")
-  activeFrom        DateTime         @map("active_from")
-  activeTo          DateTime?        @map("active_to")
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  parent            CurriculumNode?  @relation("CurriculumNodeTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children          CurriculumNode[] @relation("CurriculumNodeTree")
+  unitCode          String                    @map("unit_code")
+  unitName          String                    @map("unit_name")
+  parentId          String?                   @map("parent_id")
+  sortOrder         Int                       @default(0) @map("sort_order")
+  activeFrom        DateTime                  @map("active_from")
+  activeTo          DateTime?                 @map("active_to")
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+  parent            CurriculumNode?           @relation("CurriculumNodeTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children          CurriculumNode[]          @relation("CurriculumNodeTree")
   attemptItems      AttemptItem[]
   masterySnapshots  MasterySnapshot[]
   practiceSets      PracticeSet[]
@@ -149,6 +158,7 @@ model CurriculumNode {
   conceptLesson     ConceptLesson?
   unitProgress      StudentUnitProgress[]
   wrongNotes        WrongNote[]
+  workbookProgress  StudentWorkbookProgress[]
 
   @@index([schoolLevel, subject, grade, semester])
   @@index([curriculumVersion, schoolLevel, subject])
@@ -156,44 +166,44 @@ model CurriculumNode {
 }
 
 model Material {
-  id         String      @id @default(uuid())
-  studentId  String      @map("student_id")
-  title      String
-  publisher  String
-  subject    Subject
-  schoolLevel SchoolLevel @map("school_level")
-  grade      Int
-  semester   Int
-  sourceType MaterialSourceType @default(manual) @map("source_type")
-  systemKey  String?     @unique @map("system_key")
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
-  student    Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  attempts   Attempt[]
+  id          String             @id @default(uuid())
+  studentId   String             @map("student_id")
+  title       String
+  publisher   String
+  subject     Subject
+  schoolLevel SchoolLevel        @map("school_level")
+  grade       Int
+  semester    Int
+  sourceType  MaterialSourceType @default(manual) @map("source_type")
+  systemKey   String?            @unique @map("system_key")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  student     Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  attempts    Attempt[]
 
   @@index([studentId, createdAt])
   @@map("materials")
 }
 
 model Attempt {
-  id          String       @id @default(uuid())
-  studentId   String       @map("student_id")
-  materialId  String       @map("material_id")
-  attemptDate DateTime     @map("attempt_date")
-  notes       String?
-  sourceType  AttemptSourceType @default(manual) @map("source_type")
-  startedAt   DateTime?    @map("started_at")
-  submittedAt DateTime?    @map("submitted_at")
-  elapsedSeconds Int?      @map("elapsed_seconds")
-  practiceSetId String?    @map("practice_set_id")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  material    Material     @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  practiceSet PracticeSet? @relation(fields: [practiceSetId], references: [id], onDelete: SetNull)
-  items       AttemptItem[]
-  workArtifact StudyWorkArtifact?
-  studyReview StudyReview?
+  id             String             @id @default(uuid())
+  studentId      String             @map("student_id")
+  materialId     String             @map("material_id")
+  attemptDate    DateTime           @map("attempt_date")
+  notes          String?
+  sourceType     AttemptSourceType  @default(manual) @map("source_type")
+  startedAt      DateTime?          @map("started_at")
+  submittedAt    DateTime?          @map("submitted_at")
+  elapsedSeconds Int?               @map("elapsed_seconds")
+  practiceSetId  String?            @map("practice_set_id")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  student        Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  material       Material           @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  practiceSet    PracticeSet?       @relation(fields: [practiceSetId], references: [id], onDelete: SetNull)
+  items          AttemptItem[]
+  workArtifact   StudyWorkArtifact?
+  studyReview    StudyReview?
 
   @@index([studentId, attemptDate])
   @@index([studentId, sourceType, submittedAt])
@@ -201,35 +211,35 @@ model Attempt {
 }
 
 model AttemptItem {
-  id               String          @id @default(uuid())
-  attemptId        String          @map("attempt_id")
-  curriculumNodeId String          @map("curriculum_node_id")
-  problemNo        Int             @map("problem_no")
-  isCorrect        Boolean         @map("is_correct")
-  difficulty       Int?
-  practiceProblemId String?        @map("practice_problem_id")
-  studentAnswer    String?         @map("student_answer")
-  createdAt        DateTime        @default(now()) @map("created_at")
-  updatedAt        DateTime        @updatedAt @map("updated_at")
-  attempt          Attempt         @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  curriculumNode   CurriculumNode  @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
-  practiceProblem  PracticeProblem? @relation(fields: [practiceProblemId], references: [id], onDelete: SetNull)
-  wrongAnswer      WrongAnswer?
+  id                String           @id @default(uuid())
+  attemptId         String           @map("attempt_id")
+  curriculumNodeId  String           @map("curriculum_node_id")
+  problemNo         Int              @map("problem_no")
+  isCorrect         Boolean          @map("is_correct")
+  difficulty        Int?
+  practiceProblemId String?          @map("practice_problem_id")
+  studentAnswer     String?          @map("student_answer")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  attempt           Attempt          @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  curriculumNode    CurriculumNode   @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
+  practiceProblem   PracticeProblem? @relation(fields: [practiceProblemId], references: [id], onDelete: SetNull)
+  wrongAnswer       WrongAnswer?
 
-  @@index([attemptId, curriculumNodeId])
   @@unique([attemptId, problemNo])
+  @@index([attemptId, curriculumNodeId])
   @@map("attempt_items")
 }
 
 model WrongAnswer {
-  id            String                 @id @default(uuid())
-  attemptItemId String                 @unique @map("attempt_item_id")
-  imagePath     String?                @map("image_path")
+  id            String                   @id @default(uuid())
+  attemptItemId String                   @unique @map("attempt_item_id")
+  imagePath     String?                  @map("image_path")
   memo          String?
-  reviewedAt    DateTime?              @map("reviewed_at")
-  createdAt     DateTime               @default(now()) @map("created_at")
-  updatedAt     DateTime               @updatedAt @map("updated_at")
-  attemptItem   AttemptItem            @relation(fields: [attemptItemId], references: [id], onDelete: Cascade)
+  reviewedAt    DateTime?                @map("reviewed_at")
+  createdAt     DateTime                 @default(now()) @map("created_at")
+  updatedAt     DateTime                 @updatedAt @map("updated_at")
+  attemptItem   AttemptItem              @relation(fields: [attemptItemId], references: [id], onDelete: Cascade)
   categories    WrongAnswerCategoryMap[]
 
   @@index([createdAt])
@@ -237,11 +247,11 @@ model WrongAnswer {
 }
 
 model WrongAnswerCategory {
-  id         String                 @id @default(uuid())
-  key        String                 @unique
-  labelKo    String                 @map("label_ko")
-  createdAt  DateTime               @default(now()) @map("created_at")
-  updatedAt  DateTime               @updatedAt @map("updated_at")
+  id         String                   @id @default(uuid())
+  key        String                   @unique
+  labelKo    String                   @map("label_ko")
+  createdAt  DateTime                 @default(now()) @map("created_at")
+  updatedAt  DateTime                 @updatedAt @map("updated_at")
   wrongItems WrongAnswerCategoryMap[]
 
   @@map("wrong_answer_categories")
@@ -258,28 +268,105 @@ model WrongAnswerCategoryMap {
 }
 
 model WrongNote {
-  id                      String          @id @default(uuid())
-  studentId               String          @map("student_id")
-  curriculumNodeId        String          @map("curriculum_node_id")
-  reason                  WrongNoteReason
-  imagePath               String          @map("image_path")
-  studentMemo             String?         @map("student_memo")
-  guardianFeedback        String?         @map("guardian_feedback")
-  guardianFeedbackByUserId String?        @map("guardian_feedback_by_user_id")
-  guardianFeedbackAt      DateTime?       @map("guardian_feedback_at")
-  deletedAt               DateTime?       @map("deleted_at")
-  createdAt               DateTime        @default(now()) @map("created_at")
-  updatedAt               DateTime        @updatedAt @map("updated_at")
-  student                 Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  curriculumNode          CurriculumNode  @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
-  guardianFeedbackBy      User?           @relation("GuardianWrongNoteFeedback", fields: [guardianFeedbackByUserId], references: [id], onDelete: SetNull)
+  id                       String                 @id @default(uuid())
+  studentId                String                 @map("student_id")
+  curriculumNodeId         String                 @map("curriculum_node_id")
+  studentWorkbookId        String?                @map("student_workbook_id")
+  workbookTemplateStageId  String?                @map("workbook_template_stage_id")
+  reason                   WrongNoteReason
+  imagePath                String                 @map("image_path")
+  studentMemo              String?                @map("student_memo")
+  guardianFeedback         String?                @map("guardian_feedback")
+  guardianFeedbackByUserId String?                @map("guardian_feedback_by_user_id")
+  guardianFeedbackAt       DateTime?              @map("guardian_feedback_at")
+  deletedAt                DateTime?              @map("deleted_at")
+  createdAt                DateTime               @default(now()) @map("created_at")
+  updatedAt                DateTime               @updatedAt @map("updated_at")
+  student                  Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  curriculumNode           CurriculumNode         @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
+  studentWorkbook          StudentWorkbook?       @relation(fields: [studentWorkbookId], references: [id], onDelete: SetNull)
+  workbookTemplateStage    WorkbookTemplateStage? @relation(fields: [workbookTemplateStageId], references: [id], onDelete: SetNull)
+  guardianFeedbackBy       User?                  @relation("GuardianWrongNoteFeedback", fields: [guardianFeedbackByUserId], references: [id], onDelete: SetNull)
 
   @@index([studentId, createdAt])
   @@index([studentId, reason, createdAt])
   @@index([curriculumNodeId, createdAt])
   @@index([studentId, guardianFeedbackAt])
+  @@index([studentWorkbookId, createdAt])
   @@index([deletedAt])
   @@map("wrong_notes")
+}
+
+model WorkbookTemplate {
+  id               String                  @id @default(uuid())
+  guardianUserId   String                  @map("guardian_user_id")
+  title            String
+  publisher        String
+  schoolLevel      SchoolLevel             @map("school_level")
+  grade            Int
+  semester         Int
+  isActive         Boolean                 @default(true) @map("is_active")
+  createdAt        DateTime                @default(now()) @map("created_at")
+  updatedAt        DateTime                @updatedAt @map("updated_at")
+  guardian         User                    @relation("GuardianWorkbookTemplates", fields: [guardianUserId], references: [id], onDelete: Cascade)
+  stages           WorkbookTemplateStage[]
+  studentWorkbooks StudentWorkbook[]
+
+  @@index([guardianUserId, grade, semester, isActive])
+  @@map("workbook_templates")
+}
+
+model WorkbookTemplateStage {
+  id                 String                    @id @default(uuid())
+  workbookTemplateId String                    @map("workbook_template_id")
+  name               String
+  sortOrder          Int                       @default(0) @map("sort_order")
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  updatedAt          DateTime                  @updatedAt @map("updated_at")
+  workbookTemplate   WorkbookTemplate          @relation(fields: [workbookTemplateId], references: [id], onDelete: Cascade)
+  workbookProgress   StudentWorkbookProgress[]
+  wrongNotes         WrongNote[]
+
+  @@index([workbookTemplateId, sortOrder])
+  @@map("workbook_template_stages")
+}
+
+model StudentWorkbook {
+  id                 String                    @id @default(uuid())
+  studentId          String                    @map("student_id")
+  workbookTemplateId String                    @map("workbook_template_id")
+  isArchived         Boolean                   @default(false) @map("is_archived")
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  updatedAt          DateTime                  @updatedAt @map("updated_at")
+  student            Student                   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  workbookTemplate   WorkbookTemplate          @relation(fields: [workbookTemplateId], references: [id], onDelete: Cascade)
+  workbookProgress   StudentWorkbookProgress[]
+  wrongNotes         WrongNote[]
+
+  @@unique([studentId, workbookTemplateId])
+  @@index([studentId, isArchived, createdAt])
+  @@map("student_workbooks")
+}
+
+model StudentWorkbookProgress {
+  id                      String                 @id @default(uuid())
+  studentWorkbookId       String                 @map("student_workbook_id")
+  curriculumNodeId        String                 @map("curriculum_node_id")
+  workbookTemplateStageId String                 @map("workbook_template_stage_id")
+  status                  WorkbookProgressStatus
+  updatedByUserId         String                 @map("updated_by_user_id")
+  lastUpdatedAt           DateTime               @map("last_updated_at")
+  createdAt               DateTime               @default(now()) @map("created_at")
+  updatedAt               DateTime               @updatedAt @map("updated_at")
+  studentWorkbook         StudentWorkbook        @relation(fields: [studentWorkbookId], references: [id], onDelete: Cascade)
+  curriculumNode          CurriculumNode         @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
+  workbookTemplateStage   WorkbookTemplateStage  @relation(fields: [workbookTemplateStageId], references: [id], onDelete: Cascade)
+  updatedBy               User                   @relation("WorkbookProgressUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([studentWorkbookId, curriculumNodeId, workbookTemplateStageId])
+  @@index([studentWorkbookId, status, lastUpdatedAt])
+  @@index([curriculumNodeId, lastUpdatedAt])
+  @@map("student_workbook_progress")
 }
 
 model MasterySnapshot {
@@ -299,19 +386,19 @@ model MasterySnapshot {
 }
 
 model PracticeSet {
-  id               String        @id @default(uuid())
+  id               String            @id @default(uuid())
   title            String
   description      String?
-  schoolLevel      SchoolLevel   @map("school_level")
+  schoolLevel      SchoolLevel       @map("school_level")
   subject          Subject
   grade            Int
   semester         Int
-  curriculumNodeId String        @map("curriculum_node_id")
-  isActive         Boolean       @default(true) @map("is_active")
-  sortOrder        Int           @default(0) @map("sort_order")
-  createdAt        DateTime      @default(now()) @map("created_at")
-  updatedAt        DateTime      @updatedAt @map("updated_at")
-  curriculumNode   CurriculumNode @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
+  curriculumNodeId String            @map("curriculum_node_id")
+  isActive         Boolean           @default(true) @map("is_active")
+  sortOrder        Int               @default(0) @map("sort_order")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  curriculumNode   CurriculumNode    @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
   problems         PracticeProblem[]
   attempts         Attempt[]
 
@@ -321,21 +408,21 @@ model PracticeSet {
 }
 
 model PracticeProblem {
-  id               String             @id @default(uuid())
-  practiceSetId    String             @map("practice_set_id")
-  curriculumNodeId String             @map("curriculum_node_id")
-  problemNo        Int                @map("problem_no")
+  id               String              @id @default(uuid())
+  practiceSetId    String              @map("practice_set_id")
+  curriculumNodeId String              @map("curriculum_node_id")
+  problemNo        Int                 @map("problem_no")
   type             PracticeProblemType
   prompt           String
-  choicesJson      Json?              @map("choices_json")
-  correctAnswer    String             @map("correct_answer")
+  choicesJson      Json?               @map("choices_json")
+  correctAnswer    String              @map("correct_answer")
   explanation      String?
-  skillTags        String[]           @default([]) @map("skill_tags")
-  difficulty       Int                @default(3)
-  createdAt        DateTime           @default(now()) @map("created_at")
-  updatedAt        DateTime           @updatedAt @map("updated_at")
-  practiceSet      PracticeSet        @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
-  curriculumNode   CurriculumNode     @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
+  skillTags        String[]            @default([]) @map("skill_tags")
+  difficulty       Int                 @default(3)
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  practiceSet      PracticeSet         @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
+  curriculumNode   CurriculumNode      @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
   attemptItems     AttemptItem[]
 
   @@unique([practiceSetId, problemNo])
@@ -357,12 +444,12 @@ model ConceptLesson {
 }
 
 model StudyWorkArtifact {
-  id         String   @id @default(uuid())
-  attemptId  String   @unique @map("attempt_id")
-  imagePath  String   @map("image_path")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  attempt    Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  attemptId String   @unique @map("attempt_id")
+  imagePath String   @map("image_path")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  attempt   Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
   @@map("study_work_artifacts")
 }
@@ -387,19 +474,19 @@ model StudyReview {
 }
 
 model StudentUnitProgress {
-  id                  String              @id @default(uuid())
-  studentId           String              @map("student_id")
-  curriculumNodeId    String              @map("curriculum_node_id")
-  status              StudyProgressStatus
-  note                String?
-  lastStudiedAt       DateTime?           @map("last_studied_at")
-  reviewedAt          DateTime?           @map("reviewed_at")
-  updatedByGuardianUserId String?         @map("updated_by_guardian_user_id")
-  createdAt           DateTime            @default(now()) @map("created_at")
-  updatedAt           DateTime            @updatedAt @map("updated_at")
-  student             Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  curriculumNode      CurriculumNode      @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
-  updatedByGuardian   User?               @relation("ProgressUpdatedByGuardian", fields: [updatedByGuardianUserId], references: [id], onDelete: SetNull)
+  id                      String              @id @default(uuid())
+  studentId               String              @map("student_id")
+  curriculumNodeId        String              @map("curriculum_node_id")
+  status                  StudyProgressStatus
+  note                    String?
+  lastStudiedAt           DateTime?           @map("last_studied_at")
+  reviewedAt              DateTime?           @map("reviewed_at")
+  updatedByGuardianUserId String?             @map("updated_by_guardian_user_id")
+  createdAt               DateTime            @default(now()) @map("created_at")
+  updatedAt               DateTime            @updatedAt @map("updated_at")
+  student                 Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  curriculumNode          CurriculumNode      @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
+  updatedByGuardian       User?               @relation("ProgressUpdatedByGuardian", fields: [updatedByGuardianUserId], references: [id], onDelete: SetNull)
 
   @@unique([studentId, curriculumNodeId])
   @@index([studentId, status, updatedAt])

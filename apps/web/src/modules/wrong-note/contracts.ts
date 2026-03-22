@@ -7,6 +7,19 @@ export type WrongNoteStudentSummary = {
   grade: number;
 };
 
+export type WrongNoteChartDimension = "unit" | "reason";
+
+export type WrongNoteChartBar = {
+  key: string;
+  label: string;
+  value: number;
+  meta?: {
+    curriculumNodeId?: string;
+    unitCode?: string;
+    reason?: WrongNoteReason;
+  };
+};
+
 export type WrongNoteItem = {
   id: string;
   imagePath: string;
@@ -27,6 +40,14 @@ export type WrongNoteItem = {
     text: string;
     updatedAt: string | null;
     guardianUserId: string | null;
+  } | null;
+  workbook: {
+    studentWorkbookId: string;
+    templateId: string;
+    title: string;
+    publisher: string;
+    stageId: string;
+    stageName: string;
   } | null;
 };
 
@@ -59,4 +80,16 @@ export type WrongNoteDashboardResponse = {
     unitName: string;
     count: number;
   }>;
+};
+
+export type WrongNoteChartResponse = {
+  student: WrongNoteStudentSummary;
+  chart: {
+    dimension: WrongNoteChartDimension;
+    grade: number;
+    semester: number;
+    bars: WrongNoteChartBar[];
+    maxValue: number;
+    totalCount: number;
+  };
 };

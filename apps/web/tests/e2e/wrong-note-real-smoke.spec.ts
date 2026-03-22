@@ -10,16 +10,17 @@ const guardianEmail = process.env.SEED_GUARDIAN_EMAIL ?? "guardian@example.com";
 const guardianPassword = process.env.SEED_GUARDIAN_PASSWORD ?? "Guardian123!";
 const seededStudentId = "11111111-1111-4111-8111-111111111111";
 const seededCurriculumNodeId = "33333333-3333-4333-8333-333333333333";
-const wrongNoteUploadDir = resolve(process.cwd(), process.env.WRONG_NOTE_UPLOAD_DIR ?? "public/uploads/test-wrong-notes");
+const appDataRoot = resolve(process.cwd(), process.env.APP_DATA_ROOT ?? ".tmp/test-data");
+const wrongNoteStorageRoot = resolve(appDataRoot, "wrong-notes");
 const studentPassword = "Student123!";
 
 async function clearWrongNoteUploadDirectory() {
-  await mkdir(wrongNoteUploadDir, { recursive: true });
-  const entries = await readdir(wrongNoteUploadDir, { withFileTypes: true });
+  await mkdir(wrongNoteStorageRoot, { recursive: true });
+  const entries = await readdir(wrongNoteStorageRoot, { withFileTypes: true });
 
   await Promise.all(
     entries.map((entry) =>
-      rm(resolve(wrongNoteUploadDir, entry.name), {
+      rm(resolve(wrongNoteStorageRoot, entry.name), {
         recursive: true,
         force: true,
       }),
@@ -128,6 +129,10 @@ async function login(page: Page, identifier: string, password: string, expectedP
   await page.waitForURL(`**${expectedPath}`);
 }
 
+function wrongNoteCardGrid(page: Page) {
+  return page.locator("section").filter({ has: page.getByRole("heading", { name: "오답 카드" }) });
+}
+
 test.beforeEach(async () => {
   await resetSeedWrongNotes();
   await clearWrongNoteUploadDirectory();
@@ -156,15 +161,16 @@ test("real smoke: student upload -> guardian feedback -> student confirm", async
   await page.getByRole("button", { name: "오답노트 저장" }).click();
 
   await expect(page.getByText("오답노트를 저장했습니다.")).toBeVisible();
-  await expect(page.getByRole("button", { name: /정수와 유리수/ }).first()).toBeVisible();
+  await expect(wrongNoteCardGrid(page).getByRole("button", { name: /정수와 유리수/ }).first()).toBeVisible();
+  await expect(page.locator('img[alt="정수와 유리수"]').first()).toBeVisible();
 
   await context.clearCookies();
   await login(page, guardianEmail, guardianPassword, "/dashboard");
   await page.goto("/records/new");
   await page.waitForURL("**/dashboard");
   await page.getByLabel("학생").selectOption(seededStudentId);
-  await expect(page.getByRole("button", { name: /정수와 유리수/ }).first()).toBeVisible();
-  await page.getByRole("button", { name: /정수와 유리수/ }).first().click();
+  await expect(wrongNoteCardGrid(page).getByRole("button", { name: /정수와 유리수/ }).first()).toBeVisible();
+  await wrongNoteCardGrid(page).getByRole("button", { name: /정수와 유리수/ }).first().click();
   await page.getByLabel("보호자 피드백").fill("조건에 밑줄을 치고 마지막 부호를 다시 확인하자.");
   await page.getByRole("button", { name: "피드백 저장" }).click();
 
@@ -172,6 +178,7 @@ test("real smoke: student upload -> guardian feedback -> student confirm", async
 
   await context.clearCookies();
   await login(page, studentLoginUser.loginId, studentPassword, "/student/dashboard");
-  await page.getByRole("button", { name: /정수와 유리수/ }).first().click();
+  await wrongNoteCardGrid(page).getByRole("button", { name: /정수와 유리수/ }).first().click();
+  await expect(page.getByRole("button", { name: "닫기" })).toBeVisible();
   await expect(page.getByText("조건에 밑줄을 치고 마지막 부호를 다시 확인하자.")).toBeVisible();
 });

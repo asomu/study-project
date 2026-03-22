@@ -6,6 +6,7 @@ import { getAuthSessionFromRequest } from "@/modules/auth/session";
 import { parseDateOnly } from "@/modules/dashboard/date-range";
 import { apiError } from "@/modules/shared/api-error";
 import { logAccessDenied } from "@/modules/shared/structured-log";
+import { isGradeAllowedForSchoolLevel } from "@/modules/wrong-note/constants";
 import { serializeWrongNote, serializeWrongNoteList, serializeWrongNoteStudent, wrongNoteInclude } from "@/modules/wrong-note/serializers";
 import { buildWrongNotePagination, buildWrongNoteWhere } from "@/modules/wrong-note/service";
 import { parseGuardianWrongNoteListQuery } from "@/modules/wrong-note/schemas";
@@ -49,8 +50,14 @@ export async function GET(request: Request) {
         studentId: parsed.data.studentId,
         guardianUserId: session.userId,
       });
+
+      if (parsed.data.grade && !isGradeAllowedForSchoolLevel(student.schoolLevel, parsed.data.grade)) {
+        return apiError(400, "VALIDATION_ERROR", "grade is not available for the student's school level");
+      }
+
       const where = buildWrongNoteWhere({
         studentId: student.id,
+        grade: parsed.data.grade,
         semester: parsed.data.semester,
         curriculumNodeId: parsed.data.curriculumNodeId,
         reason: parsed.data.reason,
@@ -82,7 +89,12 @@ export async function GET(request: Request) {
             grade: student.grade,
           }),
           pagination: buildWrongNotePagination(page, pageSize, totalItems),
-          wrongNotes: wrongNotes.map(serializeWrongNote),
+          wrongNotes: wrongNotes.map((wrongNote) =>
+            serializeWrongNote(wrongNote, {
+              kind: "guardian",
+              studentId: student.id,
+            }),
+          ),
         }),
       );
     } catch (error) {

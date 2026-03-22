@@ -5,7 +5,7 @@ import { GET as GET_TRENDS } from "@/app/api/v1/dashboard/trends/route";
 import { GET as GET_WEAKNESS } from "@/app/api/v1/dashboard/weakness/route";
 import { GET as GET_WRONG_ANSWERS } from "@/app/api/v1/wrong-answers/route";
 import { prisma } from "@/lib/prisma";
-import { clearDemoData, DEMO_STUDENT_ID, seedDemoData } from "@/modules/demo/demo-data";
+import { clearDemoData, DEMO_CURRICULUM_VERSION, DEMO_STUDENT_ID, seedDemoData } from "@/modules/demo/demo-data";
 import { addDaysUtc } from "@/modules/dashboard/date-range";
 import { createSeedGuardianAuthCookie, getSeedGuardian } from "./db-test-helpers";
 
@@ -179,7 +179,7 @@ describe("real integration: demo seed", () => {
       prisma.wrongAnswerCategory.count(),
       prisma.curriculumNode.count({
         where: {
-          curriculumVersion: "2026.01",
+          curriculumVersion: DEMO_CURRICULUM_VERSION,
           schoolLevel: SchoolLevel.middle,
           subject: Subject.math,
           grade: 1,

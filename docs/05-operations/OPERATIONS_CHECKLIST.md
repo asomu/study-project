@@ -1,15 +1,15 @@
 # Operations Checklist
 
-- Last Updated: 2026-03-07
+- Last Updated: 2026-03-22
 - Scope: Private beta 로컬 운영(`apps/web`)
 - Owner: Team
 
 ## 1. Upload Storage Backup Policy
 
 - Source Directory:
-  - `/Users/mark/Documents/project/study-project/apps/web/public/uploads/wrong-answers`
+  - `/Users/mark/Library/Application Support/study-project/wrong-notes`
 - Backup Root:
-  - `/Users/mark/Documents/project/study-project/backups/wrong-answers`
+  - `/Users/mark/Library/Application Support/study-project-backups`
 - Schedule:
   - 매일 02:00 (Asia/Seoul, KST) 백업 수행
 - Retention:
@@ -71,7 +71,7 @@
 실행 순서:
 
 1. `pnpm install --frozen-lockfile`
-2. `mkdir -p apps/web/public/uploads/wrong-answers backups/wrong-answers`
+2. `mkdir -p "/Users/mark/Library/Application Support/study-project/wrong-notes" "/Users/mark/Library/Application Support/study-project-backups"`
 3. `pnpm -C apps/web exec prisma migrate deploy`
 4. `pnpm -C apps/web prisma:seed`
 5. `pnpm build`
@@ -88,4 +88,7 @@
 - 보호자 가입(`/signup`)이 정상 동작하는지 수동 확인한다.
 - 학생 프로필 생성 -> 초대코드 발급 -> 학생 활성화(`/student/activate`) 흐름을 1회 통과시킨다.
 - 보호자 대시보드(`/dashboard`)와 학생 대시보드(`/student/dashboard`)가 각 역할에서만 열리는지 확인한다.
+- 보호자가 문제집 템플릿을 1건 등록하고 학생에게 배정되는지 확인한다.
+- 학생/보호자가 같은 문제집 진도 matrix를 보고 상태를 바꿀 수 있는지 확인한다.
+- 학생 오답 업로드 시 문제집과 단계를 연결하고 상세에서 다시 보이는지 확인한다.
 - 비공개 베타 운영에서는 내부 LAN 또는 제한된 접근만 허용한다.

@@ -48,6 +48,7 @@
 
 - `/Users/mark/Documents/project/study-project/docs/06-data/ncic_middle_math_sources_2026-02-20.json`
 - `/Users/mark/Documents/project/study-project/docs/06-data/별책8_수학과_교육과정_2022.pdf`
+- `/Users/mark/Documents/project/study-project/docs/06-data/MIDDLE_MATH_CURRENT_CURRICULUM_2026-03-22.md`
 
 ## 7. Learning
 

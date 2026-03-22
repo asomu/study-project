@@ -1,0 +1,130 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { assertStudentOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
+import { isGuardianRole } from "@/modules/auth/roles";
+import { getAuthSessionFromRequest } from "@/modules/auth/session";
+import { apiError } from "@/modules/shared/api-error";
+import { logAccessDenied } from "@/modules/shared/structured-log";
+import {
+  serializeStudentWorkbook,
+  serializeWorkbookProgressDashboard,
+  studentWorkbookInclude,
+} from "@/modules/workbook/serializers";
+import { parseGuardianWorkbookProgressDashboardQuery } from "@/modules/workbook/schemas";
+import { buildWorkbookProgressDashboardPayload, getWorkbookCurriculumNodeWhere } from "@/modules/workbook/service";
+import { serializeWrongNoteStudent } from "@/modules/wrong-note/serializers";
+
+export async function GET(request: Request) {
+  try {
+    const session = await getAuthSessionFromRequest(request);
+
+    if (!session) {
+      return apiError(401, "AUTH_REQUIRED", "Authentication is required");
+    }
+
+    if (!isGuardianRole(session.role)) {
+      logAccessDenied("guardian_workbook_progress_dashboard_requires_guardian_role", {
+        userId: session.userId,
+        role: session.role,
+      });
+      return apiError(403, "FORBIDDEN", "Guardian role is required");
+    }
+
+    const requestUrl = new URL(request.url);
+    const parsed = parseGuardianWorkbookProgressDashboardQuery(requestUrl);
+
+    if (!parsed.success) {
+      return apiError(400, "VALIDATION_ERROR", "Invalid request", parsed.error.issues);
+    }
+
+    try {
+      const student = await assertStudentOwnership({
+        studentId: parsed.data.studentId,
+        guardianUserId: session.userId,
+      });
+      const availableWorkbooks = await prisma.studentWorkbook.findMany({
+        where: {
+          studentId: student.id,
+          isArchived: false,
+          workbookTemplate: {
+            isActive: true,
+          },
+        },
+        include: studentWorkbookInclude,
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      const selectedWorkbook =
+        (parsed.data.studentWorkbookId
+          ? availableWorkbooks.find((workbook) => workbook.id === parsed.data.studentWorkbookId) ?? null
+          : null) ??
+        (parsed.data.grade !== undefined
+          ? availableWorkbooks.find((workbook) => workbook.workbookTemplate.grade === parsed.data.grade) ?? null
+          : availableWorkbooks[0] ?? null) ??
+        null;
+
+      if (parsed.data.studentWorkbookId && !selectedWorkbook) {
+        return apiError(404, "NOT_FOUND", "Student workbook not found");
+      }
+
+      const [nodes, progressRecords] = selectedWorkbook
+        ? await Promise.all([
+            prisma.curriculumNode.findMany({
+              where: getWorkbookCurriculumNodeWhere({
+                schoolLevel: selectedWorkbook.workbookTemplate.schoolLevel,
+                grade: selectedWorkbook.workbookTemplate.grade,
+                semester: selectedWorkbook.workbookTemplate.semester,
+              }),
+              select: {
+                id: true,
+                unitName: true,
+                unitCode: true,
+                sortOrder: true,
+              },
+              orderBy: [
+                {
+                  sortOrder: "asc",
+                },
+                {
+                  unitCode: "asc",
+                },
+              ],
+            }),
+            prisma.studentWorkbookProgress.findMany({
+              where: {
+                studentWorkbookId: selectedWorkbook.id,
+              },
+              select: {
+                curriculumNodeId: true,
+                workbookTemplateStageId: true,
+                status: true,
+                lastUpdatedAt: true,
+              },
+            }),
+          ])
+        : [[], []];
+
+      return NextResponse.json(
+        serializeWorkbookProgressDashboard(
+          buildWorkbookProgressDashboardPayload({
+            student: serializeWrongNoteStudent(student),
+            availableWorkbooks: availableWorkbooks.map(serializeStudentWorkbook),
+            selectedWorkbook,
+            nodes,
+            progressRecords,
+          }),
+        ),
+      );
+    } catch (error) {
+      if (error instanceof OwnershipError) {
+        return apiError(403, "FORBIDDEN", "Student ownership verification failed");
+      }
+
+      throw error;
+    }
+  } catch {
+    return apiError(500, "INTERNAL_SERVER_ERROR", "Unexpected server error");
+  }
+}

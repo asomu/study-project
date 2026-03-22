@@ -26,6 +26,8 @@ backups/wrong-answers/*
 !backups/wrong-answers/.gitkeep
 .turbo
 .cache
+.tmp
+apps/web/.tmp
 *.tsbuildinfo
 
 # Logs

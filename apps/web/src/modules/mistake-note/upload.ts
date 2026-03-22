@@ -1,7 +1,9 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
-import { join, resolve } from "node:path";
+import { homedir } from "node:os";
+import { dirname, extname, isAbsolute, join, resolve } from "node:path";
+import { logStorageInfo } from "@/modules/shared/structured-log";
 
 export const allowedImageMimeToExtension = {
   "image/jpeg": "jpg",
@@ -20,6 +22,10 @@ const webpRiffSignature = Buffer.from("RIFF");
 const webpFormatSignature = Buffer.from("WEBP");
 const heifBoxTypeSignature = Buffer.from("ftyp");
 const heifBrands = new Set(["heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "mif1", "msf1"]);
+const wrongNoteLegacyPublicPrefix = "/uploads/wrong-notes/";
+const defaultAppDataRootSegments = ["Library", "Application Support", "study-project"];
+const defaultAppBackupRootSegments = ["Library", "Application Support", "study-project-backups"];
+let hasLoggedWrongNoteStorageInfo = false;
 
 function normalizeRelativePath(pathValue: string) {
   return pathValue.replace(/\\/g, "/").replace(/^\.?\//, "").replace(/\/+$/, "");
@@ -29,8 +35,69 @@ export function getUploadDirectory() {
   return normalizeRelativePath(process.env.UPLOAD_DIR ?? "public/uploads/wrong-answers");
 }
 
-export function getWrongNoteUploadDirectory() {
-  return normalizeRelativePath(process.env.WRONG_NOTE_UPLOAD_DIR ?? "public/uploads/wrong-notes");
+function expandConfiguredPath(pathValue: string) {
+  const trimmed = pathValue.trim();
+
+  if (trimmed.startsWith("~/")) {
+    return resolve(homedir(), trimmed.slice(2));
+  }
+
+  if (isAbsolute(trimmed)) {
+    return resolve(trimmed);
+  }
+
+  return resolve(process.cwd(), trimmed);
+}
+
+function toDefaultAppDataRoot() {
+  return resolve(homedir(), ...defaultAppDataRootSegments);
+}
+
+function toDefaultAppBackupRoot() {
+  return resolve(homedir(), ...defaultAppBackupRootSegments);
+}
+
+export function getAppDataRoot() {
+  const configured = process.env.APP_DATA_ROOT;
+
+  if (!configured || !configured.trim()) {
+    return toDefaultAppDataRoot();
+  }
+
+  return expandConfiguredPath(configured);
+}
+
+export function getAppBackupRoot() {
+  const configured = process.env.APP_BACKUP_ROOT;
+
+  if (!configured || !configured.trim()) {
+    return toDefaultAppBackupRoot();
+  }
+
+  return expandConfiguredPath(configured);
+}
+
+export function getWrongNoteStorageRoot() {
+  const configured = process.env.WRONG_NOTE_STORAGE_ROOT;
+
+  if (configured && configured.trim()) {
+    return expandConfiguredPath(configured);
+  }
+
+  return resolve(getAppDataRoot(), "wrong-notes");
+}
+
+function logWrongNoteStorageInfoOnce() {
+  if (hasLoggedWrongNoteStorageInfo) {
+    return;
+  }
+
+  hasLoggedWrongNoteStorageInfo = true;
+  logStorageInfo("wrong_note_storage_root_resolved", {
+    appDataRoot: getAppDataRoot(),
+    wrongNoteStorageRoot: getWrongNoteStorageRoot(),
+    appBackupRoot: getAppBackupRoot(),
+  });
 }
 
 export function getStudyArtifactUploadDirectory() {
@@ -89,6 +156,107 @@ function toPublicPath(uploadDir: string, fileName: string) {
   return `/${normalized}/${fileName}`;
 }
 
+function toSafeWrongNoteStorageKey(storageKey: string) {
+  const normalized = storageKey.replace(/\\/g, "/").replace(/^\/+/, "");
+  const parts = normalized.split("/").filter(Boolean);
+
+  if (!parts.length || parts.some((part) => part === "." || part === "..")) {
+    return null;
+  }
+
+  return parts.join("/");
+}
+
+function toLegacyWrongNoteAbsolutePath(imagePath: string) {
+  if (imagePath.startsWith(wrongNoteLegacyPublicPrefix)) {
+    return resolve(process.cwd(), "public", imagePath.slice(1));
+  }
+
+  return resolve(process.cwd(), normalizeRelativePath(imagePath));
+}
+
+function toMimeTypeFromPath(pathValue: string): AllowedImageMime {
+  const extension = extname(pathValue).toLowerCase();
+
+  if (extension === ".jpg" || extension === ".jpeg") {
+    return "image/jpeg";
+  }
+
+  if (extension === ".webp") {
+    return "image/webp";
+  }
+
+  if (extension === ".heic") {
+    return "image/heic";
+  }
+
+  if (extension === ".heif") {
+    return "image/heif";
+  }
+
+  return "image/png";
+}
+
+export function isLegacyWrongNoteImagePath(imagePath: string) {
+  return imagePath.startsWith(wrongNoteLegacyPublicPrefix) || imagePath.startsWith("uploads/wrong-notes/") || imagePath.startsWith("public/uploads/wrong-notes/");
+}
+
+export function buildStudentWrongNoteImageUrl(wrongNoteId: string) {
+  return `/api/v1/student/wrong-notes/${wrongNoteId}/image`;
+}
+
+export function buildGuardianWrongNoteImageUrl(wrongNoteId: string, studentId: string) {
+  return `/api/v1/wrong-notes/${wrongNoteId}/image?${new URLSearchParams({ studentId }).toString()}`;
+}
+
+export function resolveWrongNoteImageLocation(imagePath: string) {
+  logWrongNoteStorageInfoOnce();
+
+  if (isLegacyWrongNoteImagePath(imagePath)) {
+    return {
+      kind: "legacy" as const,
+      absolutePath: toLegacyWrongNoteAbsolutePath(imagePath),
+      storageKey: null,
+    };
+  }
+
+  const storageKey = toSafeWrongNoteStorageKey(imagePath);
+
+  if (!storageKey) {
+    return null;
+  }
+
+  return {
+    kind: "storage" as const,
+    absolutePath: resolve(getWrongNoteStorageRoot(), storageKey),
+    storageKey,
+  };
+}
+
+export async function readWrongNoteImageFile(imagePath: string) {
+  const resolved = resolveWrongNoteImageLocation(imagePath);
+
+  if (!resolved) {
+    return null;
+  }
+
+  try {
+    const buffer = await readFile(resolved.absolutePath);
+
+    return {
+      buffer,
+      contentType: toMimeTypeFromPath(resolved.absolutePath),
+      ...resolved,
+    };
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT") {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
 export async function saveWrongAnswerImage(buffer: Buffer, mimeType: AllowedImageMime, wrongAnswerId: string) {
   const uploadDir = getUploadDirectory();
   const absoluteUploadDir = resolve(process.cwd(), uploadDir);
@@ -102,17 +270,21 @@ export async function saveWrongAnswerImage(buffer: Buffer, mimeType: AllowedImag
   return toPublicPath(uploadDir, fileName);
 }
 
-export async function saveWrongNoteImage(buffer: Buffer, mimeType: AllowedImageMime, wrongNoteId: string) {
-  const uploadDir = getWrongNoteUploadDirectory();
-  const absoluteUploadDir = resolve(process.cwd(), uploadDir);
+export function buildWrongNoteStorageKey(studentId: string, wrongNoteId: string, mimeType: AllowedImageMime) {
   const extension = allowedImageMimeToExtension[mimeType];
-  const fileName = `${wrongNoteId}-${Date.now()}-${randomUUID()}.${extension}`;
-  const absolutePath = join(absoluteUploadDir, fileName);
+  return `${studentId}/${wrongNoteId}/${Date.now()}-${randomUUID()}.${extension}`;
+}
 
-  await mkdir(absoluteUploadDir, { recursive: true });
+export async function saveWrongNoteImage(buffer: Buffer, mimeType: AllowedImageMime, studentId: string, wrongNoteId: string) {
+  logWrongNoteStorageInfoOnce();
+
+  const storageKey = buildWrongNoteStorageKey(studentId, wrongNoteId, mimeType);
+  const absolutePath = resolve(getWrongNoteStorageRoot(), storageKey);
+
+  await mkdir(dirname(absolutePath), { recursive: true });
   await writeFile(absolutePath, buffer);
 
-  return toPublicPath(uploadDir, fileName);
+  return storageKey;
 }
 
 export async function saveStudyWorkArtifactImage(buffer: Buffer, attemptId: string) {

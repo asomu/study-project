@@ -15,6 +15,7 @@ import {
 } from "@/modules/mistake-note/upload";
 import { apiError } from "@/modules/shared/api-error";
 import { logAccessDenied, logUploadFailure } from "@/modules/shared/structured-log";
+import { isGradeAllowedForSchoolLevel } from "@/modules/wrong-note/constants";
 import { serializeWrongNote, serializeWrongNoteList, serializeWrongNoteStudent, wrongNoteInclude } from "@/modules/wrong-note/serializers";
 import {
   buildWrongNotePagination,
@@ -25,6 +26,49 @@ import {
 import { createWrongNoteSchema, parseStudentWrongNoteListQuery } from "@/modules/wrong-note/schemas";
 
 export const runtime = "nodejs";
+
+async function getValidatedStudentWorkbookSelection(params: {
+  studentId: string;
+  studentWorkbookId: string;
+  workbookTemplateStageId: string;
+}) {
+  const studentWorkbook = await prisma.studentWorkbook.findFirst({
+    where: {
+      id: params.studentWorkbookId,
+      studentId: params.studentId,
+      isArchived: false,
+      workbookTemplate: {
+        isActive: true,
+      },
+    },
+    include: {
+      workbookTemplate: {
+        include: {
+          stages: true,
+        },
+      },
+    },
+  });
+
+  if (!studentWorkbook) {
+    return {
+      error: "studentWorkbookId is not assigned to the student",
+    } as const;
+  }
+
+  const stage = studentWorkbook.workbookTemplate.stages.find((item) => item.id === params.workbookTemplateStageId);
+
+  if (!stage) {
+    return {
+      error: "workbookTemplateStageId does not belong to the selected workbook",
+    } as const;
+  }
+
+  return {
+    studentWorkbook,
+    stage,
+  } as const;
+}
 
 export async function GET(request: Request) {
   try {
@@ -64,8 +108,14 @@ export async function GET(request: Request) {
       const student = await assertStudentLoginOwnership({
         loginUserId: session.userId,
       });
+
+      if (parsed.data.grade && !isGradeAllowedForSchoolLevel(student.schoolLevel, parsed.data.grade)) {
+        return apiError(400, "VALIDATION_ERROR", "grade is not available for the student's school level");
+      }
+
       const where = buildWrongNoteWhere({
         studentId: student.id,
+        grade: parsed.data.grade,
         semester: parsed.data.semester,
         curriculumNodeId: parsed.data.curriculumNodeId,
         reason: parsed.data.reason,
@@ -97,7 +147,11 @@ export async function GET(request: Request) {
             grade: student.grade,
           }),
           pagination: buildWrongNotePagination(page, pageSize, totalItems),
-          wrongNotes: wrongNotes.map(serializeWrongNote),
+          wrongNotes: wrongNotes.map((wrongNote) =>
+            serializeWrongNote(wrongNote, {
+              kind: "student",
+            }),
+          ),
         }),
       );
     } catch (error) {
@@ -143,22 +197,27 @@ export async function POST(request: Request) {
       }
 
       const parsed = createWrongNoteSchema.safeParse({
+        grade: formData.get("grade"),
         curriculumNodeId: formData.get("curriculumNodeId"),
         semester: formData.get("semester"),
         reason: formData.get("reason"),
         studentMemo: formData.get("studentMemo") ?? undefined,
+        studentWorkbookId: formData.get("studentWorkbookId") || undefined,
+        workbookTemplateStageId: formData.get("workbookTemplateStageId") || undefined,
       });
 
       if (!parsed.success) {
         return apiError(400, "VALIDATION_ERROR", "Invalid request", parsed.error.issues);
       }
 
+      if (!isGradeAllowedForSchoolLevel(student.schoolLevel, parsed.data.grade)) {
+        return apiError(400, "VALIDATION_ERROR", "grade is not available for the student's school level");
+      }
+
       const curriculumNode = await prisma.curriculumNode.findFirst({
         where: getWrongNoteCurriculumNodeWhere({
-          student: {
-            schoolLevel: student.schoolLevel,
-            grade: student.grade,
-          },
+          schoolLevel: student.schoolLevel,
+          grade: parsed.data.grade,
           curriculumNodeId: parsed.data.curriculumNodeId,
           semester: parsed.data.semester,
         }),
@@ -166,6 +225,31 @@ export async function POST(request: Request) {
 
       if (!curriculumNode) {
         return apiError(400, "VALIDATION_ERROR", "curriculumNodeId is not available for the student and semester");
+      }
+
+      let studentWorkbookId: string | undefined;
+      let workbookTemplateStageId: string | undefined;
+
+      if (parsed.data.studentWorkbookId && parsed.data.workbookTemplateStageId) {
+        const workbookSelection = await getValidatedStudentWorkbookSelection({
+          studentId: student.id,
+          studentWorkbookId: parsed.data.studentWorkbookId,
+          workbookTemplateStageId: parsed.data.workbookTemplateStageId,
+        });
+
+        if ("error" in workbookSelection) {
+          return apiError(400, "VALIDATION_ERROR", workbookSelection.error ?? "Invalid workbook selection");
+        }
+
+        if (
+          workbookSelection.studentWorkbook.workbookTemplate.grade !== parsed.data.grade ||
+          workbookSelection.studentWorkbook.workbookTemplate.semester !== parsed.data.semester
+        ) {
+          return apiError(400, "VALIDATION_ERROR", "Workbook template grade and semester must match the wrong-note unit");
+        }
+
+        studentWorkbookId = workbookSelection.studentWorkbook.id;
+        workbookTemplateStageId = workbookSelection.stage.id;
       }
 
       if (!isSupportedImageMime(fileCandidate.type)) {
@@ -205,7 +289,7 @@ export async function POST(request: Request) {
       }
 
       const wrongNoteId = randomUUID();
-      const imagePath = await saveWrongNoteImage(fileBuffer, fileCandidate.type, wrongNoteId);
+      const imagePath = await saveWrongNoteImage(fileBuffer, fileCandidate.type, student.id, wrongNoteId);
       const wrongNote = await prisma.wrongNote.create({
         data: {
           id: wrongNoteId,
@@ -214,13 +298,20 @@ export async function POST(request: Request) {
           reason: parsed.data.reason,
           imagePath,
           studentMemo: normalizeOptionalText(parsed.data.studentMemo),
+          studentWorkbookId,
+          workbookTemplateStageId,
         },
         include: wrongNoteInclude,
       });
 
-      return NextResponse.json(serializeWrongNote(wrongNote), {
+      return NextResponse.json(
+        serializeWrongNote(wrongNote, {
+          kind: "student",
+        }),
+        {
         status: 201,
-      });
+        },
+      );
     } catch (error) {
       if (error instanceof OwnershipError) {
         return apiError(403, "FORBIDDEN", "Student profile linkage verification failed");

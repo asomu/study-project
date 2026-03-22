@@ -76,7 +76,12 @@ export async function PUT(request: Request, context: RouteContext) {
       include: wrongNoteInclude,
     });
 
-    return NextResponse.json(serializeWrongNote(updated));
+    return NextResponse.json(
+      serializeWrongNote(updated, {
+        kind: "guardian",
+        studentId: updated.student.id,
+      }),
+    );
   } catch {
     return apiError(500, "INTERNAL_SERVER_ERROR", "Unexpected server error");
   }

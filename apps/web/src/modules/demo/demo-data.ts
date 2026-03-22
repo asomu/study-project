@@ -6,7 +6,7 @@ import { getUploadDirectory } from "../mistake-note/upload";
 
 export const DEMO_GUARDIAN_EMAIL = "guardian@example.com";
 export const DEMO_STUDENT_ID = "11111111-1111-4111-8111-111111111111";
-export const DEMO_CURRICULUM_VERSION = "2026.01";
+export const DEMO_CURRICULUM_VERSION = "2022.12";
 
 const demoCurriculumNodes = [
   {
@@ -24,7 +24,7 @@ const demoCurriculumNodes = [
   {
     id: "22222222-2222-4222-8222-222222222224",
     unitCode: "M1-S1-U3",
-    unitName: "문자와 식",
+    unitName: "문자의 사용과 식",
     sortOrder: 3,
   },
   {
@@ -474,7 +474,7 @@ async function ensureDemoCurriculumNodes(client: PrismaClient) {
         unitCode: node.unitCode,
         unitName: node.unitName,
         sortOrder: node.sortOrder,
-        activeFrom: new Date("2026-01-01T00:00:00.000Z"),
+        activeFrom: new Date("2025-03-01T00:00:00.000Z"),
         activeTo: null,
       },
       create: {
@@ -487,7 +487,7 @@ async function ensureDemoCurriculumNodes(client: PrismaClient) {
         unitCode: node.unitCode,
         unitName: node.unitName,
         sortOrder: node.sortOrder,
-        activeFrom: new Date("2026-01-01T00:00:00.000Z"),
+        activeFrom: new Date("2025-03-01T00:00:00.000Z"),
         activeTo: null,
       },
     });

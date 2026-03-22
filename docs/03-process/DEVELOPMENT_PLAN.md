@@ -1,7 +1,7 @@
 # Development Plan
 
-- Plan Version: v1.1
-- Last Updated: 2026-03-21
+- Plan Version: v1.2
+- Last Updated: 2026-03-22
 
 ## 1. Milestones
 
@@ -15,61 +15,60 @@
 8. M7: 학습 콘텐츠 Authoring UI 완료
 9. M8: 보호자 통합 Study Dashboard 완료
 10. M9: Wrong Note-first Service Rebuild 완료
+11. M10: Workbook Progress + Wrong Note Workbook Link 완료
 
 ## 2. Current Product Direction
 
 - 현재 기본 제품 경험은 학생/보호자 오답노트 대시보드다.
-- 신규 기능과 분석은 `WrongNote`를 기준으로 확장한다.
+- 신규 기능과 분석은 `WrongNote`와 `Workbook`을 기준으로 확장한다.
 - 레거시 `attempt / wrong-answer / study` 흐름은 코드베이스에 남아 있어도 현재 제품 로드맵의 중심이 아니다.
 
-## 3. M9 Scope Lock (2026-03-21)
+## 3. M10 Scope Lock (2026-03-22)
 
 포함 범위:
 
-- 신규 1급 엔티티 `WrongNote`
-  - `studentId`
-  - `curriculumNodeId`
-  - `reason`
-  - `imagePath`
-  - `studentMemo`
-  - `guardianFeedback`
-  - `guardianFeedbackByUserId`
-  - `guardianFeedbackAt`
-  - `deletedAt`
-- 학생 대시보드 `/student/dashboard`를 오답노트 홈으로 교체
-  - 업로드 폼
-  - KPI 카드
-  - 상위 단원 분포
-  - 필터 + 카드 리스트
-  - 상세 드로어
-  - 수정/삭제/이미지 교체
-- 보호자 대시보드 `/dashboard`를 오답노트 허브로 교체
-  - 학생 선택
-  - KPI 카드
-  - 상위 단원 분포
-  - 필터 + 카드 리스트
-  - 상세 드로어
-  - 수동 피드백 저장
+- 신규 Workbook 도메인
+  - `WorkbookTemplate`
+  - `WorkbookTemplateStage`
+  - `StudentWorkbook`
+  - `StudentWorkbookProgress`
+- 보호자 UI 직접 입력 문제집 템플릿
+  - 문제집 이름
+  - 출판사
+  - 학교급
+  - 대상 학년
+  - 학기
+  - 단계 목록 추가/삭제/순서 변경
+- 학생 배정
+  - guardian-owned template를 학생에게 배정
+  - 배정 보관/복구
+- 학생/보호자 공통 workbook progress 대시보드
+  - `대상 학년`, `문제집` 컨트롤
+  - summary KPI
+  - 단원별 완료 단계 수 bar chart
+  - `단원 x 단계` matrix
+  - 셀 클릭 즉시 상태 변경
+- wrong-note workbook 연동
+  - `studentWorkbookId`
+  - `workbookTemplateStageId`
+  - workbook을 고르면 해당 학년/학기 자동 고정
 - 신규 API
-  - `POST /api/v1/student/wrong-notes`
-  - `GET /api/v1/student/wrong-notes/dashboard`
-  - `GET /api/v1/student/wrong-notes`
-  - `GET /api/v1/student/wrong-notes/{id}`
-  - `PATCH /api/v1/student/wrong-notes/{id}`
-  - `POST /api/v1/student/wrong-notes/{id}/image`
-  - `DELETE /api/v1/student/wrong-notes/{id}`
-  - `GET /api/v1/wrong-notes/dashboard`
-  - `GET /api/v1/wrong-notes`
-  - `GET /api/v1/wrong-notes/{id}`
-  - `PUT /api/v1/wrong-notes/{id}/feedback`
-- 레거시 페이지 정리
-  - `/student/wrong-answers` -> `/student/dashboard`
-  - `/wrong-answers/manage` -> `/dashboard`
+  - `GET /api/v1/workbook-templates`
+  - `POST /api/v1/workbook-templates`
+  - `PATCH /api/v1/workbook-templates/{id}`
+  - `GET /api/v1/student-workbooks`
+  - `POST /api/v1/student-workbooks`
+  - `PATCH /api/v1/student-workbooks/{id}`
+  - `GET /api/v1/student/workbook-progress/dashboard`
+  - `GET /api/v1/workbook-progress/dashboard`
+  - `PUT /api/v1/student/workbook-progress`
+  - `PUT /api/v1/workbook-progress`
 - 문서 동기화
   - `PRD`
   - `SYSTEM_ARCHITECTURE`
   - `DATA_MODEL`
   - `API_SPEC_V1`
+  - `DEVELOPMENT_PLAN`
   - `DECISION_LOG`
   - `PROJECT_STATUS`
   - `HANDOFF`
@@ -77,27 +76,32 @@
 
 비포함 범위:
 
+- workbook template import/export
+- workbook 단계 구조 배정 후 수정
+- workbook 진도 히스토리/일별 로그
 - OCR
 - 자동 피드백
 - PDF/주간 브리프
 - 재도전 상태 추적
 - 기존 `WrongAnswer` 데이터 이전
 
-## 4. M9 Validation Plan
+## 4. M10 Validation Plan
 
 - Unit
-  - reason enum 매핑
-  - 대시보드 요약/상위 단원 계산
-  - soft delete 제외 규칙
+  - workbook stage 정렬/중복 검증
+  - matrix 기본값 `not_started`
+  - summary/bar 집계
 - Route-contract
-  - 학생 생성/조회/수정/삭제 권한
-  - 보호자 조회/피드백 권한
-  - 필수 사진, 잘못된 학기/단원, MIME/용량/시그니처 검증
+  - guardian template/assignment 권한
+  - student/guardian workbook progress ownership
+  - wrong-note workbook linkage validation
 - Real integration
-  - 학생 업로드 -> DB 저장 -> 대시보드 반영
-  - 보호자 피드백 -> 학생 재조회 반영
+  - 보호자 template 생성 -> 학생 배정 -> 학생 상태 변경 -> 보호자 반영
+  - wrong-note create/update에 workbook linkage 저장
 - E2E
-  - mocked dashboard regression
+  - guardian template 등록
+  - 학생 진도 상태 변경
+  - wrong-note에 workbook/stage 연결
   - real smoke
 
 ## 5. Deferred Backlog
@@ -114,3 +118,10 @@
 - 반복 오답 추적과 재도전 상태
 - 피드백 템플릿
 - 다과목 확장
+
+### Workbook 후속 범위
+
+- 템플릿 JSON import/export
+- 단계 구조 템플릿 편집기 고도화
+- 진도 변경 히스토리/활동 로그
+- 정체 단원 알림/추천
