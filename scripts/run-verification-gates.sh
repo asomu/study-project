@@ -151,7 +151,7 @@ run_pr_mode() {
   changed_files="$(resolve_changed_files)"
 
   if [[ -n "$changed_files" ]]; then
-    if printf '%s\n' "$changed_files" | grep -Eq '^apps/web/src/app/api/v1/(student/)?wrong-notes|^apps/web/src/components/wrong-notes/|^apps/web/src/modules/wrong-note/|^apps/web/src/app/\(protected\)/(dashboard|student/dashboard)/'; then
+    if printf '%s\n' "$changed_files" | grep -Eq '^apps/web/src/app/api/v1/(student/)?wrong-notes|^apps/web/src/app/api/v1/student-workbooks/|^apps/web/src/app/api/v1/(student/)?workbook-progress/|^apps/web/src/app/api/v1/workbook-templates/|^apps/web/src/components/wrong-notes/|^apps/web/src/modules/wrong-note/|^apps/web/src/modules/workbook/|^apps/web/src/app/\(protected\)/(dashboard|student/dashboard)/'; then
       run_wrong_note_e2e="true"
     fi
   fi

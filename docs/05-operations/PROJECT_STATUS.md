@@ -187,3 +187,7 @@
 - 2026-03-22: 기술 스택 심화 학습 문서 보강
   - `JWT + 권한 흐름`, `Prisma 데이터 모델`, `Workbook progress matrix` 심화 노트 추가
   - `docs/07-learning/TECH_EXPLAINER_INDEX.md`에 후속 학습 순서 반영
+- 2026-03-22: workbook contract hardening review closeout 완료
+  - inactive workbook template은 학생 배정에서 차단하도록 API 계약을 보강
+  - student/guardian workbook progress dashboard는 잘못된 `studentWorkbookId` 요청에 fallback 대신 `404`를 반환하도록 수정
+  - workbook integration test, targeted lint/typecheck, PR verification gate path filter를 재검증

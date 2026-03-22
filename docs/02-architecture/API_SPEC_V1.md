@@ -358,6 +358,7 @@ response:
 - rules:
   - guardian 소유 student만 가능
   - guardian 소유 template만 가능
+  - inactive template은 배정할 수 없다
   - schoolLevel이 student와 일치해야 한다
   - 동일 template 중복 배정 불가
 - response: `201 studentWorkbook`
@@ -376,7 +377,7 @@ response:
   - `grade` (optional)
   - `studentWorkbookId` (optional)
 - selection rules:
-  - `studentWorkbookId`가 있으면 그 workbook 우선
+  - `studentWorkbookId`가 있으면 그 workbook만 조회하고, 없으면 `404`
   - 없고 `grade`가 있으면 그 학년에 맞는 배정 workbook만 선택
   - `grade`에 맞는 workbook이 없으면 `selectedWorkbook = null`
   - `grade`가 없을 때만 첫 active workbook 선택
@@ -395,6 +396,8 @@ response:
   - `studentId` (required)
   - `grade` (optional)
   - `studentWorkbookId` (optional)
+- selection rules:
+  - student endpoint와 동일
 - response:
   - student endpoint와 동일 shape
 

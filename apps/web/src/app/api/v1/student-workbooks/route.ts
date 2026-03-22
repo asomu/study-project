@@ -110,11 +110,16 @@ export async function POST(request: Request) {
         select: {
           id: true,
           schoolLevel: true,
+          isActive: true,
         },
       });
 
       if (!workbookTemplate) {
         return apiError(404, "NOT_FOUND", "Workbook template not found");
+      }
+
+      if (!workbookTemplate.isActive) {
+        return apiError(400, "VALIDATION_ERROR", "Inactive workbook templates cannot be assigned");
       }
 
       if (workbookTemplate.schoolLevel !== student.schoolLevel) {

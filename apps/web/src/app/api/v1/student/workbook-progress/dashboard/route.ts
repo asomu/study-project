@@ -55,17 +55,18 @@ export async function GET(request: Request) {
         },
       });
 
-      const selectedWorkbook =
-        (parsed.data.studentWorkbookId
-          ? availableWorkbooks.find((workbook) => workbook.id === parsed.data.studentWorkbookId) ?? null
-          : null) ??
-        (parsed.data.grade !== undefined
-          ? availableWorkbooks.find((workbook) => workbook.workbookTemplate.grade === parsed.data.grade) ?? null
-          : availableWorkbooks[0] ?? null) ??
-        null;
+      let selectedWorkbook = null;
 
-      if (parsed.data.studentWorkbookId && !selectedWorkbook) {
-        return apiError(404, "NOT_FOUND", "Student workbook not found");
+      if (parsed.data.studentWorkbookId) {
+        selectedWorkbook = availableWorkbooks.find((workbook) => workbook.id === parsed.data.studentWorkbookId) ?? null;
+
+        if (!selectedWorkbook) {
+          return apiError(404, "NOT_FOUND", "Student workbook not found");
+        }
+      } else if (parsed.data.grade !== undefined) {
+        selectedWorkbook = availableWorkbooks.find((workbook) => workbook.workbookTemplate.grade === parsed.data.grade) ?? null;
+      } else {
+        selectedWorkbook = availableWorkbooks[0] ?? null;
       }
 
       const [nodes, progressRecords] = selectedWorkbook

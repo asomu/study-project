@@ -35,6 +35,7 @@ vi.mock("@/lib/prisma", () => ({
 import { prisma } from "@/lib/prisma";
 import { PUT as PUT_STUDENT_WORKBOOK_PROGRESS } from "@/app/api/v1/student/workbook-progress/route";
 import { GET as GET_STUDENT_WORKBOOK_PROGRESS_DASHBOARD_PAGE } from "@/app/api/v1/student/workbook-progress/dashboard/route";
+import { GET as GET_GUARDIAN_WORKBOOK_PROGRESS_DASHBOARD_PAGE } from "@/app/api/v1/workbook-progress/dashboard/route";
 import { POST as POST_WORKBOOK_TEMPLATES } from "@/app/api/v1/workbook-templates/route";
 import { POST as POST_STUDENT_WORKBOOKS } from "@/app/api/v1/student-workbooks/route";
 
@@ -196,6 +197,7 @@ describe("workbook routes", () => {
     mockedWorkbookTemplateFindFirst.mockResolvedValue({
       id: "template-1",
       schoolLevel: "middle",
+      isActive: true,
     } as never);
     mockedStudentWorkbookFindUnique.mockResolvedValue(null as never);
     mockedStudentWorkbookCreate.mockResolvedValue(studentWorkbookRecord as never);
@@ -223,6 +225,36 @@ describe("workbook routes", () => {
     expect(response.status).toBe(201);
     expect(body.id).toBe("student-workbook-1");
     expect(body.template.title).toBe("개념원리 베이직 1-1");
+  });
+
+  it("rejects assigning an inactive workbook template", async () => {
+    const authCookie = await createAuthCookie(UserRole.guardian);
+    mockedFindStudent.mockResolvedValue(linkedStudent as never);
+    mockedWorkbookTemplateFindFirst.mockResolvedValue({
+      id: "template-1",
+      schoolLevel: "middle",
+      isActive: false,
+    } as never);
+
+    const response = await POST_STUDENT_WORKBOOKS(
+      new Request("http://localhost/api/v1/student-workbooks", {
+        method: "POST",
+        headers: {
+          cookie: authCookie,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          studentId: "student-1",
+          workbookTemplateId: "template-1",
+        }),
+      }),
+    );
+    const body = (await response.json()) as { error: { code: string; message: string } };
+
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe("VALIDATION_ERROR");
+    expect(body.error.message).toContain("Inactive workbook templates");
+    expect(mockedStudentWorkbookCreate).not.toHaveBeenCalled();
   });
 
   it("builds workbook dashboard with not_started defaults", async () => {
@@ -289,6 +321,44 @@ describe("workbook routes", () => {
     expect(body.summary.completedCount).toBe(0);
     expect(body.summary.notStartedCount).toBe(0);
     expect(body.units).toEqual([]);
+  });
+
+  it("returns 404 when the student requests an unavailable workbook id", async () => {
+    const authCookie = await createAuthCookie(UserRole.student);
+    mockedFindStudent.mockResolvedValue(linkedStudent as never);
+    mockedStudentWorkbookFindMany.mockResolvedValue([studentWorkbookRecord] as never);
+
+    const response = await GET_STUDENT_WORKBOOK_PROGRESS_DASHBOARD_PAGE(
+      new Request("http://localhost/api/v1/student/workbook-progress/dashboard?studentWorkbookId=missing-workbook", {
+        method: "GET",
+        headers: {
+          cookie: authCookie,
+        },
+      }),
+    );
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe("NOT_FOUND");
+  });
+
+  it("returns 404 when the guardian requests an unavailable workbook id", async () => {
+    const authCookie = await createAuthCookie(UserRole.guardian);
+    mockedFindStudent.mockResolvedValue(linkedStudent as never);
+    mockedStudentWorkbookFindMany.mockResolvedValue([studentWorkbookRecord] as never);
+
+    const response = await GET_GUARDIAN_WORKBOOK_PROGRESS_DASHBOARD_PAGE(
+      new Request("http://localhost/api/v1/workbook-progress/dashboard?studentId=student-1&studentWorkbookId=missing-workbook", {
+        method: "GET",
+        headers: {
+          cookie: authCookie,
+        },
+      }),
+    );
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe("NOT_FOUND");
   });
 
   it("updates workbook progress for a valid student workbook cell", async () => {
