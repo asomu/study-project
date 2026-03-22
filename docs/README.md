@@ -8,7 +8,7 @@
 - `02-architecture`: 시스템/데이터/API 설계
 - `03-process`: 개발 프로세스, 계획, 프롬프트 템플릿
 - `04-quality`: 테스트/검증/리뷰 기준
-- `05-operations`: 상태 추적, 핸드오프, 의사결정 로그
+- `05-operations`: 상태 추적, 핸드오프, 의사결정 로그, 운영/사용 가이드
 - `06-data`: 외부 수집 데이터(원본/가공본)
 - `07-learning`: 기술 설명 노트, 학습용 인덱스, explainer 템플릿
 
@@ -17,6 +17,7 @@
 - 문서 인덱스: `/Users/mark/Documents/project/study-project/docs/INDEX.md`
 - 현재 제품 요약: `/Users/mark/Documents/project/study-project/docs/CONTEXT_INDEX.md`
 - 진행 상태: `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
+- 사용자 가이드: `/Users/mark/Documents/project/study-project/docs/05-operations/USER_GUIDE.md`
 - 운영 체크리스트: `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`
 - 데모 운영 런북: `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`
 - 검증 플랜: `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`

@@ -9,16 +9,15 @@
 - Overall Progress: 100%
 - Current Focus:
   - workbook progress UI/API 운영 안정화
-  - guardian workbook template 관리 UX polish 여부 결정
-  - repo 밖 wrong-note 저장소와 guarded image API 운영 안정화
-  - storage audit / backup 루틴 고정
-  - 모바일 업로드/상세 드로어 수동 QA
+  - wrong-note workspace async request race hardening 반영 확인
+  - wrong-note storage audit baseline과 backup verification 운영 반영
+  - current WrongNote + Workbook demo seed 재정비 여부 결정
   - 후속 범위(OCR/자동 피드백/리포트) 우선순위 정리
 - Top Risks:
-  - guardian workbook template 수정 UX는 현재 prompt 기반이라 운영 편의 개선 여지가 있다.
+  - isolated QA schema 기준 guardian/student wrong-note workspace의 이미지 업로드, 상세 dialog, 보호자 피드백 저장은 통과했지만, heavy QA 세션에서 async fetch fan-out이 관찰돼 stale request abort를 반영했다. 실기기 follow-up에서 잔여 노이즈를 계속 관찰해야 한다.
+  - 2026-03-22 storage audit baseline은 `wrongNoteCount=1`, `missingCount=1`, `orphanCount=0`이며, 누락 1건은 unrecoverable legacy `/uploads/wrong-notes/...` 경로다.
   - OCR, 자동 피드백, 재도전 상태 추적은 아직 없다.
   - 레거시 `wrong-answer`/`study` 기능이 코드베이스에 남아 있어 추가 정리 판단이 필요하다.
-  - 기존 `public/uploads/wrong-notes`에 저장되었다가 이미 유실된 파일은 자동 복구되지 않는다.
 
 Source:
 
@@ -42,6 +41,7 @@ Source:
 | 데이터 모델 | `/Users/mark/Documents/project/study-project/docs/02-architecture/DATA_MODEL.md` | `wrong_notes`, `workbook_*` 스키마와 파생 규칙 확인 |
 | 현재 진행률/다음 액션 | `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` | 이번 세션 우선순위와 리스크 확인 |
 | 결정 히스토리 | `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` | WrongNote 전환과 Workbook 도메인 분리 결정 이유 추적 |
+| 실제 사용 순서 | `/Users/mark/Documents/project/study-project/docs/05-operations/USER_GUIDE.md` | 보호자/학생 현재 사용 플로우 확인 |
 | 세션 연속성 | `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md` | 직전 세션 완료 항목과 다음 액션 확인 |
 | 일정/범위 락 | `/Users/mark/Documents/project/study-project/docs/03-process/DEVELOPMENT_PLAN.md` | M10 범위와 검증 계획 확인 |
 | 테스트 전략 | `/Users/mark/Documents/project/study-project/docs/04-quality/TEST_AND_VALIDATION.md` | Hybrid TDD 게이트와 E2E 기준 확인 |

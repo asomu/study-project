@@ -24,7 +24,7 @@ export function AppShell({ title, subtitle, session, children }: AppShellProps) 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-slate-50">
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-4xl items-start justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-6">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-medium text-slate-600">{subtitle}</p>
@@ -48,7 +48,9 @@ export function AppShell({ title, subtitle, session, children }: AppShellProps) 
               ))}
             </nav>
           </div>
-          <LogoutButton />
+          <div className="self-end sm:self-auto">
+            <LogoutButton />
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">{children}</main>

@@ -54,9 +54,16 @@ pnpm -C apps/web demo:seed
 pnpm -C apps/web demo:clear
 ```
 
-- `demo:seed`는 기존 `기본 학생` 범위의 학습 데이터만 지우고, 최근 4주 데모용 기록/오답/대시보드 데이터를 다시 채웁니다.
-- `demo:clear`는 같은 학생 범위의 데모 학습 데이터와 업로드 파일만 정리합니다.
+- `demo:seed`는 현재 legacy `attempt / wrong-answer` 데모 데이터만 다시 채웁니다.
+- `demo:clear`는 같은 legacy 데모 데이터와 업로드 파일만 정리합니다.
 - `DEMO_REFERENCE_DATE=YYYY-MM-DD pnpm -C apps/web demo:seed`로 기준일을 고정할 수 있습니다.
+- 현재 제품의 WrongNote + Workbook 데모는 수동 준비가 기준이며 `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`를 따릅니다.
+
+## Current Product Guides
+
+- 사용자 가이드: `/Users/mark/Documents/project/study-project/docs/05-operations/USER_GUIDE.md`
+- 수동 QA 체크리스트: `/Users/mark/Documents/project/study-project/docs/04-quality/USER_E2E_MANUAL_CHECKLIST.md`
+- 데모 런북: `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`
 
 ## LAN Demo Start
 

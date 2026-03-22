@@ -1,5 +1,9 @@
 # Test and Validation Strategy
 
+- Last Updated: 2026-03-22
+- Scope: Wrong-note-first + workbook-progress private beta
+- Audience: 개발자 / 리뷰어 / 운영자
+
 ## 1. 테스트 접근 방식
 
 권장: Hybrid TDD
@@ -11,93 +15,125 @@
 
 ## 2. 왜 Hybrid TDD인가
 
-- 전면 TDD는 UI 변경 속도를 저해할 수 있음
-- 분석/계산/판정 로직은 TDD가 높은 품질 이점 제공
-- 대시보드는 통합/E2E로 신뢰도 확보가 효율적
+- 전면 TDD는 화면 조합이 많은 대시보드 작업 속도를 과도하게 늦출 수 있다.
+- `WrongNote`와 `Workbook`의 계산/검증/권한 로직은 TDD가 회귀 방지 효과가 크다.
+- 학생/보호자 대시보드는 통합/E2E로 한 번 더 검증하는 편이 운영 신뢰도에 유리하다.
 
-## 3. 테스트 레벨
+## 3. 현재 핵심 검증 대상
+
+- 학생 WrongNote 생성/조회/수정/삭제
+- 보호자 WrongNote 조회/피드백 저장
+- WrongNote chart, filter, guarded image API
+- repo 밖 wrong-note 저장소와 legacy path 호환
+- Workbook template 생성/활성 관리
+- Student workbook 배정/보관
+- workbook progress KPI, 단원별 bar chart, `단원 x 단계` matrix
+- wrong-note workbook linkage와 grade/semester/stage 검증
+- 학생/보호자 role guard 및 ownership chain
+- 레거시 wrong-answer/study surface의 redirect 동작
+
+## 4. 테스트 레벨
 
 1. Unit
-- 성취도 계산, 카테고리 집계, 우선순위 로직
+- wrong-note serializer/service validation
+- workbook stage 정렬/중복 검증
+- matrix 기본값 `not_started`
+- summary/bar 집계
+- wrong-note storage root/path 해석과 legacy image path 호환
 
 2. Route-contract
 - Next route handler의 요청/응답/에러 코드 계약 검증
 - Prisma/외부 의존성은 mock 처리
+- 주요 대상:
+  - `/api/v1/student/wrong-notes*`
+  - `/api/v1/wrong-notes*`
+  - `/api/v1/workbook-templates*`
+  - `/api/v1/student-workbooks*`
+  - `/api/v1/student/workbook-progress*`
+  - `/api/v1/workbook-progress*`
 
 3. Real Integration
 - PostgreSQL + Prisma + migration/seed 기준으로 API + DB + 업로드 흐름 검증
+- wrong-note/workbook end-to-end persistence
+- current curriculum version selection과 storage 동작 검증
 
 4. E2E
-- mocked UI regression: 핵심 화면 상호작용/쿼리 파라미터 회귀
-- real smoke: 로그인 -> 입력 -> 오답 관리 -> 대시보드 반영
+- mocked UI regression: `tests/e2e/wrong-note-dashboard.spec.ts`
+- real smoke: `tests/e2e/wrong-note-real-smoke.spec.ts`
+- 현재 E2E surface는 wrong-note workspace 안의 workbook progress UI까지 함께 검증한다.
 
-## 4. 도구
+## 5. 도구
 
 - Unit/Route-contract/Real Integration: Vitest
 - E2E: Playwright
-- Quality: ESLint, Prettier, TypeScript strict mode
+- Quality: ESLint, TypeScript, Next build, doc link checker
 
-## 5. 품질 게이트
+## 6. 품질 게이트
 
 - PR 기준
-  - `pnpm lint` pass
-  - `pnpm typecheck` pass
-  - `pnpm build` pass
-  - `pnpm test` pass (unit + integration)
-  - `bash scripts/check-doc-links.sh` pass
+  - `pnpm verify:pr`
+  - 기본 세트: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `bash scripts/check-doc-links.sh`
+  - changed-path rule: 현재 스크립트는 wrong-note/dashboard workspace 변경 시 `tests/e2e/wrong-note-dashboard.spec.ts`를 추가 실행한다.
 - 릴리즈 기준
-  - PR 기준 전체 pass
-  - `pnpm test:e2e` pass
-  - 치명도 높은 버그 0건
+  - `pnpm verify:release`
+  - 기본 세트: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm test:e2e`
+  - 운영 세트: `pnpm -C apps/web run wrong-note:storage:audit -- --json`, `bash scripts/check-doc-links.sh`
+  - storage/backup directory 존재 여부와 2GB threshold를 함께 확인한다.
 
-### 5.1 실행 명령 표준화
+### 6.1 실행 명령 표준화
 
 - PR 스모크 게이트: `pnpm verify:pr`
 - 릴리즈 풀회귀 게이트: `pnpm verify:release`
-- 상세 계획/시나리오: `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`
-- 수동 사용자 검증 체크리스트: `/Users/mark/Documents/project/study-project/docs/04-quality/USER_E2E_MANUAL_CHECKLIST.md`
+- 상세 게이트 설명: `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`
+- 수동 검증 체크리스트: `/Users/mark/Documents/project/study-project/docs/04-quality/USER_E2E_MANUAL_CHECKLIST.md`
+- 운영/시연 절차: `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`
 
-## 6. M4 회귀 게이트 고정 세트 (2026-02-28)
+## 7. 현재 고정 회귀 세트 (2026-03-22 baseline)
 
-- dashboard 경계/권한 케이스
-  - `GET /api/v1/dashboard/overview`: 기본 날짜, 학기 경계, 빈 커리큘럼
-  - `GET /api/v1/dashboard/weakness`: `401/403/400` 및 기간별 집계 경계
-  - `GET /api/v1/dashboard/trends`: 부분 주간 버킷, `rangeEnd` 단독 입력, 날짜 경계
-- 입력 -> 대시보드 반영 흐름
-  - `records -> wrong-answers -> dashboard` E2E 데이터 반영 회귀
-  - 대시보드 필터 변경 시 API 쿼리 파라미터 반영 회귀
-- 오답 카테고리 저장/해제 흐름
-  - 카테고리 다중 선택 저장
-  - 빈 배열 저장 시 카테고리 맵핑 삭제
-  - 저장 결과가 조회/대시보드 분포에 반영되는지 확인
+- student wrong-note create/list/dashboard/chart/detail/update/delete
+- guardian wrong-note dashboard/list/detail/feedback/image
+- selected grade/semester/unit validation
+- workbook template create/update/activate
+- student workbook assignment/archive
+- workbook progress dashboard, KPI, bar chart, matrix status cycle
+- wrong-note workbook linkage validation
+- missing image placeholder + legacy image path compatibility
+- 레거시 redirect surface
 
-## 7. 오답 기능 검증 포인트
+## 8. 권한/데이터 리스크 검증 포인트
 
-- 이미지 업로드 실패/재시도
-- MIME 허용이더라도 파일 시그니처가 다르면 업로드 거부
-- 카테고리 복수 선택 정확성
-- 오답 수정/삭제 후 분석 반영 일관성
-
-## 8. 권한/버전 리스크 검증 포인트
-
-- 보호자 A가 보호자 B의 `studentId`로 요청 시 403 반환
-- `attemptId/materialId/wrongAnswerId` 경유 요청의 소유권 체인 검증
-- `asOfDate` 기준 커리큘럼 버전 선택 정확성
-- `curriculumVersion` 명시 시 해당 버전 우선 적용
+- 보호자 A가 보호자 B의 `studentId`로 요청 시 `403` 또는 `404`
+- 학생이 다른 학생의 `wrongNoteId` 또는 `studentWorkbookId`를 사용할 수 없어야 한다.
+- workbook을 선택한 wrong-note는 stage가 필수이며 grade/semester가 workbook template과 일치해야 한다.
+- 빈 문자열 피드백 저장 시 기존 피드백이 제거되어야 한다.
+- MIME이 허용되어도 파일 시그니처가 다르면 업로드를 거부해야 한다.
+- `asOfDate` 기준 커리큘럼 버전 선택이 현재 적용 학년과 일치해야 한다.
 
 ## 9. FR-테스트 추적 규칙
 
-- FR-001/003/004/005/006은 Unit + Route-contract + Real Integration으로 기본 검증한다.
-- FR-002/007/008은 Route-contract + Real Integration + E2E 스모크를 포함한다.
-- PR마다 변경된 FR ID를 PR 설명에 기록하고, 대응 테스트를 연결한다.
+- FR-001/003/004/005/006/007A/013은 Unit + Route-contract + Real Integration으로 기본 검증한다.
+- FR-002A/002B/002C/004A/004B/004C는 Unit + Route-contract + mocked E2E를 포함한다.
+- FR-007/008/009/010/011/012는 Route-contract + Real Integration + smoke를 포함한다.
+- PR마다 변경된 FR ID를 PR 설명에 기록하고 대응 테스트를 연결한다.
 
 ## 10. 분류 규칙
 
+- `tests/unit`: 도메인/계산/validation
 - `tests/integration`: mocked route-contract
 - `tests/real-integration`: Prisma + PostgreSQL real integration
 - `tests/e2e/*.spec.ts`: mocked UI regression
-- `tests/e2e/real-smoke.spec.ts`: 실서버/실DB smoke
+- `tests/e2e/wrong-note-real-smoke.spec.ts`: 실서버/실DB smoke
 
-## 11. Deferred Scope
+## 11. 수동 검증 문서 연결
 
-- 리포트 산출물과 약점 우선순위 추천은 M5 계약/테스트 케이스로만 유지하고 현재 릴리즈 게이트에는 포함하지 않는다.
+- 사용자 핵심 루프 수동 QA: `/Users/mark/Documents/project/study-project/docs/04-quality/USER_E2E_MANUAL_CHECKLIST.md`
+- 보호자/학생 실제 사용 흐름: `/Users/mark/Documents/project/study-project/docs/05-operations/USER_GUIDE.md`
+- 데모 준비/시연: `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`
+
+## 12. Deferred Scope
+
+- OCR
+- 자동 피드백
+- 재도전 상태 추적
+- PDF/주간 리포트
+- legacy `dashboard/overview|weakness|trends` 계열은 현재 기본 제품 게이트가 아니라 호환/잔존 코드로만 본다.

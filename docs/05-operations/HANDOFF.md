@@ -3,6 +3,45 @@
 ## Latest Update (2026-03-22)
 
 - Done:
+  - Study Code Cleanup verification follow-up 완료
+    - `WrongNoteWorkspace`의 abort-safe fetch에서 `response.json()` abort를 삼켜 `null payload` 런타임 크래시로 이어질 수 있던 경로를 `readJsonOrNull` helper로 정리
+    - 상세 드로어 fetch를 abort-safe하게 보강하고 detail 삭제 실패를 dialog-local error로 정리
+    - mocked e2e의 학생 업로드 selector를 현재 `선택 입력` 구조에 맞게 재고정하고 guardian stale-card regression test 타입을 정리
+    - `eslint.config.mjs`에 `test-results/**` ignore를 추가해 Playwright 산출물이 lint 입력에 섞이지 않게 정리
+    - `pnpm -C apps/web lint`
+    - `pnpm -C apps/web typecheck`
+    - `pnpm -C apps/web test:e2e:mocked`
+  - wrong-note storage audit baseline + backup verification 완료
+    - `pnpm -C apps/web run wrong-note:storage:audit -- --json` 실행 결과 `wrongNoteCount=1`, `missingCount=1`, `orphanCount=0`
+    - 누락 1건은 legacy `/uploads/wrong-notes/...` 경로이며 자동 복구 대상이 아님을 baseline으로 기록
+    - `pnpm -C apps/web run wrong-note:storage:backup` 실행으로 app backup root archive 생성 확인
+    - `OPERATIONS_CHECKLIST`에 audit cadence / pass criteria / escalation rule을 추가
+    - `bash scripts/check-doc-links.sh`
+  - mobile deep interaction QA + async request hardening 완료
+    - isolated QA schema 기준 학생 이미지 업로드, 학생 상세 메모 저장, 보호자 피드백 저장을 모바일 실브라우저로 검증
+    - 상세 dialog 상단에서 background fetch 실패가 글로벌 배너로 섞여 보이지 않도록 detail-local message/error 상태를 분리
+    - wrong-note workspace의 workspace/chart/workbook reload가 stale request를 abort하고 stable student primitive 기준으로만 재호출되도록 하드닝
+    - `pnpm -C apps/web typecheck`
+    - `pnpm -C apps/web lint`
+    - `pnpm -C apps/web exec playwright test --config tests/e2e/playwright.config.ts tests/e2e/wrong-note-dashboard.spec.ts`
+    - `pnpm -C apps/web build`
+    - `bash scripts/check-doc-links.sh`
+  - mobile QA follow-up 완료
+    - 360px/390px 기준 guardian/student wrong-note workspace를 실제 브라우저로 점검
+    - 공통 `AppShell` 헤더를 모바일 세로 스택으로 바꾸고 `로그아웃` 버튼 줄바꿈을 제거
+    - `.next-*` QA dist 디렉터리 ignore 규칙을 일반화
+    - `pnpm -C apps/web typecheck`
+    - `pnpm -C apps/web lint`
+  - wrong-note/workbook UX polish follow-up 완료
+    - guardian workbook template 제목/출판사 수정을 `prompt`가 아니라 inline editor로 교체
+    - 학생 빠른 업로드를 기본 입력과 선택 입력 접기 구조로 단순화
+    - guardian dashboard를 `학생 보기` / `문제집 관리` 모드로 분리
+    - workbook matrix에 모바일 카드형 대안을 추가
+    - 핵심 KPI를 workbook/chart/filter보다 먼저 배치
+    - 오답 상세를 keyboard 접근 가능한 side sheet dialog로 정리
+    - `pnpm -C apps/web typecheck`
+    - `pnpm -C apps/web lint`
+    - `pnpm -C apps/web exec playwright test --config tests/e2e/playwright.config.ts tests/e2e/wrong-note-dashboard.spec.ts`
   - M10 closeout cleanup 완료
     - guardian dashboard의 문제집 템플릿 카탈로그와 학생 배정 목록을 분리
     - 배정되지 않은 템플릿도 수정/활성 관리 가능하도록 UI 정리
@@ -65,15 +104,20 @@
     - `PROJECT_STATUS`
     - `HANDOFF`
     - `CONTEXT_INDEX`
+  - 문서 정합성 audit + guide refresh 완료
+    - `TEST_AND_VALIDATION`, `M4_REVIEW_AND_TEST_PLAN`, `USER_E2E_MANUAL_CHECKLIST`, `DEMO_RUNBOOK`를 current WrongNote + Workbook 흐름 기준으로 갱신
+    - `USER_GUIDE` 신규 추가
+    - `docs/README`, `docs/INDEX`, `apps/web/README`에서 사용자/운영 가이드 링크를 노출
+    - `demo:seed`가 아직 legacy assessment demo data만 다룬다는 점을 문서에 명시
 - In Progress:
   - 없음
 - Blocked:
   - 없음
 - Next:
-  - guardian workbook template 수정 UX를 prompt 기반에서 inline 편집으로 다듬을지 결정
-  - storage audit 결과를 주기 점검 루틴으로 정리
-  - backup 보관 주기와 복구 절차를 운영 체크리스트에 고정
+  - 실기기 모바일에서 wrong-note workspace의 async request noise 재발 여부 관찰
+  - latest backup archive 기준 복구 smoke 절차 1회 수행
   - 레거시 wrong-answer/study 제거 여부 결정
+  - `demo:seed`를 current WrongNote + Workbook 데모 데이터 기준으로 재구성할지 결정
 
 ## Session Start Checklist
 

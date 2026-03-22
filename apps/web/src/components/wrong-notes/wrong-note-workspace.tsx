@@ -1,7 +1,7 @@
 "use client";
 
 import type { SchoolLevel, WrongNoteReason } from "@prisma/client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { WrongNoteBarChart } from "@/components/wrong-notes/wrong-note-bar-chart";
 import { WrongNoteImage } from "@/components/wrong-notes/wrong-note-image";
@@ -28,6 +28,7 @@ import {
 } from "@/modules/wrong-note/constants";
 
 type WorkspaceMode = "student" | "guardian";
+type GuardianWorkspaceView = "student_overview" | "workbook_management";
 
 type CurriculumNodeOption = {
   id: string;
@@ -58,6 +59,11 @@ type StudentWorkbookListResponse = {
   studentWorkbooks?: StudentWorkbookItem[];
 };
 
+const DEFAULT_TEMPLATE_STAGES = ["개념원리 이해", "핵심문제 익히기", "중단원 마무리하기", "서술형 대비문제"];
+
+const DIALOG_FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 function defaultSemester() {
   return String(new Date().getUTCMonth() < 6 ? 1 : 2);
 }
@@ -78,6 +84,32 @@ function todayDateOnly() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function getFocusableElements(container: HTMLElement | null) {
+  if (!container) {
+    return [];
+  }
+
+  return Array.from(container.querySelectorAll<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR)).filter(
+    (element) => !element.hasAttribute("disabled"),
+  );
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+async function readJsonOrNull<T>(response: Response) {
+  try {
+    return (await response.json()) as T;
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+
+    return null;
+  }
+}
+
 export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
   const [students, setStudents] = useState<WrongNoteStudentSummary[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState("");
@@ -96,6 +128,8 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [message, setMessage] = useState("");
+  const [detailErrorMessage, setDetailErrorMessage] = useState("");
+  const [detailMessage, setDetailMessage] = useState("");
   const [chartControls, setChartControls] = useState<{
     dimension: WrongNoteChartDimension;
     grade: string;
@@ -109,6 +143,8 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     grade: "",
     studentWorkbookId: "",
   });
+  const [guardianView, setGuardianView] = useState<GuardianWorkspaceView>("student_overview");
+  const [uploadAdvancedOpen, setUploadAdvancedOpen] = useState(false);
   const [templateDraft, setTemplateDraft] = useState<{
     title: string;
     publisher: string;
@@ -122,8 +158,14 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     schoolLevel: "middle",
     grade: "",
     semester: defaultSemester(),
-    stages: ["개념원리 이해", "핵심문제 익히기", "중단원 마무리하기", "서술형 대비문제"],
+    stages: [...DEFAULT_TEMPLATE_STAGES],
   });
+  const [templateEditDraft, setTemplateEditDraft] = useState<{
+    id: string;
+    title: string;
+    publisher: string;
+  } | null>(null);
+  const [templateSaveId, setTemplateSaveId] = useState("");
   const [assignmentDraft, setAssignmentDraft] = useState({
     workbookTemplateId: "",
   });
@@ -180,6 +222,25 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     workbookTemplateStageId: "",
   });
   const [detailUnits, setDetailUnits] = useState<CurriculumNodeOption[]>([]);
+  const detailDialogRef = useRef<HTMLDivElement | null>(null);
+  const detailCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const detailPreviousFocusRef = useRef<HTMLElement | null>(null);
+  const detailAbortRef = useRef<AbortController | null>(null);
+  const workspaceAbortRef = useRef<AbortController | null>(null);
+  const chartAbortRef = useRef<AbortController | null>(null);
+  const workbookDashboardAbortRef = useRef<AbortController | null>(null);
+  const assignedWorkbooksAbortRef = useRef<AbortController | null>(null);
+
+  const closeDetail = useCallback(() => {
+    detailAbortRef.current?.abort();
+    detailAbortRef.current = null;
+    setDetailOpen(false);
+    setDetailLoading(false);
+    setSelectedNote(null);
+    setSelectedNoteId("");
+    setDetailErrorMessage("");
+    setDetailMessage("");
+  }, []);
 
   const activeStudent = useMemo(() => {
     if (mode === "guardian") {
@@ -190,6 +251,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
   }, [dashboard?.student, listData?.student, mode, selectedStudentId, students]);
   const activeStudentId = activeStudent?.id ?? "";
   const activeStudentGrade = activeStudent?.grade ?? null;
+  const activeStudentSchoolLevel = activeStudent?.schoolLevel ?? null;
 
   const titleText =
     mode === "student" ? "사진으로 오답을 남기고, 누적 데이터를 다시 복습합니다" : "학생 오답 데이터를 모아 보호자 피드백으로 연결합니다";
@@ -197,10 +259,12 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     mode === "student"
       ? "틀린 문제를 바로 찍어 올리고 단원과 실수 이유를 정리하세요. 누적된 오답이 나중에 다시 볼 복습 지도 역할을 합니다."
       : "학생별 오답 누적, 오류유형 분포, 단원별 바 차트를 한 화면에서 보고 직접 피드백을 남길 수 있습니다.";
+  const showGuardianManagement = mode === "guardian" && guardianView === "workbook_management";
+  const showStudentOverview = mode === "student" || guardianView === "student_overview";
 
   const gradeOptions = useMemo(() => {
-    return activeStudent ? getGradeOptionsForSchoolLevel(activeStudent.schoolLevel) : [];
-  }, [activeStudent]);
+    return activeStudentSchoolLevel ? getGradeOptionsForSchoolLevel(activeStudentSchoolLevel) : [];
+  }, [activeStudentSchoolLevel]);
   const workbookSelectorOptions = useMemo(() => workbookDashboard?.availableWorkbooks ?? [], [workbookDashboard?.availableWorkbooks]);
   const uploadSelectedWorkbook = useMemo(
     () => workbookSelectorOptions.find((workbook) => workbook.id === uploadDraft.studentWorkbookId) ?? null,
@@ -218,12 +282,12 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     return workbookSelectorOptions.filter((workbook) => workbook.template.grade === Number(workbookControls.grade));
   }, [workbookControls.grade, workbookSelectorOptions]);
   const guardianTemplateOptions = useMemo(() => {
-    if (!activeStudent) {
+    if (!activeStudentSchoolLevel) {
       return workbookTemplates;
     }
 
-    return workbookTemplates.filter((template) => template.schoolLevel === activeStudent.schoolLevel);
-  }, [activeStudent, workbookTemplates]);
+    return workbookTemplates.filter((template) => template.schoolLevel === activeStudentSchoolLevel);
+  }, [activeStudentSchoolLevel, workbookTemplates]);
   const workbookDashboardEndpoint = useMemo(() => {
     const query = new URLSearchParams();
 
@@ -323,7 +387,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     }
 
     const response = await fetch("/api/v1/students");
-    const payload = (await response.json().catch(() => null)) as StudentsResponse | ApiErrorPayload | null;
+    const payload = await readJsonOrNull<StudentsResponse | ApiErrorPayload>(response);
 
     if (!response.ok) {
       throw new Error(toApiErrorMessage(payload, "학생 목록을 불러오지 못했습니다."));
@@ -331,11 +395,8 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
 
     const items = (payload as StudentsResponse)?.students ?? [];
     setStudents(items);
-
-    if (!selectedStudentId && items[0]) {
-      setSelectedStudentId(items[0].id);
-    }
-  }, [mode, selectedStudentId]);
+    setSelectedStudentId((prev) => (items.some((student) => student.id === prev) ? prev : (items[0]?.id ?? "")));
+  }, [mode]);
 
   const loadWorkbookTemplates = useCallback(async () => {
     if (mode !== "guardian") {
@@ -343,7 +404,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     }
 
     const response = await fetch("/api/v1/workbook-templates");
-    const payload = (await response.json().catch(() => null)) as WorkbookTemplateResponse | ApiErrorPayload | null;
+    const payload = await readJsonOrNull<WorkbookTemplateResponse | ApiErrorPayload>(response);
 
     if (!response.ok) {
       throw new Error(toApiErrorMessage(payload, "문제집 템플릿을 불러오지 못했습니다."));
@@ -358,35 +419,55 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     }
 
     if (!guardianAssignedWorkbooksEndpoint) {
+      assignedWorkbooksAbortRef.current?.abort();
+      assignedWorkbooksAbortRef.current = null;
       setAssignedWorkbooks([]);
       return;
     }
 
-    const response = await fetch(guardianAssignedWorkbooksEndpoint);
-    const payload = (await response.json().catch(() => null)) as StudentWorkbookListResponse | ApiErrorPayload | null;
+    const controller = new AbortController();
+    assignedWorkbooksAbortRef.current?.abort();
+    assignedWorkbooksAbortRef.current = controller;
 
-    if (!response.ok) {
-      throw new Error(toApiErrorMessage(payload, "학생 문제집 배정 목록을 불러오지 못했습니다."));
+    try {
+      const response = await fetch(guardianAssignedWorkbooksEndpoint, {
+        signal: controller.signal,
+      });
+      const payload = await readJsonOrNull<StudentWorkbookListResponse | ApiErrorPayload>(response);
+
+      if (!response.ok) {
+        throw new Error(toApiErrorMessage(payload, "학생 문제집 배정 목록을 불러오지 못했습니다."));
+      }
+
+      setAssignedWorkbooks((payload as StudentWorkbookListResponse).studentWorkbooks ?? []);
+    } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
+
+      throw error;
+    } finally {
+      if (assignedWorkbooksAbortRef.current === controller) {
+        assignedWorkbooksAbortRef.current = null;
+      }
     }
-
-    setAssignedWorkbooks((payload as StudentWorkbookListResponse).studentWorkbooks ?? []);
   }, [guardianAssignedWorkbooksEndpoint, mode]);
 
   const loadCurriculum = useCallback(
-    async (student: WrongNoteStudentSummary | null, grade: string, semester: string) => {
-      if (!student || !grade || !semester) {
+    async (schoolLevel: SchoolLevel | null, grade: string, semester: string) => {
+      if (!schoolLevel || !grade || !semester) {
         return [];
       }
 
       const query = new URLSearchParams({
-        schoolLevel: student.schoolLevel,
+        schoolLevel,
         grade,
         semester,
         subject: "math",
         asOfDate: todayDateOnly(),
       });
       const response = await fetch(`/api/v1/curriculum?${query.toString()}`);
-      const payload = (await response.json().catch(() => null)) as { nodes?: CurriculumNodeOption[] } | ApiErrorPayload | null;
+      const payload = await readJsonOrNull<{ nodes?: CurriculumNodeOption[] } | ApiErrorPayload>(response);
 
       if (!response.ok) {
         throw new Error(toApiErrorMessage(payload, "단원 목록을 불러오지 못했습니다."));
@@ -399,21 +480,33 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
 
   const loadWorkspace = useCallback(async () => {
     if (mode === "guardian" && !selectedStudentId) {
+      workspaceAbortRef.current?.abort();
+      workspaceAbortRef.current = null;
+      setLoading(false);
       return;
     }
 
     if (!dashboardEndpoint) {
+      workspaceAbortRef.current?.abort();
+      workspaceAbortRef.current = null;
+      setLoading(false);
       return;
     }
 
+    const controller = new AbortController();
+    workspaceAbortRef.current?.abort();
+    workspaceAbortRef.current = controller;
     setLoading(true);
     setErrorMessage("");
 
     try {
-      const [dashboardResponse, listResponse] = await Promise.all([fetch(dashboardEndpoint), fetch(listEndpoint)]);
+      const [dashboardResponse, listResponse] = await Promise.all([
+        fetch(dashboardEndpoint, { signal: controller.signal }),
+        fetch(listEndpoint, { signal: controller.signal }),
+      ]);
       const [dashboardPayload, listPayload] = await Promise.all([
-        dashboardResponse.json().catch(() => null),
-        listResponse.json().catch(() => null),
+        readJsonOrNull<WrongNoteDashboardResponse | ApiErrorPayload>(dashboardResponse),
+        readJsonOrNull<WrongNoteListResponse | ApiErrorPayload>(listResponse),
       ]);
 
       if (!dashboardResponse.ok) {
@@ -426,58 +519,94 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
 
       setDashboard(dashboardPayload as WrongNoteDashboardResponse);
       setListData(listPayload as WrongNoteListResponse);
+    } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
+
+      throw error;
     } finally {
-      setLoading(false);
+      if (workspaceAbortRef.current === controller) {
+        workspaceAbortRef.current = null;
+        setLoading(false);
+      }
     }
   }, [dashboardEndpoint, listEndpoint, mode, selectedStudentId]);
 
   const loadChart = useCallback(async () => {
     if (mode === "guardian" && !selectedStudentId) {
+      chartAbortRef.current?.abort();
+      chartAbortRef.current = null;
       setChartData(null);
       setChartLoading(false);
       return;
     }
 
     if (!chartEndpoint) {
+      chartAbortRef.current?.abort();
+      chartAbortRef.current = null;
       setChartData(null);
       setChartLoading(false);
       return;
     }
 
+    const controller = new AbortController();
+    chartAbortRef.current?.abort();
+    chartAbortRef.current = controller;
     setChartLoading(true);
 
     try {
-      const response = await fetch(chartEndpoint);
-      const payload = (await response.json().catch(() => null)) as WrongNoteChartResponse | ApiErrorPayload | null;
+      const response = await fetch(chartEndpoint, {
+        signal: controller.signal,
+      });
+      const payload = await readJsonOrNull<WrongNoteChartResponse | ApiErrorPayload>(response);
 
       if (!response.ok) {
         throw new Error(toApiErrorMessage(payload, "오답 그래프를 불러오지 못했습니다."));
       }
 
       setChartData((payload as WrongNoteChartResponse).chart);
+    } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
+
+      throw error;
     } finally {
-      setChartLoading(false);
+      if (chartAbortRef.current === controller) {
+        chartAbortRef.current = null;
+        setChartLoading(false);
+      }
     }
   }, [chartEndpoint, mode, selectedStudentId]);
 
   const loadWorkbookDashboard = useCallback(async () => {
     if (mode === "guardian" && !selectedStudentId) {
+      workbookDashboardAbortRef.current?.abort();
+      workbookDashboardAbortRef.current = null;
       setWorkbookDashboard(null);
       setWorkbookLoading(false);
       return;
     }
 
     if (!workbookDashboardEndpoint) {
+      workbookDashboardAbortRef.current?.abort();
+      workbookDashboardAbortRef.current = null;
       setWorkbookDashboard(null);
       setWorkbookLoading(false);
       return;
     }
 
+    const controller = new AbortController();
+    workbookDashboardAbortRef.current?.abort();
+    workbookDashboardAbortRef.current = controller;
     setWorkbookLoading(true);
 
     try {
-      const response = await fetch(workbookDashboardEndpoint);
-      const payload = (await response.json().catch(() => null)) as WorkbookProgressDashboardResponse | ApiErrorPayload | null;
+      const response = await fetch(workbookDashboardEndpoint, {
+        signal: controller.signal,
+      });
+      const payload = await readJsonOrNull<WorkbookProgressDashboardResponse | ApiErrorPayload>(response);
 
       if (!response.ok) {
         throw new Error(toApiErrorMessage(payload, "문제집 진도 현황을 불러오지 못했습니다."));
@@ -486,7 +615,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
       const data = payload as WorkbookProgressDashboardResponse;
       setWorkbookDashboard(data);
       setWorkbookControls((prev) => {
-        const nextGrade = prev.grade || String(data.selectedWorkbook?.grade ?? activeStudent?.grade ?? "");
+        const nextGrade = prev.grade || String(data.selectedWorkbook?.grade ?? activeStudentGrade ?? "");
         const nextStudentWorkbookId = data.selectedWorkbook?.studentWorkbookId ?? "";
 
         if (prev.grade === nextGrade && prev.studentWorkbookId === nextStudentWorkbookId) {
@@ -498,10 +627,19 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
           studentWorkbookId: nextStudentWorkbookId,
         };
       });
+    } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
+
+      throw error;
     } finally {
-      setWorkbookLoading(false);
+      if (workbookDashboardAbortRef.current === controller) {
+        workbookDashboardAbortRef.current = null;
+        setWorkbookLoading(false);
+      }
     }
-  }, [activeStudent?.grade, mode, selectedStudentId, workbookDashboardEndpoint]);
+  }, [activeStudentGrade, mode, selectedStudentId, workbookDashboardEndpoint]);
 
   const loadDetail = useCallback(
     async (wrongNoteId: string) => {
@@ -513,14 +651,22 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
       setSelectedNoteId(wrongNoteId);
       setDetailOpen(true);
       setDetailLoading(true);
-      setErrorMessage("");
+      setDetailErrorMessage("");
+      setDetailMessage("");
+      const controller = new AbortController();
+      detailAbortRef.current?.abort();
+      detailAbortRef.current = controller;
 
       try {
-        const response = await fetch(detailEndpoint);
-        const payload = (await response.json().catch(() => null)) as WrongNoteItem | ApiErrorPayload | null;
+        const response = await fetch(detailEndpoint, {
+          signal: controller.signal,
+        });
+        const payload = await readJsonOrNull<WrongNoteItem | ApiErrorPayload>(response);
 
         if (!response.ok) {
-          throw new Error(toApiErrorMessage(payload, "오답 상세를 불러오지 못했습니다."));
+          setSelectedNote(null);
+          setDetailErrorMessage(toApiErrorMessage(payload, "오답 상세를 불러오지 못했습니다."));
+          return;
         }
 
         const detail = payload as WrongNoteItem;
@@ -537,8 +683,18 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
           studentWorkbookId: detail.workbook?.studentWorkbookId ?? "",
           workbookTemplateStageId: detail.workbook?.stageId ?? "",
         });
+      } catch (error) {
+        if (isAbortError(error)) {
+          return;
+        }
+
+        setSelectedNote(null);
+        setDetailErrorMessage(error instanceof Error ? error.message : "오답 상세를 불러오지 못했습니다.");
       } finally {
-        setDetailLoading(false);
+        if (detailAbortRef.current === controller) {
+          detailAbortRef.current = null;
+          setDetailLoading(false);
+        }
       }
     },
     [mode, selectedStudentId],
@@ -546,12 +702,6 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
 
   useEffect(() => {
     if (mode !== "guardian") {
-      loadWorkspace().catch((error: unknown) => {
-        setErrorMessage(error instanceof Error ? error.message : "오답 대시보드를 불러오지 못했습니다.");
-      });
-      loadWorkbookDashboard().catch((error: unknown) => {
-        setErrorMessage(error instanceof Error ? error.message : "문제집 진도 현황을 불러오지 못했습니다.");
-      });
       return;
     }
 
@@ -561,10 +711,35 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     loadWorkbookTemplates().catch((error: unknown) => {
       setErrorMessage(error instanceof Error ? error.message : "문제집 템플릿을 불러오지 못했습니다.");
     });
-  }, [loadStudents, loadWorkbookDashboard, loadWorkbookTemplates, loadWorkspace, mode]);
+  }, [loadStudents, loadWorkbookTemplates, mode]);
 
   useEffect(() => {
-    if (mode !== "guardian" || !selectedStudentId) {
+    if (mode !== "guardian") {
+      return;
+    }
+
+    setDashboard(null);
+    setListData(null);
+    setChartData(null);
+    setWorkbookDashboard(null);
+    setErrorMessage("");
+    setMessage("");
+    closeDetail();
+
+    if (selectedStudentId) {
+      setLoading(true);
+      setChartLoading(true);
+      setWorkbookLoading(true);
+      return;
+    }
+
+    setLoading(false);
+    setChartLoading(false);
+    setWorkbookLoading(false);
+  }, [closeDetail, mode, selectedStudentId]);
+
+  useEffect(() => {
+    if (mode !== "student") {
       return;
     }
 
@@ -574,10 +749,22 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     loadWorkbookDashboard().catch((error: unknown) => {
       setErrorMessage(error instanceof Error ? error.message : "문제집 진도 현황을 불러오지 못했습니다.");
     });
+  }, [loadWorkbookDashboard, loadWorkspace, mode]);
+
+  useEffect(() => {
+    if (mode !== "guardian" || !selectedStudentId) {
+      return;
+    }
+
+    // Guardian bootstrap handles list/dashboard data and assignments.
+    // Chart/workbook panels refresh from the active-student effects below.
+    loadWorkspace().catch((error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : "오답 대시보드를 불러오지 못했습니다.");
+    });
     loadAssignedWorkbooks().catch((error: unknown) => {
       setErrorMessage(error instanceof Error ? error.message : "학생 문제집 배정 목록을 불러오지 못했습니다.");
     });
-  }, [loadAssignedWorkbooks, loadWorkbookDashboard, loadWorkspace, mode, selectedStudentId]);
+  }, [loadAssignedWorkbooks, loadWorkspace, mode, selectedStudentId]);
 
   useEffect(() => {
     if (!activeStudentId || activeStudentGrade === null) {
@@ -595,13 +782,13 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     });
     setTemplateDraft((prev) => ({
       ...prev,
-      schoolLevel: activeStudent?.schoolLevel ?? prev.schoolLevel,
+      schoolLevel: activeStudentSchoolLevel ?? prev.schoolLevel,
       grade: String(activeStudentGrade),
     }));
-  }, [activeStudent?.schoolLevel, activeStudentGrade, activeStudentId]);
+  }, [activeStudentGrade, activeStudentId, activeStudentSchoolLevel]);
 
   useEffect(() => {
-    if ((mode === "guardian" && !selectedStudentId) || !activeStudent) {
+    if ((mode === "guardian" && !selectedStudentId) || !activeStudentId) {
       if (mode === "guardian" && !selectedStudentId) {
         setChartData(null);
       }
@@ -611,10 +798,10 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     loadChart().catch((error: unknown) => {
       setErrorMessage(error instanceof Error ? error.message : "오답 그래프를 불러오지 못했습니다.");
     });
-  }, [activeStudent, loadChart, mode, selectedStudentId]);
+  }, [activeStudentId, loadChart, mode, selectedStudentId]);
 
   useEffect(() => {
-    if ((mode === "guardian" && !selectedStudentId) || !activeStudent) {
+    if ((mode === "guardian" && !selectedStudentId) || !activeStudentId) {
       if (mode === "guardian" && !selectedStudentId) {
         setWorkbookDashboard(null);
       }
@@ -624,10 +811,10 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
     loadWorkbookDashboard().catch((error: unknown) => {
       setErrorMessage(error instanceof Error ? error.message : "문제집 진도 현황을 불러오지 못했습니다.");
     });
-  }, [activeStudent, loadWorkbookDashboard, mode, selectedStudentId]);
+  }, [activeStudentId, loadWorkbookDashboard, mode, selectedStudentId]);
 
   useEffect(() => {
-    if (!activeStudent) {
+    if (!activeStudentId || !activeStudentSchoolLevel) {
       return;
     }
 
@@ -640,7 +827,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
       return;
     }
 
-    loadCurriculum(activeStudent, filters.grade, filters.semester)
+    loadCurriculum(activeStudentSchoolLevel, filters.grade, filters.semester)
       .then((nodes) => {
         setFilterUnits(nodes);
 
@@ -658,15 +845,15 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
       .catch((error: unknown) => {
         setErrorMessage(error instanceof Error ? error.message : "단원 목록을 불러오지 못했습니다.");
       });
-  }, [activeStudent, filters.curriculumNodeId, filters.grade, filters.semester, gradeOptions, loadCurriculum]);
+  }, [activeStudentId, activeStudentSchoolLevel, filters.curriculumNodeId, filters.grade, filters.semester, gradeOptions, loadCurriculum]);
 
   useEffect(() => {
-    if (mode !== "student" || !activeStudent) {
+    if (mode !== "student" || !activeStudentId || activeStudentGrade === null) {
       return;
     }
 
     setUploadDraft((prev) => {
-      const nextGrade = gradeOptions.includes(Number(prev.grade)) ? prev.grade : String(activeStudent.grade);
+      const nextGrade = gradeOptions.includes(Number(prev.grade)) ? prev.grade : String(activeStudentGrade);
 
       return {
         ...prev,
@@ -674,7 +861,8 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         curriculumNodeId: nextGrade === prev.grade ? prev.curriculumNodeId : "",
       };
     });
-  }, [activeStudent, gradeOptions, mode]);
+    setUploadAdvancedOpen(false);
+  }, [activeStudentGrade, activeStudentId, gradeOptions, mode]);
 
   useEffect(() => {
     if (!uploadSelectedWorkbook) {
@@ -698,14 +886,15 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         ? prev.workbookTemplateStageId
         : (uploadSelectedWorkbook.template.stages[0]?.id ?? ""),
     }));
+    setUploadAdvancedOpen(true);
   }, [uploadSelectedWorkbook]);
 
   useEffect(() => {
-    if (mode !== "student" || !activeStudent) {
+    if (mode !== "student" || !activeStudentId || !activeStudentSchoolLevel) {
       return;
     }
 
-    loadCurriculum(activeStudent, uploadDraft.grade, uploadDraft.semester)
+    loadCurriculum(activeStudentSchoolLevel, uploadDraft.grade, uploadDraft.semester)
       .then((nodes) => {
         setUploadUnits(nodes);
         setUploadDraft((prev) => ({
@@ -716,14 +905,14 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
       .catch((error: unknown) => {
         setErrorMessage(error instanceof Error ? error.message : "업로드용 단원 목록을 불러오지 못했습니다.");
       });
-  }, [activeStudent, loadCurriculum, mode, uploadDraft.grade, uploadDraft.semester]);
+  }, [activeStudentId, activeStudentSchoolLevel, loadCurriculum, mode, uploadDraft.grade, uploadDraft.semester]);
 
   useEffect(() => {
-    if (!detailOpen || !activeStudent) {
+    if (!detailOpen || !activeStudentId || !activeStudentSchoolLevel) {
       return;
     }
 
-    loadCurriculum(activeStudent, detailDraft.grade, detailDraft.semester)
+    loadCurriculum(activeStudentSchoolLevel, detailDraft.grade, detailDraft.semester)
       .then((nodes) => {
         setDetailUnits(nodes);
         setDetailDraft((prev) => ({
@@ -734,7 +923,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
       .catch((error: unknown) => {
         setErrorMessage(error instanceof Error ? error.message : "상세 단원 목록을 불러오지 못했습니다.");
       });
-  }, [activeStudent, detailDraft.grade, detailDraft.semester, detailOpen, loadCurriculum]);
+  }, [activeStudentId, activeStudentSchoolLevel, detailDraft.grade, detailDraft.semester, detailOpen, loadCurriculum]);
 
   useEffect(() => {
     if (!detailSelectedWorkbook) {
@@ -756,9 +945,80 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
           : "",
       workbookTemplateStageId: detailSelectedWorkbook.template.stages.some((stage) => stage.id === prev.workbookTemplateStageId)
         ? prev.workbookTemplateStageId
-        : (detailSelectedWorkbook.template.stages[0]?.id ?? ""),
+      : (detailSelectedWorkbook.template.stages[0]?.id ?? ""),
     }));
   }, [detailSelectedWorkbook]);
+
+  useEffect(() => {
+    setTemplateEditDraft(null);
+  }, [activeStudentId]);
+
+  useEffect(() => {
+    if (!detailOpen) {
+      return;
+    }
+
+    detailPreviousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const dialog = detailDialogRef.current;
+    const originalOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    (detailCloseButtonRef.current ?? dialog)?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeDetail();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const focusableElements = getFocusableElements(dialog);
+
+      if (!focusableElements.length) {
+        event.preventDefault();
+        dialog?.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+        return;
+      }
+
+      if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+      detailPreviousFocusRef.current?.focus();
+    };
+  }, [closeDetail, detailOpen]);
+
+  useEffect(() => {
+    return () => {
+      detailAbortRef.current?.abort();
+      workspaceAbortRef.current?.abort();
+      chartAbortRef.current?.abort();
+      workbookDashboardAbortRef.current?.abort();
+      assignedWorkbooksAbortRef.current?.abort();
+    };
+  }, []);
 
   async function refreshWorkspace(options?: { reopenDetailId?: string }) {
     await Promise.all([loadWorkspace(), loadChart(), loadWorkbookDashboard()]);
@@ -810,7 +1070,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         })),
       }),
     });
-    const payload = (await response.json().catch(() => null)) as WorkbookTemplateItem | ApiErrorPayload | null;
+    const payload = await readJsonOrNull<WorkbookTemplateItem | ApiErrorPayload>(response);
 
     if (!response.ok) {
       setErrorMessage(toApiErrorMessage(payload, "문제집 템플릿 등록에 실패했습니다."));
@@ -821,47 +1081,67 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
       ...prev,
       title: "",
       publisher: "",
-      stages: ["개념원리 이해", "핵심문제 익히기", "중단원 마무리하기", "서술형 대비문제"],
+      stages: [...DEFAULT_TEMPLATE_STAGES],
     }));
     setMessage("문제집 템플릿을 등록했습니다.");
     await Promise.all([loadWorkbookTemplates(), loadWorkbookDashboard()]);
   }
 
-  async function handleUpdateWorkbookTemplate(template: WorkbookTemplateItem) {
-    const nextTitle = window.prompt("문제집 이름을 수정하세요.", template.title);
+  function startWorkbookTemplateEdit(template: WorkbookTemplateItem) {
+    setTemplateEditDraft({
+      id: template.id,
+      title: template.title,
+      publisher: template.publisher,
+    });
+    setErrorMessage("");
+    setMessage("");
+  }
 
-    if (nextTitle === null) {
+  function cancelWorkbookTemplateEdit() {
+    setTemplateEditDraft(null);
+  }
+
+  async function handleUpdateWorkbookTemplate() {
+    if (!templateEditDraft) {
       return;
     }
 
-    const nextPublisher = window.prompt("출판사를 수정하세요.", template.publisher);
+    const nextTitle = templateEditDraft.title.trim();
+    const nextPublisher = templateEditDraft.publisher.trim();
 
-    if (nextPublisher === null) {
+    if (!nextTitle || !nextPublisher) {
+      setErrorMessage("문제집 이름과 출판사를 모두 입력해주세요.");
       return;
     }
 
     setErrorMessage("");
     setMessage("");
+    setTemplateSaveId(templateEditDraft.id);
 
-    const response = await fetch(`/api/v1/workbook-templates/${template.id}`, {
-      method: "PATCH",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        title: nextTitle,
-        publisher: nextPublisher,
-      }),
-    });
-    const payload = (await response.json().catch(() => null)) as WorkbookTemplateItem | ApiErrorPayload | null;
+    try {
+      const response = await fetch(`/api/v1/workbook-templates/${templateEditDraft.id}`, {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          title: nextTitle,
+          publisher: nextPublisher,
+        }),
+      });
+      const payload = await readJsonOrNull<WorkbookTemplateItem | ApiErrorPayload>(response);
 
-    if (!response.ok) {
-      setErrorMessage(toApiErrorMessage(payload, "문제집 템플릿 수정에 실패했습니다."));
-      return;
+      if (!response.ok) {
+        setErrorMessage(toApiErrorMessage(payload, "문제집 템플릿 수정에 실패했습니다."));
+        return;
+      }
+
+      setTemplateEditDraft(null);
+      setMessage("문제집 템플릿 정보를 수정했습니다.");
+      await Promise.all([loadWorkbookTemplates(), loadWorkbookDashboard(), loadAssignedWorkbooks()]);
+    } finally {
+      setTemplateSaveId("");
     }
-
-    setMessage("문제집 템플릿 정보를 수정했습니다.");
-    await Promise.all([loadWorkbookTemplates(), loadWorkbookDashboard(), loadAssignedWorkbooks()]);
   }
 
   async function handleToggleWorkbookTemplateActive(template: WorkbookTemplateItem) {
@@ -877,7 +1157,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         isActive: !template.isActive,
       }),
     });
-    const payload = (await response.json().catch(() => null)) as WorkbookTemplateItem | ApiErrorPayload | null;
+    const payload = await readJsonOrNull<WorkbookTemplateItem | ApiErrorPayload>(response);
 
     if (!response.ok) {
       setErrorMessage(toApiErrorMessage(payload, "문제집 활성 상태 변경에 실패했습니다."));
@@ -912,7 +1192,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         workbookTemplateId: assignmentDraft.workbookTemplateId,
       }),
     });
-    const payload = (await response.json().catch(() => null)) as StudentWorkbookItem | ApiErrorPayload | null;
+    const payload = await readJsonOrNull<StudentWorkbookItem | ApiErrorPayload>(response);
 
     if (!response.ok) {
       setErrorMessage(toApiErrorMessage(payload, "학생 문제집 배정에 실패했습니다."));
@@ -939,7 +1219,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         isArchived: !studentWorkbook.isArchived,
       }),
     });
-    const payload = (await response.json().catch(() => null)) as StudentWorkbookItem | ApiErrorPayload | null;
+    const payload = await readJsonOrNull<StudentWorkbookItem | ApiErrorPayload>(response);
 
     if (!response.ok) {
       setErrorMessage(toApiErrorMessage(payload, "학생 문제집 상태 변경에 실패했습니다."));
@@ -970,7 +1250,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         status: getNextWorkbookProgressStatus(stageState.status),
       }),
     });
-    const payload = (await response.json().catch(() => null)) as { row?: unknown } | ApiErrorPayload | null;
+    const payload = await readJsonOrNull<{ row?: unknown } | ApiErrorPayload>(response);
 
     if (!response.ok) {
       setErrorMessage(toApiErrorMessage(payload, "문제집 진도 상태 변경에 실패했습니다."));
@@ -1021,7 +1301,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
       method: "POST",
       body: formData,
     });
-    const payload = (await response.json().catch(() => null)) as WrongNoteItem | ApiErrorPayload | null;
+    const payload = await readJsonOrNull<WrongNoteItem | ApiErrorPayload>(response);
 
     if (!response.ok) {
       setErrorMessage(toApiErrorMessage(payload, "오답 업로드에 실패했습니다."));
@@ -1038,6 +1318,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
       reason: WRONG_NOTE_REASON_OPTIONS[0].key,
       workbookTemplateStageId: prev.studentWorkbookId ? prev.workbookTemplateStageId : "",
     }));
+    setUploadAdvancedOpen(Boolean(uploadDraft.studentWorkbookId));
     setMessage("오답노트를 저장했습니다.");
     await refreshWorkspace({
       reopenDetailId: created.id,
@@ -1051,16 +1332,18 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
 
     setErrorMessage("");
     setMessage("");
+    setDetailErrorMessage("");
+    setDetailMessage("");
 
     const patchPayload: Record<string, unknown> = {};
 
     if (!detailDraft.grade) {
-      setErrorMessage("대상 학년을 선택해주세요.");
+      setDetailErrorMessage("대상 학년을 선택해주세요.");
       return;
     }
 
     if (detailDraft.studentWorkbookId && !detailDraft.workbookTemplateStageId) {
-      setErrorMessage("문제집 단계를 선택해주세요.");
+      setDetailErrorMessage("문제집 단계를 선택해주세요.");
       return;
     }
 
@@ -1098,10 +1381,10 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         },
         body: JSON.stringify(patchPayload),
       });
-      const patchPayloadBody = (await patchResponse.json().catch(() => null)) as WrongNoteItem | ApiErrorPayload | null;
+      const patchPayloadBody = await readJsonOrNull<WrongNoteItem | ApiErrorPayload>(patchResponse);
 
       if (!patchResponse.ok) {
-        setErrorMessage(toApiErrorMessage(patchPayloadBody, "오답 수정에 실패했습니다."));
+        setDetailErrorMessage(toApiErrorMessage(patchPayloadBody, "오답 수정에 실패했습니다."));
         return;
       }
     }
@@ -1114,14 +1397,15 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         method: "POST",
         body: formData,
       });
-      const imagePayload = (await imageResponse.json().catch(() => null)) as { imagePath?: string } | ApiErrorPayload | null;
+      const imagePayload = await readJsonOrNull<{ imagePath?: string } | ApiErrorPayload>(imageResponse);
 
       if (!imageResponse.ok) {
-        setErrorMessage(toApiErrorMessage(imagePayload, "이미지 교체에 실패했습니다."));
+        setDetailErrorMessage(toApiErrorMessage(imagePayload, "이미지 교체에 실패했습니다."));
         return;
       }
     }
 
+    setDetailMessage("오답 상세를 저장했습니다.");
     setMessage("오답 상세를 저장했습니다.");
     await refreshWorkspace({
       reopenDetailId: selectedNoteId,
@@ -1139,20 +1423,20 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
 
     setErrorMessage("");
     setMessage("");
+    setDetailErrorMessage("");
+    setDetailMessage("");
 
     const response = await fetch(`/api/v1/student/wrong-notes/${selectedNoteId}`, {
       method: "DELETE",
     });
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as ApiErrorPayload | null;
-      setErrorMessage(toApiErrorMessage(payload, "오답 삭제에 실패했습니다."));
+      const payload = await readJsonOrNull<ApiErrorPayload>(response);
+      setDetailErrorMessage(toApiErrorMessage(payload, "오답 삭제에 실패했습니다."));
       return;
     }
 
-    setDetailOpen(false);
-    setSelectedNote(null);
-    setSelectedNoteId("");
+    closeDetail();
     setMessage("오답노트를 삭제했습니다.");
     await refreshWorkspace();
   }
@@ -1164,6 +1448,8 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
 
     setErrorMessage("");
     setMessage("");
+    setDetailErrorMessage("");
+    setDetailMessage("");
 
     const response = await fetch(`/api/v1/wrong-notes/${selectedNoteId}/feedback`, {
       method: "PUT",
@@ -1174,13 +1460,14 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         text: detailDraft.feedbackText,
       }),
     });
-    const payload = (await response.json().catch(() => null)) as WrongNoteItem | ApiErrorPayload | null;
+    const payload = await readJsonOrNull<WrongNoteItem | ApiErrorPayload>(response);
 
     if (!response.ok) {
-      setErrorMessage(toApiErrorMessage(payload, "보호자 피드백 저장에 실패했습니다."));
+      setDetailErrorMessage(toApiErrorMessage(payload, "보호자 피드백 저장에 실패했습니다."));
       return;
     }
 
+    setDetailMessage("보호자 피드백을 저장했습니다.");
     setMessage("보호자 피드백을 저장했습니다.");
     await refreshWorkspace({
       reopenDetailId: selectedNoteId,
@@ -1274,6 +1561,51 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         </section>
       ) : null}
 
+      {mode === "guardian" ? (
+        <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">보호자 작업 모드</h3>
+              <p className="mt-1 text-xs text-slate-500">학생 상태를 보는 화면과 문제집을 관리하는 화면을 나눠서 집중합니다.</p>
+            </div>
+            <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1">
+              <button
+                type="button"
+                onClick={() => setGuardianView("student_overview")}
+                className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                  guardianView === "student_overview" ? "bg-slate-950 text-white" : "text-slate-600"
+                }`}
+              >
+                학생 보기
+              </button>
+              <button
+                type="button"
+                onClick={() => setGuardianView("workbook_management")}
+                className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                  guardianView === "workbook_management" ? "bg-slate-950 text-white" : "text-slate-600"
+                }`}
+              >
+                문제집 관리
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <section aria-label="핵심 요약" className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <MetricCard label="총 오답 수" value={`${dashboard?.summary.totalNotes ?? 0}건`} description="삭제되지 않은 전체 누적 오답" />
+        <MetricCard label="최근 30일" value={`${dashboard?.summary.recent30DaysNotes ?? 0}건`} description="최근 30일 안에 새로 기록된 오답" />
+        <MetricCard label="피드백 완료" value={`${dashboard?.summary.feedbackCompletedNotes ?? 0}건`} description="보호자 피드백이 남아 있는 오답" />
+        {WRONG_NOTE_REASON_OPTIONS.map((option) => (
+          <MetricCard
+            key={option.key}
+            label={option.labelKo}
+            value={`${dashboard?.summary.reasonCounts[option.key] ?? 0}건`}
+            description="오류유형별 누적 개수"
+          />
+        ))}
+      </section>
+
       {mode === "student" ? (
         <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1342,49 +1674,6 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
               </select>
             </label>
             <label className="space-y-1 text-sm text-slate-700">
-              <span>문제집 선택</span>
-              <select
-                value={uploadDraft.studentWorkbookId}
-                onChange={(event) =>
-                  setUploadDraft((prev) => ({
-                    ...prev,
-                    studentWorkbookId: event.target.value,
-                    workbookTemplateStageId: "",
-                    curriculumNodeId: "",
-                  }))
-                }
-                className="w-full rounded-xl border border-slate-300 px-3 py-2"
-              >
-                <option value="">문제집 연결 안 함</option>
-                {workbookSelectorOptions.map((workbook) => (
-                  <option key={workbook.id} value={workbook.id}>
-                    {workbook.template.title} · {workbook.template.publisher} · {formatSchoolGradeLabel(workbook.template.schoolLevel, workbook.template.grade)} {workbook.template.semester}학기
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-1 text-sm text-slate-700">
-              <span>문제집 단계</span>
-              <select
-                value={uploadDraft.workbookTemplateStageId}
-                onChange={(event) =>
-                  setUploadDraft((prev) => ({
-                    ...prev,
-                    workbookTemplateStageId: event.target.value,
-                  }))
-                }
-                className="w-full rounded-xl border border-slate-300 px-3 py-2"
-                disabled={!uploadSelectedWorkbook}
-              >
-                <option value="">{uploadSelectedWorkbook ? "단계 선택" : "문제집을 먼저 선택하세요"}</option>
-                {(uploadSelectedWorkbook?.template.stages ?? []).map((stage) => (
-                  <option key={stage.id} value={stage.id}>
-                    {stage.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-1 text-sm text-slate-700">
               <span>단원</span>
               <select
                 value={uploadDraft.curriculumNodeId}
@@ -1405,9 +1694,6 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
                 ))}
               </select>
             </label>
-          </div>
-
-          <div className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr]">
             <label className="space-y-1 text-sm text-slate-700">
               <span>오류유형</span>
               <select
@@ -1427,21 +1713,92 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
                 ))}
               </select>
             </label>
-            <label className="space-y-1 text-sm text-slate-700">
-              <span>학생 메모</span>
-              <textarea
-                value={uploadDraft.studentMemo}
-                onChange={(event) =>
-                  setUploadDraft((prev) => ({
-                    ...prev,
-                    studentMemo: event.target.value,
-                  }))
-                }
-                rows={3}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2"
-                placeholder="왜 틀렸는지 짧게 적어두면 나중에 다시 보기 쉽습니다."
-              />
-            </label>
+          </div>
+
+          <div className="mt-4 rounded-[1.25rem] border border-dashed border-slate-300 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">선택 입력</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  문제집 연결과 학생 메모는 필요할 때만 입력하세요. 빠른 저장이 먼저이고, 추가 정리는 나중에도 가능합니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUploadAdvancedOpen((prev) => !prev)}
+                aria-expanded={uploadAdvancedOpen}
+                className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700"
+              >
+                {uploadAdvancedOpen ? "선택 입력 닫기" : "선택 입력 열기"}
+              </button>
+            </div>
+
+            {uploadAdvancedOpen ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <label className="space-y-1 text-sm text-slate-700">
+                  <span>문제집 선택</span>
+                  <select
+                    value={uploadDraft.studentWorkbookId}
+                    onChange={(event) => {
+                      setUploadAdvancedOpen(true);
+                      setUploadDraft((prev) => ({
+                        ...prev,
+                        studentWorkbookId: event.target.value,
+                        workbookTemplateStageId: "",
+                        curriculumNodeId: "",
+                      }));
+                    }}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2"
+                  >
+                    <option value="">문제집 연결 안 함</option>
+                    {workbookSelectorOptions.map((workbook) => (
+                      <option key={workbook.id} value={workbook.id}>
+                        {workbook.template.title} · {workbook.template.publisher} ·{" "}
+                        {formatSchoolGradeLabel(workbook.template.schoolLevel, workbook.template.grade)} {workbook.template.semester}학기
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm text-slate-700">
+                  <span>문제집 단계</span>
+                  <select
+                    value={uploadDraft.workbookTemplateStageId}
+                    onChange={(event) => {
+                      setUploadAdvancedOpen(true);
+                      setUploadDraft((prev) => ({
+                        ...prev,
+                        workbookTemplateStageId: event.target.value,
+                      }));
+                    }}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2"
+                    disabled={!uploadSelectedWorkbook}
+                  >
+                    <option value="">{uploadSelectedWorkbook ? "단계 선택" : "문제집을 먼저 선택하세요"}</option>
+                    {(uploadSelectedWorkbook?.template.stages ?? []).map((stage) => (
+                      <option key={stage.id} value={stage.id}>
+                        {stage.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm text-slate-700 md:col-span-2">
+                  <span>학생 메모</span>
+                  <textarea
+                    value={uploadDraft.studentMemo}
+                    onChange={(event) => {
+                      setUploadAdvancedOpen(true);
+                      setUploadDraft((prev) => ({
+                        ...prev,
+                        studentMemo: event.target.value,
+                      }));
+                    }}
+                    rows={3}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2"
+                    placeholder="왜 틀렸는지 짧게 적어두면 나중에 다시 보기 쉽습니다."
+                  />
+                </label>
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -1464,20 +1821,24 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
       <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="font-mono text-xs tracking-[0.24em] uppercase text-teal-700">Workbook Progress</p>
-            <h3 className="mt-2 text-lg font-semibold text-slate-950">문제집 진도</h3>
+            <p className="font-mono text-xs tracking-[0.24em] uppercase text-teal-700">
+              {showGuardianManagement ? "Workbook Admin" : "Workbook Progress"}
+            </p>
+            <h3 className="mt-2 text-lg font-semibold text-slate-950">{showGuardianManagement ? "문제집 관리" : "문제집 진도"}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              문제집을 선택하면 단원별 단계 진행 상태를 바로 바꾸고, 전체 완료율을 한눈에 확인할 수 있습니다.
+              {showGuardianManagement
+                ? "보호자 템플릿과 학생 배정을 한 화면에서 정리하고, 학생 보기 화면과 분리해서 관리합니다."
+                : "문제집을 선택하면 단원별 단계 진행 상태를 바로 바꾸고, 전체 완료율을 한눈에 확인할 수 있습니다."}
             </p>
           </div>
-          {workbookDashboard?.selectedWorkbook ? (
+          {!showGuardianManagement && workbookDashboard?.selectedWorkbook ? (
             <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
               {workbookDashboard.selectedWorkbook.title} · {workbookDashboard.selectedWorkbook.publisher}
             </span>
           ) : null}
         </div>
 
-        {mode === "guardian" ? (
+        {showGuardianManagement ? (
           <div className="mt-5 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
             <article className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-3">
@@ -1675,26 +2036,87 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
                   guardianTemplateOptions.map((template) => (
                     <div key={template.id} className="rounded-2xl border border-slate-200 bg-white p-3">
                       <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">
-                            {template.title} · {template.publisher}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            {formatSchoolGradeLabel(template.schoolLevel, template.grade)} · {template.semester}학기 · 단계 {template.stages.length}개
-                          </p>
+                        <div className="min-w-0 flex-1">
+                          {templateEditDraft?.id === template.id ? (
+                            <div className="grid gap-3 md:grid-cols-2">
+                              <label className="space-y-1 text-sm text-slate-700">
+                                <span>문제집 이름</span>
+                                <input
+                                  value={templateEditDraft.title}
+                                  onChange={(event) =>
+                                    setTemplateEditDraft((prev) =>
+                                      prev
+                                        ? {
+                                            ...prev,
+                                            title: event.target.value,
+                                          }
+                                        : prev,
+                                    )
+                                  }
+                                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2"
+                                />
+                              </label>
+                              <label className="space-y-1 text-sm text-slate-700">
+                                <span>출판사</span>
+                                <input
+                                  value={templateEditDraft.publisher}
+                                  onChange={(event) =>
+                                    setTemplateEditDraft((prev) =>
+                                      prev
+                                        ? {
+                                            ...prev,
+                                            publisher: event.target.value,
+                                          }
+                                        : prev,
+                                    )
+                                  }
+                                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2"
+                                />
+                              </label>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {template.title} · {template.publisher}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                {formatSchoolGradeLabel(template.schoolLevel, template.grade)} · {template.semester}학기 · 단계 {template.stages.length}개
+                              </p>
+                            </>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleUpdateWorkbookTemplate(template).catch((error: unknown) => {
-                                setErrorMessage(error instanceof Error ? error.message : "문제집 템플릿 수정에 실패했습니다.");
-                              });
-                            }}
-                            className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700"
-                          >
-                            템플릿 수정
-                          </button>
+                          {templateEditDraft?.id === template.id ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleUpdateWorkbookTemplate().catch((error: unknown) => {
+                                    setErrorMessage(error instanceof Error ? error.message : "문제집 템플릿 수정에 실패했습니다.");
+                                  });
+                                }}
+                                className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white hover:bg-teal-800"
+                                disabled={templateSaveId === template.id}
+                              >
+                                {templateSaveId === template.id ? "저장 중..." : "수정 저장"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelWorkbookTemplateEdit}
+                                className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700"
+                              >
+                                취소
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => startWorkbookTemplateEdit(template)}
+                              className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700"
+                            >
+                              템플릿 수정
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => {
@@ -1800,7 +2222,9 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
           </div>
         ) : null}
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
+        {showStudentOverview ? (
+          <>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
           <label className="space-y-1 text-sm text-slate-700">
             <span>대상 학년</span>
             <select
@@ -1844,39 +2268,88 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
               ))}
             </select>
           </label>
-        </div>
-
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <MetricCard label="전체 단계 수" value={`${workbookDashboard?.summary.totalSteps ?? 0}`} description="단원 x 단계 전체 셀 수" />
-          <MetricCard label="완료" value={`${workbookDashboard?.summary.completedCount ?? 0}`} description="완료 상태 셀 수" />
-          <MetricCard label="진행중" value={`${workbookDashboard?.summary.inProgressCount ?? 0}`} description="진행중 상태 셀 수" />
-          <MetricCard label="시작전" value={`${workbookDashboard?.summary.notStartedCount ?? 0}`} description="아직 시작하지 않은 셀 수" />
-          <MetricCard label="완료율" value={`${workbookDashboard?.summary.completedPct ?? 0}%`} description="완료 단계 비율" />
-        </div>
-
-        <div className="mt-5">
-          {!activeStudent && mode === "guardian" ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
-              학생을 먼저 선택하면 문제집 진도 현황이 표시됩니다.
             </div>
-          ) : workbookLoading ? (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600">문제집 진도 현황을 불러오는 중입니다.</div>
-          ) : (
-            <WrongNoteBarChart
-              bars={workbookBars}
-              maxValue={Math.max(...workbookBars.map((bar) => bar.value), 0)}
-              totalCount={workbookBars.reduce((sum, bar) => sum + bar.value, 0)}
-              loading={false}
-              emptyMessage="선택한 문제집에 아직 표시할 진도 데이터가 없습니다"
-            />
-          )}
-        </div>
 
-        <div className="mt-5 overflow-x-auto rounded-[1.25rem] border border-slate-200">
-          {!workbookDashboard?.selectedWorkbook ? (
-            <div className="bg-slate-50 px-4 py-8 text-sm text-slate-600">선택한 조건에 맞는 문제집이 없습니다. 문제집을 등록하고 학생에게 배정해 주세요.</div>
-          ) : (
-            <table className="min-w-full border-collapse text-sm">
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <MetricCard label="전체 단계 수" value={`${workbookDashboard?.summary.totalSteps ?? 0}`} description="단원 x 단계 전체 셀 수" />
+              <MetricCard label="완료" value={`${workbookDashboard?.summary.completedCount ?? 0}`} description="완료 상태 셀 수" />
+              <MetricCard label="진행중" value={`${workbookDashboard?.summary.inProgressCount ?? 0}`} description="진행중 상태 셀 수" />
+              <MetricCard label="시작전" value={`${workbookDashboard?.summary.notStartedCount ?? 0}`} description="아직 시작하지 않은 셀 수" />
+              <MetricCard label="완료율" value={`${workbookDashboard?.summary.completedPct ?? 0}%`} description="완료 단계 비율" />
+            </div>
+
+            <div className="mt-5">
+              {!activeStudent && mode === "guardian" ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+                  학생을 먼저 선택하면 문제집 진도 현황이 표시됩니다.
+                </div>
+              ) : workbookLoading ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600">문제집 진도 현황을 불러오는 중입니다.</div>
+              ) : (
+                <WrongNoteBarChart
+                  bars={workbookBars}
+                  maxValue={Math.max(...workbookBars.map((bar) => bar.value), 0)}
+                  totalCount={workbookBars.reduce((sum, bar) => sum + bar.value, 0)}
+                  loading={false}
+                  emptyMessage="선택한 문제집에 아직 표시할 진도 데이터가 없습니다"
+                />
+              )}
+            </div>
+
+            <div className="mt-5">
+              {!workbookDashboard?.selectedWorkbook ? (
+                <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-8 text-sm text-slate-600">
+                  선택한 조건에 맞는 문제집이 없습니다. 문제집을 등록하고 학생에게 배정해 주세요.
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-3 lg:hidden">
+                    {workbookDashboard.units.map((unit) => (
+                      <article key={unit.curriculumNodeId} className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">{unit.unitName}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              완료 {unit.stageStates.filter((stageState) => stageState.status === "completed").length} / {unit.stageStates.length}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-3 space-y-3">
+                          {unit.stageStates.map((stageState) => (
+                            <div
+                              key={`${unit.curriculumNodeId}-${stageState.workbookTemplateStageId}`}
+                              className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-3"
+                            >
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">{stageState.stageName}</p>
+                                <p className="mt-1 text-xs text-slate-500">최근 갱신 {formatDateLabel(stageState.lastUpdatedAt)}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleWorkbookStatusCycle(unit, stageState).catch((error: unknown) => {
+                                    setErrorMessage(error instanceof Error ? error.message : "문제집 진도 상태 변경에 실패했습니다.");
+                                  });
+                                }}
+                                className={`min-w-[92px] rounded-full px-3 py-2 text-xs font-semibold ${
+                                  stageState.status === "completed"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : stageState.status === "in_progress"
+                                      ? "bg-sky-100 text-sky-800"
+                                      : "bg-slate-100 text-slate-700"
+                                }`}
+                              >
+                                {getWorkbookProgressStatusLabel(stageState.status)}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+
+                  <div className="hidden overflow-x-auto rounded-[1.25rem] border border-slate-200 lg:block">
+                    <table className="min-w-full border-collapse text-sm">
               <thead className="bg-slate-50">
                 <tr>
                   <th className="border-b border-slate-200 px-4 py-3 text-left font-semibold text-slate-700">단원</th>
@@ -1916,11 +2389,20 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          )}
-        </div>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        ) : null}
       </section>
 
+      {errorMessage ? <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{errorMessage}</p> : null}
+      {message ? <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{message}</p> : null}
+
+      {showStudentOverview ? (
+        <>
       <section aria-label="오답 현황 그래프" className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -2013,23 +2495,6 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
             />
           )}
         </div>
-      </section>
-
-      {errorMessage ? <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{errorMessage}</p> : null}
-      {message ? <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{message}</p> : null}
-
-      <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <MetricCard label="총 오답 수" value={`${dashboard?.summary.totalNotes ?? 0}건`} description="삭제되지 않은 전체 누적 오답" />
-        <MetricCard label="최근 30일" value={`${dashboard?.summary.recent30DaysNotes ?? 0}건`} description="최근 30일 안에 새로 기록된 오답" />
-        <MetricCard label="피드백 완료" value={`${dashboard?.summary.feedbackCompletedNotes ?? 0}건`} description="보호자 피드백이 남아 있는 오답" />
-        {WRONG_NOTE_REASON_OPTIONS.map((option) => (
-          <MetricCard
-            key={option.key}
-            label={option.labelKo}
-            value={`${dashboard?.summary.reasonCounts[option.key] ?? 0}건`}
-            description="오류유형별 누적 개수"
-          />
-        ))}
       </section>
 
       <section>
@@ -2237,7 +2702,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
                 key={wrongNote.id}
                 onClick={() => {
                   loadDetail(wrongNote.id).catch((error: unknown) => {
-                    setErrorMessage(error instanceof Error ? error.message : "오답 상세를 불러오지 못했습니다.");
+                    setDetailErrorMessage(error instanceof Error ? error.message : "오답 상세를 불러오지 못했습니다.");
                   });
                 }}
                 className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md"
@@ -2322,24 +2787,31 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
         ) : null}
       </section>
 
+        </>
+      ) : null}
+
       {detailOpen ? (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/55 backdrop-blur-sm">
-          <div className="h-full w-full max-w-2xl overflow-y-auto bg-white shadow-2xl">
+          <div
+            ref={detailDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="wrong-note-detail-title"
+            tabIndex={-1}
+            className="h-full w-full max-w-2xl overflow-y-auto bg-white shadow-2xl outline-none"
+          >
             <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-mono text-xs tracking-[0.24em] uppercase text-teal-700">Wrong Note Detail</p>
-                  <h3 className="mt-2 text-lg font-semibold text-slate-950">
+                  <h3 id="wrong-note-detail-title" className="mt-2 text-lg font-semibold text-slate-950">
                     {selectedNote?.curriculum.unitName ?? "오답 상세"}
                   </h3>
                 </div>
                 <button
+                  ref={detailCloseButtonRef}
                   type="button"
-                  onClick={() => {
-                    setDetailOpen(false);
-                    setSelectedNote(null);
-                    setSelectedNoteId("");
-                  }}
+                  onClick={closeDetail}
                   className="rounded-full border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700"
                 >
                   닫기
@@ -2348,6 +2820,8 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
             </div>
 
             <div className="space-y-5 px-5 py-5">
+              {detailErrorMessage ? <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{detailErrorMessage}</p> : null}
+              {detailMessage ? <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{detailMessage}</p> : null}
               {detailLoading ? (
                 <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">상세 정보를 불러오는 중입니다.</p>
               ) : selectedNote ? (
@@ -2549,7 +3023,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
                           type="button"
                           onClick={() => {
                             handleStudentSaveDetail().catch((error: unknown) => {
-                              setErrorMessage(error instanceof Error ? error.message : "오답 상세 저장에 실패했습니다.");
+                              setDetailErrorMessage(error instanceof Error ? error.message : "오답 상세 저장에 실패했습니다.");
                             });
                           }}
                           className="rounded-full bg-slate-950 px-5 py-2 text-sm font-semibold text-white hover:bg-teal-800"
@@ -2560,7 +3034,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
                           type="button"
                           onClick={() => {
                             handleStudentDelete().catch((error: unknown) => {
-                              setErrorMessage(error instanceof Error ? error.message : "오답 삭제에 실패했습니다.");
+                              setDetailErrorMessage(error instanceof Error ? error.message : "오답 삭제에 실패했습니다.");
                             });
                           }}
                           className="rounded-full border border-rose-300 px-5 py-2 text-sm font-semibold text-rose-700 hover:border-rose-400"
@@ -2615,7 +3089,7 @@ export function WrongNoteWorkspace({ mode }: WrongNoteWorkspaceProps) {
                           type="button"
                           onClick={() => {
                             handleGuardianSaveFeedback().catch((error: unknown) => {
-                              setErrorMessage(error instanceof Error ? error.message : "피드백 저장에 실패했습니다.");
+                              setDetailErrorMessage(error instanceof Error ? error.message : "피드백 저장에 실패했습니다.");
                             });
                           }}
                           className="rounded-full bg-slate-950 px-5 py-2 text-sm font-semibold text-white hover:bg-teal-800"

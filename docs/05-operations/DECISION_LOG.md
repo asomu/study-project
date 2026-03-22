@@ -216,3 +216,17 @@
   - 학생과 보호자는 둘 다 workbook progress 상태를 수정할 수 있다.
   - wrong-note workbook linkage는 optional이며, workbook을 선택한 경우 stage 선택은 required다.
   - 템플릿이 배정된 뒤에는 단계 구조 편집을 막고 제목/출판사/활성 상태만 수정한다.
+
+## ADR-0028: WrongNote 워크스페이스의 핵심 UX는 요약 우선 + 모드 분리 + 선택 입력 접기 + inline 편집으로 고정
+
+- Date: 2026-03-22
+- Decision: 학생/보호자 공통 `WrongNoteWorkspace`는 핵심 KPI를 상단에 먼저 노출하고, 학생 빠른 업로드는 필수 입력과 선택 입력을 분리하며, 보호자 화면은 `학생 보기`와 `문제집 관리` 모드로 나눈다. 보호자 문제집 템플릿 수정은 `prompt`가 아니라 inline 편집으로 수행하고, workbook progress matrix는 모바일에서 카드 기반 대안 UI를 함께 제공한다. 오답 상세는 keyboard 접근 가능한 side sheet dialog로 제공한다.
+- Rationale: 현재 제품의 핵심 과제는 "한 화면에서 현재 상태를 이해하고 바로 행동한다"는 점이다. 학생에게는 빠른 첫 저장이, 보호자에게는 끊김 없는 템플릿 관리와 피드백 흐름이 중요하다. 모든 입력을 기본 화면에 펼치거나 브라우저 `prompt`에 의존하면 중학생/보호자 모두 판단 비용이 커지고, 보호자 화면에 관리 기능과 학생 상태를 한 스크롤에 몰아두면 정보 밀도가 높아진다. 상세 드로어가 dialog semantics 없이 동작하면 접근성과 수정 피드백도 약해진다.
+- Consequence:
+  - 학생 업로드 폼은 `사진 / 대상 학년 / 학기 / 단원 / 오류유형`을 기본 입력으로 두고, `문제집 연결 / 단계 / 학생 메모`는 선택 입력 영역으로 접는다.
+  - 보호자 workspace는 `학생 보기`와 `문제집 관리` 토글을 두고, 학생 상태 확인과 템플릿/배정 관리를 분리한다.
+  - 보호자 workbook template 제목/출판사 수정은 현재 값을 유지한 inline editor에서 저장/취소한다.
+  - 핵심 KPI는 workbook/chart/filter보다 먼저 배치한다.
+  - workbook progress matrix는 desktop/tablet table을 유지하되, 모바일에서는 단원 카드 + 단계 상태 리스트로 대체 표현한다.
+  - 상세 드로어는 `role="dialog"`/`aria-modal`과 keyboard close/focus loop를 갖춘 side sheet로 유지한다.
+  - mocked e2e는 선택 입력 토글, 보호자 모드 전환, inline 템플릿 수정, dialog 기반 상세 상호작용을 회귀 범위로 포함한다.

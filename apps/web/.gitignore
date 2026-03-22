@@ -17,7 +17,7 @@
 
 # next.js
 /.next/
-/.next-playwright/
+/.next-*/
 /out/
 /public/uploads/wrong-answers/*
 /public/uploads/test-wrong-answers/*

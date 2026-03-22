@@ -437,24 +437,29 @@ test("student wrong-note dashboard uploads and reflects a new note", async ({ pa
   await page.waitForURL("**/student/dashboard");
   const chartSection = page.locator('section[aria-label="오답 현황 그래프"]');
   const filterSection = page.locator('article[aria-label="오답 탐색 필터"]');
+  const uploadSection = page.locator("section").filter({ has: page.getByRole("heading", { name: "사진 1장으로 오답 1건을 기록합니다" }) });
 
-  await page.getByLabel("사진 파일").setInputFiles({
+  await uploadSection.getByLabel("사진 파일").setInputFiles({
     name: "wrong-note.png",
     mimeType: "image/png",
     buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]),
   });
-  await page.getByLabel("문제집 선택").first().selectOption("student-workbook-1");
-  await page.getByLabel("문제집 단계").first().selectOption("stage-2");
-  await page.getByLabel("단원").first().selectOption("node-3");
-  await page.getByLabel("학생 메모").first().fill("부호를 잘못 봤어요.");
-  await page.getByRole("button", { name: "오답노트 저장" }).click();
+  await uploadSection.getByRole("button", { name: "선택 입력 열기" }).click();
+  await uploadSection.getByLabel("문제집 선택").selectOption("student-workbook-1");
+  await uploadSection.getByLabel("문제집 단계").selectOption("stage-2");
+  await uploadSection.getByLabel("단원").selectOption("node-3");
+  await uploadSection.getByLabel("학생 메모").fill("부호를 잘못 봤어요.");
+  await uploadSection.getByRole("button", { name: "오답노트 저장" }).click();
 
-  await expect(page.getByText("오답노트를 저장했습니다.")).toBeVisible();
+  await expect(page.getByText("오답노트를 저장했습니다.").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /유리수와 순환소수/ }).first()).toBeVisible();
   await expect(page.getByText("1건 누적")).toBeVisible();
   await expect(chartSection.getByText("정수와 유리수")).toBeVisible();
   await expect(page.getByText("개념원리 베이직 2-1 · 개념원리 · 핵심문제 익히기")).toBeVisible();
-  await page.getByRole("button", { name: "닫기" }).click();
+  const createdDetailDialog = page.getByRole("dialog", { name: /유리수와 순환소수/ });
+  await expect(createdDetailDialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(createdDetailDialog).toHaveCount(0);
 
   const workbookSection = page.locator("section").filter({ has: page.getByRole("heading", { name: "문제집 진도" }) });
   await workbookSection.getByRole("button", { name: "진행중" }).first().click();
@@ -469,10 +474,12 @@ test("student wrong-note dashboard uploads and reflects a new note", async ({ pa
   await expect(chartSection.getByText("유리수와 순환소수")).toHaveCount(0);
 
   await page.getByRole("button", { name: /유리수와 순환소수/ }).first().click();
-  await page.getByLabel("학생 메모").last().fill("부호를 반대로 처리했어요.");
+  const editDetailDialog = page.getByRole("dialog", { name: /유리수와 순환소수/ });
+  await expect(editDetailDialog).toBeVisible();
+  await editDetailDialog.getByLabel("학생 메모").fill("부호를 반대로 처리했어요.");
   await page.getByRole("button", { name: "수정 저장" }).click();
 
-  await expect(page.getByText("오답 상세를 저장했습니다.")).toBeVisible();
+  await expect(page.getByText("오답 상세를 저장했습니다.").first()).toBeVisible();
 });
 
 test("guardian wrong-note dashboard stores manual feedback", async ({ page }) => {
@@ -764,6 +771,8 @@ test("guardian wrong-note dashboard stores manual feedback", async ({ page }) =>
   const guardianChartSection = page.locator('section[aria-label="오답 현황 그래프"]');
   const guardianFilterSection = page.locator('article[aria-label="오답 탐색 필터"]');
 
+  await expect(page.getByLabel("학생 선택")).toHaveValue("student-note-e2e-1");
+  await expect(page.getByRole("button", { name: /정수와 유리수/ }).first()).toBeVisible();
   await expect(guardianChartSection.getByText("정수와 유리수")).toBeVisible();
   await guardianChartSection.getByLabel("그래프 기준").selectOption("reason");
   await expect(guardianChartSection.getByText("문제 잘못 읽음")).toBeVisible();
@@ -773,8 +782,484 @@ test("guardian wrong-note dashboard stores manual feedback", async ({ page }) =>
   await page.getByLabel("보호자 피드백").fill("문장을 끝까지 읽고 조건에 밑줄을 쳐보자.");
   await page.getByRole("button", { name: "피드백 저장" }).click();
 
-  await expect(page.getByText("보호자 피드백을 저장했습니다.")).toBeVisible();
+  await expect(page.getByText("보호자 피드백을 저장했습니다.").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /정수와 유리수/ }).first()).toContainText("피드백 있음");
+});
+
+test("guardian dashboard clears stale note cards while switching students", async ({ page }) => {
+  const guardianToken = await createAuthToken({
+    sub: "guardian-switch-e2e",
+    role: "guardian",
+    loginId: "guardian-switch@example.com",
+    email: "guardian-switch@example.com",
+    name: "보호자 학생 전환 E2E",
+  });
+
+  const students = [
+    {
+      id: "student-switch-e2e-1",
+      name: "학생 하나",
+      schoolLevel: "middle" as const,
+      grade: 1,
+    },
+    {
+      id: "student-switch-e2e-2",
+      name: "학생 둘",
+      schoolLevel: "middle" as const,
+      grade: 2,
+    },
+  ];
+
+  type StudentSwitchNote = {
+    id: string;
+    imagePath: string;
+    studentMemo: string | null;
+    createdAt: string;
+    updatedAt: string;
+    curriculum: {
+      grade: number;
+      semester: number;
+      curriculumNodeId: string;
+      unitName: string;
+    };
+    reason: {
+      key: "calculation_mistake" | "misread_question" | "lack_of_concept";
+      labelKo: string;
+    };
+    feedback: null;
+    workbook: null;
+  };
+
+  const notesByStudentId: Record<string, StudentSwitchNote[]> = {
+    "student-switch-e2e-1": [
+      {
+        id: "note-switch-1",
+        imagePath: "/api/v1/wrong-notes/note-switch-1/image?studentId=student-switch-e2e-1",
+        studentMemo: "첫 학생 메모",
+        createdAt: "2026-03-21T09:00:00.000Z",
+        updatedAt: "2026-03-21T09:00:00.000Z",
+        curriculum: {
+          grade: 1,
+          semester: 1,
+          curriculumNodeId: "node-switch-1",
+          unitName: "정수와 유리수",
+        },
+        reason: {
+          key: "misread_question",
+          labelKo: "문제 잘못 읽음",
+        },
+        feedback: null,
+        workbook: null,
+      },
+    ],
+    "student-switch-e2e-2": [
+      {
+        id: "note-switch-2",
+        imagePath: "/api/v1/wrong-notes/note-switch-2/image?studentId=student-switch-e2e-2",
+        studentMemo: "둘째 학생 메모",
+        createdAt: "2026-03-22T09:00:00.000Z",
+        updatedAt: "2026-03-22T09:00:00.000Z",
+        curriculum: {
+          grade: 2,
+          semester: 1,
+          curriculumNodeId: "node-switch-2",
+          unitName: "유리수와 순환소수",
+        },
+        reason: {
+          key: "lack_of_concept",
+          labelKo: "문제 이해 못함",
+        },
+        feedback: null,
+        workbook: null,
+      },
+    ],
+  };
+
+  let releaseSecondStudentWorkspace = () => {};
+  const secondStudentWorkspaceReady = new Promise<void>((resolve) => {
+    releaseSecondStudentWorkspace = resolve;
+  });
+
+  function countNotesByReason(notes: StudentSwitchNote[], reason: StudentSwitchNote["reason"]["key"]) {
+    return notes.filter((note) => note.reason.key === reason).length;
+  }
+
+  function buildDashboard(studentId: keyof typeof notesByStudentId) {
+    const student = students.find((candidate) => candidate.id === studentId)!;
+    const notes = notesByStudentId[studentId];
+    const reasonCounts = {
+      calculation_mistake: countNotesByReason(notes, "calculation_mistake"),
+      misread_question: countNotesByReason(notes, "misread_question"),
+      lack_of_concept: countNotesByReason(notes, "lack_of_concept"),
+    };
+
+    return {
+      student,
+      summary: {
+        totalNotes: notes.length,
+        recent30DaysNotes: notes.length,
+        feedbackCompletedNotes: notes.filter((note) => Boolean(note.feedback)).length,
+        reasonCounts,
+      },
+      reasonDistribution: [
+        { key: "calculation_mistake", labelKo: "단순 연산 실수", count: reasonCounts.calculation_mistake },
+        { key: "misread_question", labelKo: "문제 잘못 읽음", count: reasonCounts.misread_question },
+        { key: "lack_of_concept", labelKo: "문제 이해 못함", count: reasonCounts.lack_of_concept },
+      ],
+      topUnits: notes.map((note) => ({
+        curriculumNodeId: note.curriculum.curriculumNodeId,
+        unitName: note.curriculum.unitName,
+        count: 1,
+      })),
+    };
+  }
+
+  await page.route("**/api/v1/students", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        students,
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes/dashboard*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = (requestUrl.searchParams.get("studentId") ?? students[0].id) as keyof typeof notesByStudentId;
+
+    if (studentId === "student-switch-e2e-2") {
+      await secondStudentWorkspaceReady;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(buildDashboard(studentId)),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes?*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = (requestUrl.searchParams.get("studentId") ?? students[0].id) as keyof typeof notesByStudentId;
+
+    if (studentId === "student-switch-e2e-2") {
+      await secondStudentWorkspaceReady;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student: students.find((candidate) => candidate.id === studentId),
+        pagination: {
+          page: 1,
+          pageSize: 12,
+          totalItems: notesByStudentId[studentId].length,
+          totalPages: 1,
+        },
+        wrongNotes: notesByStudentId[studentId],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes/chart*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = requestUrl.searchParams.get("studentId") ?? students[0].id;
+    const note = notesByStudentId[studentId as keyof typeof notesByStudentId][0];
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student: students.find((candidate) => candidate.id === studentId),
+        chart: {
+          dimension: "unit",
+          grade: note.curriculum.grade,
+          semester: note.curriculum.semester,
+          bars: [
+            {
+              key: note.curriculum.curriculumNodeId,
+              label: note.curriculum.unitName,
+              value: 1,
+            },
+          ],
+          maxValue: 1,
+          totalCount: 1,
+        },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/workbook-templates", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        workbookTemplates: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/student-workbooks?*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = requestUrl.searchParams.get("studentId") ?? students[0].id;
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student: students.find((candidate) => candidate.id === studentId),
+        studentWorkbooks: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/workbook-progress/dashboard*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = requestUrl.searchParams.get("studentId") ?? students[0].id;
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student: students.find((candidate) => candidate.id === studentId),
+        availableWorkbooks: [],
+        selectedWorkbook: null,
+        summary: {
+          totalSteps: 0,
+          notStartedCount: 0,
+          inProgressCount: 0,
+          completedCount: 0,
+          completedPct: 0,
+        },
+        unitBars: [],
+        units: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes/note-switch-*/image?*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "image/png",
+      body: onePixelPng,
+    });
+  });
+
+  await page.context().addCookies([
+    {
+      name: AUTH_COOKIE_NAME,
+      value: guardianToken,
+      url: appOrigin,
+      httpOnly: true,
+      sameSite: "Lax",
+    },
+  ]);
+
+  await page.goto("/dashboard");
+  await expect(page.getByLabel("학생 선택")).toHaveValue("student-switch-e2e-1");
+  await expect(page.getByRole("button", { name: /정수와 유리수/ }).first()).toBeVisible();
+
+  await page.getByLabel("학생 선택").selectOption("student-switch-e2e-2");
+  await expect(page.getByLabel("학생 선택")).toHaveValue("student-switch-e2e-2");
+  await expect(page.getByText("오답 목록을 불러오는 중입니다.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /정수와 유리수/ })).toHaveCount(0);
+
+  releaseSecondStudentWorkspace();
+
+  await expect(page.getByText("오답 목록을 불러오는 중입니다.")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /유리수와 순환소수/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /정수와 유리수/ })).toHaveCount(0);
+});
+
+test("guardian dashboard edits a workbook template inline", async ({ page }) => {
+  const guardianToken = await createAuthToken({
+    sub: "guardian-template-e2e",
+    role: "guardian",
+    loginId: "guardian@example.com",
+    email: "guardian@example.com",
+    name: "보호자 템플릿 E2E",
+  });
+
+  const student = {
+    id: "student-template-e2e-1",
+    name: "학생 템플릿 E2E",
+    schoolLevel: "middle" as const,
+    grade: 1,
+  };
+
+  let workbookTemplate = {
+    id: "template-edit-1",
+    title: "쎈 수학 1-1",
+    publisher: "좋은책신사고",
+    schoolLevel: "middle" as const,
+    grade: 1,
+    semester: 1,
+    isActive: true,
+    stages: [
+      { id: "stage-1", name: "개념 익히기", sortOrder: 0 },
+      { id: "stage-2", name: "유형 연습", sortOrder: 1 },
+    ],
+  };
+
+  await page.route("**/api/v1/students", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        students: [student],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes/dashboard*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student,
+        summary: {
+          totalNotes: 0,
+          recent30DaysNotes: 0,
+          feedbackCompletedNotes: 0,
+          reasonCounts: {
+            calculation_mistake: 0,
+            misread_question: 0,
+            lack_of_concept: 0,
+          },
+        },
+        reasonDistribution: [
+          { key: "calculation_mistake", labelKo: "단순 연산 실수", count: 0 },
+          { key: "misread_question", labelKo: "문제 잘못 읽음", count: 0 },
+          { key: "lack_of_concept", labelKo: "문제 이해 못함", count: 0 },
+        ],
+        topUnits: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes/chart*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student,
+        chart: {
+          dimension: "unit",
+          grade: 1,
+          semester: 1,
+          bars: [{ key: "node-1", label: "정수와 유리수", value: 0 }],
+          maxValue: 0,
+          totalCount: 0,
+        },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/workbook-templates", async (route) => {
+    if (route.request().method() !== "GET") {
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        workbookTemplates: [workbookTemplate],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/workbook-templates/template-edit-1", async (route) => {
+    const payload = JSON.parse(route.request().postData() ?? "{}") as { title?: string; publisher?: string };
+
+    workbookTemplate = {
+      ...workbookTemplate,
+      title: payload.title ?? workbookTemplate.title,
+      publisher: payload.publisher ?? workbookTemplate.publisher,
+    };
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(workbookTemplate),
+    });
+  });
+
+  await page.route("**/api/v1/student-workbooks?*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student,
+        studentWorkbooks: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/workbook-progress/dashboard*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student,
+        availableWorkbooks: [],
+        selectedWorkbook: null,
+        summary: {
+          totalSteps: 0,
+          notStartedCount: 0,
+          inProgressCount: 0,
+          completedCount: 0,
+          completedPct: 0,
+        },
+        unitBars: [],
+        units: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes?*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student,
+        pagination: {
+          page: 1,
+          pageSize: 12,
+          totalItems: 0,
+          totalPages: 1,
+        },
+        wrongNotes: [],
+      }),
+    });
+  });
+
+  await page.context().addCookies([
+    {
+      name: AUTH_COOKIE_NAME,
+      value: guardianToken,
+      url: appOrigin,
+      httpOnly: true,
+      sameSite: "Lax",
+    },
+  ]);
+
+  await page.goto("/dashboard");
+  await expect(page.getByLabel("학생 선택")).toHaveValue("student-template-e2e-1");
+  await expect(page.getByRole("button", { name: "문제집 관리" })).toBeVisible();
+  await page.getByRole("button", { name: "문제집 관리" }).click();
+  const templateCard = page.locator("div.rounded-2xl").filter({ has: page.getByText("쎈 수학 1-1 · 좋은책신사고") }).first();
+
+  await templateCard.getByRole("button", { name: "템플릿 수정" }).click();
+  const editingTemplateCard = page.locator("div.rounded-2xl").filter({ has: page.getByRole("button", { name: "수정 저장" }) }).first();
+  await editingTemplateCard.getByLabel("문제집 이름").fill("쎈 수학 라이트 1-1");
+  await editingTemplateCard.getByLabel("출판사").fill("좋은책신사고 개정판");
+  await editingTemplateCard.getByRole("button", { name: "수정 저장" }).click();
+
+  await expect(page.getByText("문제집 템플릿 정보를 수정했습니다.")).toBeVisible();
+  await expect(page.locator("div.rounded-2xl").filter({ has: page.getByText("쎈 수학 라이트 1-1 · 좋은책신사고 개정판", { exact: true }) }).first()).toBeVisible();
 });
 
 test("student wrong-note dashboard shows a placeholder when the stored image file is missing", async ({ page }) => {

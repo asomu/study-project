@@ -16,8 +16,9 @@ node_modules
 
 # Build artifacts / caches
 .next
-apps/web/.next-codex-review
+apps/web/.next-*
 out
+output
 dist
 build
 coverage

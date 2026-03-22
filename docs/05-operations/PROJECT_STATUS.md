@@ -117,19 +117,20 @@
 - 기능 구현 블로커 없음
 - 검증 블로커 없음
 - 현재 제품은 수학 과목 + 수동 분류 + 수동 피드백까지 포함한다.
-- guardian workbook template 수정 UX는 현재 prompt 기반 제목/출판사 수정이라 후속 polish 여지가 있다.
+- guardian/student 공통 wrong-note workspace는 isolated QA schema 기준 360px/390px 모바일에서 이미지 업로드, 상세 dialog, 보호자 피드백 저장까지 통과했다. 다만 heavy QA 세션에서는 겹친 async workspace/chart/workbook fetch 노이즈가 관찰돼 stale request abort와 stable dependency hardening을 반영했고, 실기기 follow-up에서 잔여 fan-out 여부를 계속 관찰해야 한다.
+- 2026-03-22 storage audit dry-run 기준 `wrongNoteCount=1`, `missingCount=1`, `orphanCount=0`이며, 누락 1건은 legacy `/uploads/wrong-notes/...` 경로라 자동 복구되지 않는다.
 - OCR, 자동 피드백, 반복 오답 기반 재도전 관리는 아직 없다.
-- 과거 `public/uploads/wrong-notes`에 저장되었다가 이미 유실된 파일은 자동 복구되지 않는다.
 - 레거시 `attempt / wrong-answer / study` 기능은 코드베이스에 남아 있으므로, 다음 정리 단계에서 완전 제거 여부를 판단해야 한다.
 - 레거시 API/도메인 코드는 아직 남아 있으나 UI surface와 수동 운영 기준에서는 비활성 처리되었다.
+- `demo:seed`는 아직 legacy `attempt / wrong-answer` 데모 데이터만 생성하며 current WrongNote + Workbook 시연 데이터는 수동 준비가 필요하다.
 - 중등 수학 커리큘럼은 2026 기준 학년별 적용 버전이 다르므로, 2027년 중3 개정 전환 시 seed와 authoring 기준을 다시 점검해야 한다.
 
 ## 4. Next Actions
 
-1. guardian workbook template 수정 UX를 prompt 기반에서 더 구조화된 inline editor로 다듬을지 결정한다.
-2. `pnpm -C apps/web run wrong-note:storage:audit -- --json` 기준으로 누락/고아 파일 점검 루틴을 운영 체크리스트에 편입한다.
-3. `pnpm -C apps/web run wrong-note:storage:backup`의 주기와 보관 정책을 확정한다.
-4. 레거시 `wrong-answer`/`study` 화면과 API를 완전 제거할지, 호환용으로 유지할지 결정한다.
+1. 실기기 모바일에서 wrong-note workspace의 async request noise가 다시 보이는지 follow-up 확인한다.
+2. latest backup archive 기준 복구 smoke 절차를 1회 검증한다.
+3. 레거시 `wrong-answer`/`study` 화면과 API를 완전 제거할지, 호환용으로 유지할지 결정한다.
+4. `demo:seed`를 current WrongNote + Workbook 시연 데이터 기준으로 재구성할지 결정한다.
 
 ## 5. Change Log
 
@@ -180,6 +181,12 @@
   - guardian dashboard에서 문제집 템플릿 카탈로그와 학생 배정 목록을 분리해, 배정되지 않은 템플릿도 수정/활성 관리 가능하게 정리
   - workbook progress dashboard가 선택 학년에 맞는 문제집이 없을 때 다른 학년 문제집으로 fallback하지 않도록 수정
   - workbook integration test, mocked/real e2e, build, lint, link check 재검증 완료
+- 2026-03-22: wrong-note/workbook UX polish follow-up 완료
+  - guardian workbook template 수정 UI를 `prompt`에서 inline editor로 교체
+  - 학생 빠른 업로드를 기본 입력 + 선택 입력 접기 구조로 단순화
+  - guardian dashboard를 `학생 보기` / `문제집 관리` 모드로 분리하고, workbook matrix에 모바일 카드형 대안을 추가
+  - 핵심 KPI를 workbook/chart/filter보다 먼저 배치하고, 상세 드로어를 keyboard 접근 가능한 dialog로 정리
+  - `wrong-note-dashboard.spec.ts`, `typecheck`, `lint`, mocked e2e, build 재검증 완료
 - 2026-03-22: 현재 제품 기술 학습 문서 동기화
   - `docs/01-product/TECH_STACK.md`를 현재 구현 기준으로 갱신
   - `docs/07-learning/notes/2026-03-22-current-product-tech-explainer.md` 추가
@@ -187,7 +194,31 @@
 - 2026-03-22: 기술 스택 심화 학습 문서 보강
   - `JWT + 권한 흐름`, `Prisma 데이터 모델`, `Workbook progress matrix` 심화 노트 추가
   - `docs/07-learning/TECH_EXPLAINER_INDEX.md`에 후속 학습 순서 반영
+- 2026-03-22: M10 documentation audit + guide refresh 완료
+  - `TEST_AND_VALIDATION`, `M4_REVIEW_AND_TEST_PLAN`, `USER_E2E_MANUAL_CHECKLIST`, `DEMO_RUNBOOK`를 current WrongNote + Workbook 기준으로 재정리
+  - `USER_GUIDE`를 신규 추가하고 `docs/README`, `docs/INDEX`, `apps/web/README` 네비게이션을 갱신
+  - `demo:seed`의 legacy scope limitation을 운영 문서에 명시
+- 2026-03-22: mobile QA follow-up 완료
+  - 360px/390px 기준 guardian/student wrong-note workspace를 실제 브라우저로 점검
+  - 공통 `AppShell` 헤더를 모바일 세로 스택으로 조정하고 `로그아웃` 버튼 줄바꿈을 제거
+  - `.next-*` QA dist 디렉터리가 lint/git 상태를 흔들지 않도록 ignore 규칙을 일반화
+- 2026-03-22: mobile deep interaction QA + async request hardening 완료
+  - isolated QA schema 기준 학생 이미지 업로드, 학생 상세 메모 저장, 보호자 피드백 저장 모바일 실브라우저 QA를 통과
+  - 상세 dialog가 background fetch 실패를 글로벌 배너로 노출하지 않도록 detail-local message/error 상태를 분리
+  - wrong-note workspace의 workspace/chart/workbook reload가 stale request를 abort하고 stable student primitive 기준으로만 후속 fetch를 다시 트리거하도록 하드닝
+  - `typecheck`, `lint`, mocked e2e, `build`, doc link check 재검증 완료
+- 2026-03-22: wrong-note storage audit baseline + backup verification 완료
+  - live storage audit dry-run 결과 `wrongNoteCount=1`, `missingCount=1`(`legacy`), `orphanCount=0`
+  - 누락 1건은 legacy `/uploads/wrong-notes/...` 경로로 자동 복구 대상이 아님을 운영 baseline으로 기록
+  - `wrong-note:storage:backup` 실행으로 app backup root에 archive 생성 확인
+  - `OPERATIONS_CHECKLIST`, `PROJECT_STATUS`, `HANDOFF`, `CONTEXT_INDEX`에 audit cadence / 대응 규칙 / baseline을 반영
 - 2026-03-22: workbook contract hardening review closeout 완료
   - inactive workbook template은 학생 배정에서 차단하도록 API 계약을 보강
   - student/guardian workbook progress dashboard는 잘못된 `studentWorkbookId` 요청에 fallback 대신 `404`를 반환하도록 수정
   - workbook integration test, targeted lint/typecheck, PR verification gate path filter를 재검증
+- 2026-03-22: Study Code Cleanup verification follow-up 완료
+  - `WrongNoteWorkspace`의 abort-safe fetch에서 `response.json()` abort를 삼켜 `null payload` 런타임 크래시로 이어질 수 있던 경로를 `readJsonOrNull` helper로 정리
+  - 상세 드로어 fetch를 abort-safe하게 보강하고 detail 삭제 실패도 dialog-local error로 정리
+  - mocked e2e의 학생 업로드 selector를 현재 `선택 입력` 구조에 맞게 재고정하고 guardian stale-card regression test 타입을 정리
+  - `eslint.config.mjs`에 `test-results/**` ignore를 추가해 Playwright 산출물이 lint 입력에 섞이지 않게 정리
+  - `pnpm -C apps/web lint`, `pnpm -C apps/web typecheck`, `pnpm -C apps/web test:e2e:mocked` 재통과

@@ -33,8 +33,9 @@
 - `/Users/mark/Documents/project/study-project/docs/04-quality/M4_REVIEW_AND_TEST_PLAN.md`
 - `/Users/mark/Documents/project/study-project/docs/04-quality/USER_E2E_MANUAL_CHECKLIST.md`
 
-## 5. Continuity
+## 5. Operations
 
+- `/Users/mark/Documents/project/study-project/docs/05-operations/USER_GUIDE.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md`
