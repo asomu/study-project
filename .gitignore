@@ -23,6 +23,7 @@ build
 coverage
 playwright-report
 test-results
+.playwright-cli
 backups/wrong-answers/*
 !backups/wrong-answers/.gitkeep
 .turbo
