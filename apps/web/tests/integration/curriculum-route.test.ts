@@ -71,4 +71,45 @@ describe("GET /api/v1/curriculum", () => {
       }),
     );
   });
+
+  it("returns current elementary curriculum metadata for 2026-03-22", async () => {
+    mockedFindMany.mockResolvedValue([
+      {
+        id: "node-e6-1",
+        curriculumVersion: "2022.12",
+        schoolLevel: SchoolLevel.elementary,
+        subject: Subject.math,
+        grade: 6,
+        semester: 1,
+        unitCode: "E6-S1-U1",
+        unitName: "분수의 나눗셈",
+        parentId: null,
+        sortOrder: 1,
+        activeFrom: new Date("2026-03-01T00:00:00.000Z"),
+        activeTo: null,
+        createdAt: new Date("2026-03-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-03-01T00:00:00.000Z"),
+      },
+    ] as never);
+
+    const request = new Request("http://localhost/api/v1/curriculum?schoolLevel=elementary&grade=6&semester=1&asOfDate=2026-03-22", {
+      method: "GET",
+    });
+
+    const response = await GET(request);
+    const body = (await response.json()) as { meta: { curriculumVersion: string; effectiveFrom: string } };
+
+    expect(response.status).toBe(200);
+    expect(body.meta.curriculumVersion).toBe("2022.12");
+    expect(body.meta.effectiveFrom).toContain("2026-03-01");
+    expect(mockedFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          schoolLevel: SchoolLevel.elementary,
+          grade: 6,
+          semester: 1,
+        }),
+      }),
+    );
+  });
 });

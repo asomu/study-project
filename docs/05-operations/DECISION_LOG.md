@@ -230,3 +230,14 @@
   - workbook progress matrix는 desktop/tablet table을 유지하되, 모바일에서는 단원 카드 + 단계 상태 리스트로 대체 표현한다.
   - 상세 드로어는 `role="dialog"`/`aria-modal`과 keyboard close/focus loop를 갖춘 side sheet로 유지한다.
   - mocked e2e는 선택 입력 토글, 보호자 모드 전환, inline 템플릿 수정, dialog 기반 상세 상호작용을 회귀 범위로 포함한다.
+
+## ADR-0029: 초등 수학 단원 시드도 현재 적용 버전 기준으로 추가한다
+
+- Date: 2026-03-22
+- Decision: wrong-note 단원 선택용 `curriculum_nodes`에 초등 수학을 추가하고, 2026-03-22 기준 초1~초6 전체를 `2022.12` active catalog로 유지한다.
+- Rationale: 2022 개정 교육과정은 초등학교에도 순차 적용되며, 2026-03-01부터 5~6학년까지 전면 적용된다. 따라서 2026-03-22 운영 기준에서 초등 수학 단원이 비어 있으면 elementary 학생의 업로드/필터/문제집 연동 콤보박스가 실제 교과 흐름을 반영하지 못한다.
+- Consequence:
+  - `/api/v1/curriculum`은 `schoolLevel=elementary` 조회에도 현재 active `2022.12` 단원 집합을 반환한다.
+  - 초등 단원명은 공식 성취기준의 학년군 구조를 바탕으로, 앱 UX를 위해 `학년 / 학기 / 대표 단원명`으로 정규화한다.
+  - 초등 1~2, 3~4, 5~6의 적용 시점은 각각 `2024-03-01`, `2025-03-01`, `2026-03-01`로 유지한다.
+  - 향후 publisher-specific authoring이나 교과서 단원 단위 세분화가 필요해지면, 현재 대표 단원 라벨을 더 세밀한 catalog로 재점검해야 한다.

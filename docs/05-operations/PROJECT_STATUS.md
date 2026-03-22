@@ -116,9 +116,10 @@
 
 - 기능 구현 블로커 없음
 - 검증 블로커 없음
-- 현재 제품은 수학 과목 + 수동 분류 + 수동 피드백까지 포함한다.
-- guardian/student 공통 wrong-note workspace는 isolated QA schema 기준 360px/390px 모바일에서 이미지 업로드, 상세 dialog, 보호자 피드백 저장까지 통과했다. 다만 heavy QA 세션에서는 겹친 async workspace/chart/workbook fetch 노이즈가 관찰돼 stale request abort와 stable dependency hardening을 반영했고, 실기기 follow-up에서 잔여 fan-out 여부를 계속 관찰해야 한다.
+- 현재 제품은 초등/중등 수학 과목 + 수동 분류 + 수동 피드백까지 포함한다.
+- guardian/student 공통 wrong-note workspace는 isolated QA schema 기준 360px/390px 모바일에서 이미지 업로드, 상세 dialog, 보호자 피드백 저장까지 통과했다. 2026-03-22 후속 모바일 로그인 QA에서는 student/guardian 모두 console error 0건이었고 `ERR_INSUFFICIENT_RESOURCES`는 재현되지 않았다. 현재는 stale request abort에 따른 `net::ERR_ABORTED`만 남아 있어, heavy soak 상황에서 추가 fan-out이 다시 보이는지만 계속 관찰하면 된다.
 - 2026-03-22 storage audit dry-run 기준 `wrongNoteCount=1`, `missingCount=1`, `orphanCount=0`이며, 누락 1건은 legacy `/uploads/wrong-notes/...` 경로라 자동 복구되지 않는다.
+- latest backup archive `study-project-20260322-205441.tar.gz`는 `/Users/mark/Documents/project/study-project/output/restore-smoke/20260322-restore-check`에 정상 복구되며, 현재 archive payload는 빈 `study-project/wrong-notes` 디렉터리 baseline이다.
 - OCR, 자동 피드백, 반복 오답 기반 재도전 관리는 아직 없다.
 - 레거시 `attempt / wrong-answer / study` 기능은 코드베이스에 남아 있으므로, 다음 정리 단계에서 완전 제거 여부를 판단해야 한다.
 - 레거시 API/도메인 코드는 아직 남아 있으나 UI surface와 수동 운영 기준에서는 비활성 처리되었다.
@@ -127,10 +128,10 @@
 
 ## 4. Next Actions
 
-1. 실기기 모바일에서 wrong-note workspace의 async request noise가 다시 보이는지 follow-up 확인한다.
-2. latest backup archive 기준 복구 smoke 절차를 1회 검증한다.
-3. 레거시 `wrong-answer`/`study` 화면과 API를 완전 제거할지, 호환용으로 유지할지 결정한다.
-4. `demo:seed`를 current WrongNote + Workbook 시연 데이터 기준으로 재구성할지 결정한다.
+1. wrong-note workspace의 stale request abort가 heavy soak/mobile 반복 탐색에서도 추가 문제를 만들지 관찰한다.
+2. 레거시 `wrong-answer`/`study` 화면과 API를 완전 제거할지, 호환용으로 유지할지 결정한다.
+3. `demo:seed`를 current WrongNote + Workbook 시연 데이터 기준으로 재구성할지 결정한다.
+4. storage audit baseline의 legacy missing 1건을 운영상 known issue로 유지할지, 별도 정리 표식으로 관리할지 결정한다.
 
 ## 5. Change Log
 
@@ -212,6 +213,15 @@
   - 누락 1건은 legacy `/uploads/wrong-notes/...` 경로로 자동 복구 대상이 아님을 운영 baseline으로 기록
   - `wrong-note:storage:backup` 실행으로 app backup root에 archive 생성 확인
   - `OPERATIONS_CHECKLIST`, `PROJECT_STATUS`, `HANDOFF`, `CONTEXT_INDEX`에 audit cadence / 대응 규칙 / baseline을 반영
+- 2026-03-22: backup restore smoke + mobile async follow-up 확인
+  - latest backup archive `study-project-20260322-205441.tar.gz`를 `output/restore-smoke/20260322-restore-check`에 정상 복구 확인
+  - 현재 archive payload는 빈 `study-project/wrong-notes` 디렉터리 baseline
+  - mobile follow-up login QA에서 student/guardian 모두 console error 0건, `ERR_INSUFFICIENT_RESOURCES` 미재현 확인
+  - 네트워크에는 stale request 정리에 따른 `net::ERR_ABORTED`만 남으며, 추가 fan-out 여부는 soak 관찰 대상으로 유지
+- 2026-03-22: study code cleanup closeout 완료
+  - current uncommitted scope review에서 추가 release blocker를 발견하지 못했다.
+  - `pnpm -C apps/web prisma:seed`, `pnpm -C apps/web exec vitest run tests/integration/curriculum-route.test.ts`, `pnpm -C apps/web typecheck`, `pnpm -C apps/web lint` 재통과
+  - 문서 closeout 반영 후 `bash scripts/check-doc-links.sh` 재통과
 - 2026-03-22: workbook contract hardening review closeout 완료
   - inactive workbook template은 학생 배정에서 차단하도록 API 계약을 보강
   - student/guardian workbook progress dashboard는 잘못된 `studentWorkbookId` 요청에 fallback 대신 `404`를 반환하도록 수정
@@ -222,3 +232,8 @@
   - mocked e2e의 학생 업로드 selector를 현재 `선택 입력` 구조에 맞게 재고정하고 guardian stale-card regression test 타입을 정리
   - `eslint.config.mjs`에 `test-results/**` ignore를 추가해 Playwright 산출물이 lint 입력에 섞이지 않게 정리
   - `pnpm -C apps/web lint`, `pnpm -C apps/web typecheck`, `pnpm -C apps/web test:e2e:mocked` 재통과
+- 2026-03-22: 초등 수학 현재 교육과정 seed 확장 완료
+  - wrong-note `curriculum_nodes`에 초1~초6 / 1~2학기 대표 단원을 추가
+  - 2026-03-22 기준 초1~초6 전체를 `2022.12` active catalog로 반영
+  - 공식 적용 일정과 초등 단원 정규화 근거를 `docs/06-data/ELEMENTARY_MATH_CURRENT_CURRICULUM_2026-03-22.md`에 기록
+  - `prisma:seed`, `curriculum-route.test.ts`, `typecheck`, `lint`, doc link check를 재검증

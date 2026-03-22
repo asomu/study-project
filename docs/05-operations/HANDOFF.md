@@ -3,6 +3,28 @@
 ## Latest Update (2026-03-22)
 
 - Done:
+  - study code cleanup closeout 완료
+    - current uncommitted scope review에서 추가 release blocker를 발견하지 못했다.
+    - `pnpm -C apps/web prisma:seed`
+    - `pnpm -C apps/web exec vitest run tests/integration/curriculum-route.test.ts`
+    - `pnpm -C apps/web typecheck`
+    - `pnpm -C apps/web lint`
+    - `bash scripts/check-doc-links.sh`
+  - backup restore smoke + mobile async follow-up 확인
+    - latest backup archive `study-project-20260322-205441.tar.gz`를 `/Users/mark/Documents/project/study-project/output/restore-smoke/20260322-restore-check`에 정상 복구했다.
+    - restored payload baseline은 빈 `study-project/wrong-notes` 디렉터리다.
+    - 390px 모바일 로그인 follow-up에서 student/guardian 모두 console error 0건을 확인했다.
+    - `ERR_INSUFFICIENT_RESOURCES`는 재현되지 않았고, stale request 정리에 따른 `net::ERR_ABORTED`만 남았다.
+    - `bash scripts/check-doc-links.sh`
+  - 초등 수학 현재 교육과정 seed 확장 완료
+    - wrong-note `curriculum_nodes`에 초1~초6 / 1~2학기 대표 단원을 추가
+    - 2026-03-22 기준 초등 전 학년을 `2022.12` active catalog로 반영
+    - `docs/06-data/ELEMENTARY_MATH_CURRENT_CURRICULUM_2026-03-22.md` 추가
+    - `pnpm -C apps/web prisma:seed`
+    - `pnpm -C apps/web exec vitest run tests/integration/curriculum-route.test.ts`
+    - `pnpm -C apps/web typecheck`
+    - `pnpm -C apps/web lint`
+    - `bash scripts/check-doc-links.sh`
   - Study Code Cleanup verification follow-up 완료
     - `WrongNoteWorkspace`의 abort-safe fetch에서 `response.json()` abort를 삼켜 `null payload` 런타임 크래시로 이어질 수 있던 경로를 `readJsonOrNull` helper로 정리
     - 상세 드로어 fetch를 abort-safe하게 보강하고 detail 삭제 실패를 dialog-local error로 정리
@@ -114,10 +136,10 @@
 - Blocked:
   - 없음
 - Next:
-  - 실기기 모바일에서 wrong-note workspace의 async request noise 재발 여부 관찰
-  - latest backup archive 기준 복구 smoke 절차 1회 수행
+  - heavy soak/mobile 반복 탐색에서 wrong-note workspace의 stale request abort가 추가 문제를 만드는지 관찰
   - 레거시 wrong-answer/study 제거 여부 결정
   - `demo:seed`를 current WrongNote + Workbook 데모 데이터 기준으로 재구성할지 결정
+  - storage audit baseline의 legacy missing 1건을 known issue로 유지할지, 별도 표식으로 관리할지 결정
 
 ## Session Start Checklist
 

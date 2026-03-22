@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import bcrypt from "bcryptjs";
 import {
   Prisma,
@@ -15,6 +16,28 @@ function toNullableJson(value: readonly string[] | null) {
 }
 
 const SEEDED_STUDENT_ID = "11111111-1111-4111-8111-111111111111";
+type CurriculumNodeSeed = {
+  id: string;
+  curriculumVersion: string;
+  schoolLevel?: SchoolLevel;
+  grade: number;
+  semester: number;
+  unitCode: string;
+  unitName: string;
+  sortOrder: number;
+  activeFrom: Date;
+  activeTo: Date | null;
+};
+
+function createDeterministicUuid(seed: string) {
+  const normalized = createHash("sha1").update(seed).digest("hex").slice(0, 32).split("");
+  normalized[12] = "4";
+  normalized[16] = "8";
+  const hex = normalized.join("");
+
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
 const CURRENT_CURRICULUM_NODE_IDS = {
   grade1Semester1PrimeFactorization: "22222222-2222-4222-8222-222222222222",
   grade1Semester1IntegersAndRationals: "33333333-3333-4333-8333-333333333333",
@@ -32,6 +55,96 @@ const CURRENT_CURRICULUM_NODE_IDS = {
   grade3Semester2TrigonometricRatio: "20202020-2020-4020-8020-202020202020",
   grade3Semester2CircleProperties: "21212121-2121-4121-8121-212121212121",
 } as const;
+
+const ELEMENTARY_CURRICULUM_BUNDLES = [
+  {
+    grade: 1,
+    semester: 1,
+    activeFrom: "2024-03-01",
+    units: ["9까지의 수", "여러 가지 모양", "덧셈과 뺄셈", "비교하기", "50까지의 수"],
+  },
+  {
+    grade: 1,
+    semester: 2,
+    activeFrom: "2024-03-01",
+    units: ["100까지의 수", "덧셈과 뺄셈", "여러 가지 모양과 규칙 찾기", "시각과 시간", "자료의 정리"],
+  },
+  {
+    grade: 2,
+    semester: 1,
+    activeFrom: "2024-03-01",
+    units: ["세 자리 수", "덧셈과 뺄셈", "여러 가지 도형", "길이 재기", "분류와 표"],
+  },
+  {
+    grade: 2,
+    semester: 2,
+    activeFrom: "2024-03-01",
+    units: ["네 자리 수", "곱셈구구와 곱셈", "시각과 시간", "길이와 단위", "규칙 찾기와 그래프"],
+  },
+  {
+    grade: 3,
+    semester: 1,
+    activeFrom: "2025-03-01",
+    units: ["큰 수", "곱셈", "나눗셈", "평면도형", "길이와 시간"],
+  },
+  {
+    grade: 3,
+    semester: 2,
+    activeFrom: "2025-03-01",
+    units: ["분수와 소수", "여러 가지 삼각형", "들이와 무게", "자료를 정리하고 나타내기", "규칙을 수나 식으로 나타내기"],
+  },
+  {
+    grade: 4,
+    semester: 1,
+    activeFrom: "2025-03-01",
+    units: ["큰 수와 어림셈", "각도", "곱셈과 나눗셈", "평면도형의 이동", "막대그래프"],
+  },
+  {
+    grade: 4,
+    semester: 2,
+    activeFrom: "2025-03-01",
+    units: ["분수의 덧셈과 뺄셈", "소수의 덧셈과 뺄셈", "여러 가지 삼각형", "여러 가지 사각형", "꺾은선그래프"],
+  },
+  {
+    grade: 5,
+    semester: 1,
+    activeFrom: "2026-03-01",
+    units: ["자연수의 혼합 계산", "약수와 배수", "대응 관계", "약분과 통분", "분모가 다른 분수의 덧셈과 뺄셈", "다각형의 둘레와 넓이"],
+  },
+  {
+    grade: 5,
+    semester: 2,
+    activeFrom: "2026-03-01",
+    units: ["수의 범위와 어림하기", "분수의 곱셈", "소수의 곱셈", "합동과 대칭", "직육면체와 정육면체", "평균"],
+  },
+  {
+    grade: 6,
+    semester: 1,
+    activeFrom: "2026-03-01",
+    units: ["분수의 나눗셈", "소수의 나눗셈", "비와 비율", "각기둥과 각뿔", "띠그래프와 원그래프"],
+  },
+  {
+    grade: 6,
+    semester: 2,
+    activeFrom: "2026-03-01",
+    units: ["비례식과 비례배분", "원기둥, 원뿔, 구", "원주율과 원의 넓이", "입체도형의 겉넓이와 부피", "가능성"],
+  },
+] as const;
+
+const ELEMENTARY_CURRICULUM_NODES: CurriculumNodeSeed[] = ELEMENTARY_CURRICULUM_BUNDLES.flatMap((bundle) =>
+  bundle.units.map((unitName, index) => ({
+    id: createDeterministicUuid(`elementary:${bundle.grade}:${bundle.semester}:${index + 1}:${unitName}`),
+    curriculumVersion: "2022.12",
+    schoolLevel: SchoolLevel.elementary,
+    grade: bundle.grade,
+    semester: bundle.semester,
+    unitCode: `E${bundle.grade}-S${bundle.semester}-U${index + 1}`,
+    unitName,
+    sortOrder: index + 1,
+    activeFrom: new Date(`${bundle.activeFrom}T00:00:00.000Z`),
+    activeTo: null,
+  })),
+);
 
 const SEEDED_WORKBOOK_TEMPLATES = [
   {
@@ -64,7 +177,7 @@ const SEEDED_WORKBOOK_TEMPLATES = [
   },
 ] as const;
 
-const CURRICULUM_NODES = [
+const CURRICULUM_NODES: readonly CurriculumNodeSeed[] = [
   {
     id: CURRENT_CURRICULUM_NODE_IDS.grade1Semester1PrimeFactorization,
     curriculumVersion: "2022.12",
@@ -406,6 +519,7 @@ const CURRICULUM_NODES = [
     activeFrom: new Date("2018-03-01T00:00:00.000Z"),
     activeTo: null,
   },
+  ...ELEMENTARY_CURRICULUM_NODES,
 ] as const;
 
 const CONCEPT_LESSONS = [
@@ -755,11 +869,13 @@ async function main() {
   }
 
   for (const node of CURRICULUM_NODES) {
+    const schoolLevel = node.schoolLevel ?? SchoolLevel.middle;
+
     await prisma.curriculumNode.upsert({
       where: { id: node.id },
       update: {
         curriculumVersion: node.curriculumVersion,
-        schoolLevel: SchoolLevel.middle,
+        schoolLevel,
         subject: Subject.math,
         grade: node.grade,
         semester: node.semester,
@@ -772,7 +888,7 @@ async function main() {
       create: {
         id: node.id,
         curriculumVersion: node.curriculumVersion,
-        schoolLevel: SchoolLevel.middle,
+        schoolLevel,
         subject: Subject.math,
         grade: node.grade,
         semester: node.semester,

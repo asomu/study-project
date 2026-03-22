@@ -39,6 +39,8 @@
 - Manual Verification:
   - 2026-03-22 `pnpm -C apps/web run wrong-note:storage:backup` 실행으로 archive 생성 확인
   - latest verified archive root: `/Users/mark/Library/Application Support/study-project-backups`
+  - 2026-03-22 restore smoke: `study-project-20260322-205441.tar.gz`를 `/Users/mark/Documents/project/study-project/output/restore-smoke/20260322-restore-check`에 정상 압축 해제 확인
+  - restored structure baseline: `study-project/wrong-notes` 디렉터리까지 존재, 현재 archive payload는 0B
 
 ## 3. Cleanup Policy
 
