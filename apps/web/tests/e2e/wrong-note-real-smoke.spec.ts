@@ -157,6 +157,7 @@ test("real smoke: student upload -> guardian feedback -> student confirm", async
   });
   await page.getByLabel("학기").first().selectOption("1");
   await page.getByLabel("단원").first().selectOption(seededCurriculumNodeId);
+  await page.getByRole("button", { name: "선택 입력 열기" }).click();
   await page.getByLabel("학생 메모").first().fill("문장을 끝까지 읽지 않았어요.");
   await page.getByRole("button", { name: "오답노트 저장" }).click();
 
