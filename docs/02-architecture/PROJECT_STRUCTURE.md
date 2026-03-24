@@ -13,11 +13,14 @@
 │  │  │  ├─ modules/
 │  │  │  │  ├─ auth/
 │  │  │  │  ├─ curriculum/
-│  │  │  │  ├─ assessment/
-│  │  │  │  ├─ mistake-note/
-│  │  │  │  ├─ analytics/
-│  │  │  │  └─ dashboard/
-│  │  │  ├─ shared/
+│  │  │  │  ├─ demo/
+│  │  │  │  ├─ shared/
+│  │  │  │  ├─ students/
+│  │  │  │  ├─ workbook/
+│  │  │  │  └─ wrong-note/
+│  │  │  ├─ components/
+│  │  │  │  ├─ layout/
+│  │  │  │  └─ wrong-notes/
 │  │  │  └─ styles/
 │  │  ├─ prisma/
 │  │  ├─ tests/
@@ -25,13 +28,12 @@
 │  │  │  ├─ integration/          # mocked route-contract tests
 │  │  │  ├─ real-integration/     # Prisma + PostgreSQL real integration tests
 │  │  │  └─ e2e/                  # mocked UI regression + real smoke
+│  │  ├─ scripts/
 │  │  └─ package.json
 ├─ infra/
 │  ├─ docker/
 │  │  ├─ docker-compose.local.yml
 │  └─ (deferred)/                 # prod compose / proxy 등은 후속 도입 후보
-├─ backups/
-│  └─ wrong-answers/
 ├─ docs/
 │  ├─ README.md
 │  ├─ INDEX.md
@@ -47,6 +49,7 @@
 ## 구조 원칙
 
 - 기능 중심 모듈 구조를 유지
+- 현재 문서는 active runtime 기준만 보여주며, redirect shim이나 dormant legacy DB table은 별도 운영 문서에서만 다룬다.
 - 도메인 로직은 `modules/*`에 모듈 단위로 유지하고, 과도한 계층 증설은 피한다.
 - 프레임워크 의존 코드는 `app` 또는 `infrastructure`에 제한
 - 테스트는 `unit` / `route-contract` / `real-integration` / `e2e`로 역할을 분리한다.

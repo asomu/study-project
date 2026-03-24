@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { assertStudentOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
 import { isGuardianRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
-import { readWrongNoteImageFile } from "@/modules/mistake-note/upload";
+import { readWrongNoteImageFile } from "@/modules/shared/wrong-note-storage";
 import { apiError } from "@/modules/shared/api-error";
 import { logAccessDenied } from "@/modules/shared/structured-log";
 import { parseGuardianWrongNoteDetailQuery } from "@/modules/wrong-note/schemas";

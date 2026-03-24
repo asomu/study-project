@@ -10,7 +10,7 @@ import {
   isLegacyWrongNoteImagePath,
   isSupportedImageMime,
   resolveWrongNoteImageLocation,
-} from "@/modules/mistake-note/upload";
+} from "@/modules/shared/wrong-note-storage";
 
 function buildHeifHeader(brand: string) {
   return Buffer.concat([Buffer.from([0x00, 0x00, 0x00, 0x18]), Buffer.from("ftyp"), Buffer.from(brand), Buffer.alloc(4)]);
@@ -36,6 +36,9 @@ describe("mistake-note upload", () => {
   });
 
   it("resolves default macOS app data roots for wrong-note storage", () => {
+    vi.stubEnv("APP_DATA_ROOT", "");
+    vi.stubEnv("APP_BACKUP_ROOT", "");
+
     expect(getAppDataRoot()).toBe(resolve(homedir(), "Library", "Application Support", "study-project"));
     expect(getAppBackupRoot()).toBe(resolve(homedir(), "Library", "Application Support", "study-project-backups"));
     expect(getWrongNoteStorageRoot()).toBe(resolve(homedir(), "Library", "Application Support", "study-project", "wrong-notes"));

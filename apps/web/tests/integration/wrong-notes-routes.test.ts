@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UserRole, WrongNoteReason } from "@prisma/client";
 import { AUTH_COOKIE_NAME } from "@/modules/auth/constants";
 import { signAuthToken } from "@/modules/auth/jwt";
-import { saveWrongNoteImage } from "@/modules/mistake-note/upload";
+import { saveWrongNoteImage } from "@/modules/shared/wrong-note-storage";
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {

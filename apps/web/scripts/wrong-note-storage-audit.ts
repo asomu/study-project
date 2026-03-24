@@ -1,7 +1,7 @@
 import { access, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { prisma } from "@/lib/prisma";
-import { getAppBackupRoot, getAppDataRoot, getWrongNoteStorageRoot, resolveWrongNoteImageLocation } from "@/modules/mistake-note/upload";
+import { getAppBackupRoot, getAppDataRoot, getWrongNoteStorageRoot, resolveWrongNoteImageLocation } from "@/modules/shared/wrong-note-storage";
 import { logStorageInfo } from "@/modules/shared/structured-log";
 import { loadLocalEnv } from "./load-local-env";
 

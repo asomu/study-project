@@ -1,6 +1,6 @@
 # Demo Runbook
 
-- Last Updated: 2026-03-22
+- Last Updated: 2026-03-23
 - Scope: `/Users/mark/Documents/project/study-project/apps/web`
 - Audience: 제품 오너 / 운영자 / 내부 시연 담당자
 - Goal: 현재 WrongNote + Workbook 제품 흐름을 같은 LAN에서 안정적으로 시연한다.
@@ -66,22 +66,22 @@ pnpm -C apps/web demo:clear
 
 주의:
 
-- 현재 `demo:seed`는 legacy `attempt / wrong-answer` 데모 데이터만 갱신한다.
-- 현재 제품의 WrongNote + Workbook 시연 데이터는 아래 수동 준비 순서로 만든다.
+- `demo:seed`는 seeded guardian/student/workbook 기준 current WrongNote + Workbook 데모 데이터를 갱신한다.
+- 학생 실로그인까지 시연하려면 별도 학생 활성화가 필요할 수 있다.
 
 ## 3. 현재 데모 데이터 truth
 
 - 기본 보호자 seed 계정은 존재한다.
   - email: `guardian@example.com`
   - password: `Guardian123!`
-- 학생 로그인 계정은 기본으로 생성되지 않는다.
-- 현재 제품 데모는 아래 수동 준비가 기준이다.
-  1. 보호자가 학생 프로필 생성
-  2. 초대코드 발급
-  3. 학생 첫 활성화
-  4. 보호자 workbook template 등록 + 학생 배정
-  5. 학생이 progress와 wrong-note를 직접 입력
-  6. 보호자가 feedback 저장
+- seeded 학생/문제집 baseline은 기본 seed에 이미 존재한다.
+- `demo:seed`를 실행하면 아래 current dataset이 주입된다.
+  1. active workbook template 1개 + stage 3개
+  2. student workbook progress 3건(`completed`, `in_progress` 혼합)
+  3. wrong-note 3건
+  4. workbook-linked wrong-note 포함
+  5. guardian feedback 완료 wrong-note 1건
+- 학생 로그인 계정은 기본으로 생성되지 않으므로, 학생 홈까지 시연하려면 `/student/activate`를 거쳐 계정을 연결한다.
 
 ## 4. 시연 전 최소 준비 데이터
 
@@ -236,7 +236,6 @@ docker compose -f infra/docker/docker-compose.local.yml down
 
 ## 8. 현재 한계와 메모
 
-- `demo:seed`는 아직 current WrongNote + Workbook 데모 데이터를 만들지 않는다.
-- guardian workbook template 수정 UX는 현재 prompt 기반이다.
+- `demo:seed`는 current WrongNote + Workbook 데이터만 주입하며, legacy attempt/wrong-answer dataset은 더 이상 만들지 않는다.
 - legacy image path에 실제 파일이 없으면 placeholder가 보일 수 있다.
-- 현재 데모는 수동 준비 데이터가 가장 truthful하다.
+- 학생 실로그인 시연은 별도 활성화가 필요할 수 있다.

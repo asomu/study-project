@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
-import { dirname, extname, isAbsolute, join, resolve } from "node:path";
+import { dirname, extname, isAbsolute, resolve } from "node:path";
 import { logStorageInfo } from "@/modules/shared/structured-log";
 
 export const allowedImageMimeToExtension = {
@@ -27,14 +27,6 @@ const defaultAppDataRootSegments = ["Library", "Application Support", "study-pro
 const defaultAppBackupRootSegments = ["Library", "Application Support", "study-project-backups"];
 let hasLoggedWrongNoteStorageInfo = false;
 
-function normalizeRelativePath(pathValue: string) {
-  return pathValue.replace(/\\/g, "/").replace(/^\.?\//, "").replace(/\/+$/, "");
-}
-
-export function getUploadDirectory() {
-  return normalizeRelativePath(process.env.UPLOAD_DIR ?? "public/uploads/wrong-answers");
-}
-
 function expandConfiguredPath(pathValue: string) {
   const trimmed = pathValue.trim();
 
@@ -55,6 +47,60 @@ function toDefaultAppDataRoot() {
 
 function toDefaultAppBackupRoot() {
   return resolve(homedir(), ...defaultAppBackupRootSegments);
+}
+
+function toSafeWrongNoteStorageKey(storageKey: string) {
+  const normalized = storageKey.replace(/\\/g, "/").replace(/^\/+/, "");
+  const parts = normalized.split("/").filter(Boolean);
+
+  if (!parts.length || parts.some((part) => part === "." || part === "..")) {
+    return null;
+  }
+
+  return parts.join("/");
+}
+
+function toLegacyWrongNoteAbsolutePath(imagePath: string) {
+  if (imagePath.startsWith(wrongNoteLegacyPublicPrefix)) {
+    return resolve(process.cwd(), "public", imagePath.slice(1));
+  }
+
+  return resolve(process.cwd(), imagePath.replace(/\\/g, "/").replace(/^\.?\//, ""));
+}
+
+function toMimeTypeFromPath(pathValue: string): AllowedImageMime {
+  const extension = extname(pathValue).toLowerCase();
+
+  if (extension === ".jpg" || extension === ".jpeg") {
+    return "image/jpeg";
+  }
+
+  if (extension === ".webp") {
+    return "image/webp";
+  }
+
+  if (extension === ".heic") {
+    return "image/heic";
+  }
+
+  if (extension === ".heif") {
+    return "image/heif";
+  }
+
+  return "image/png";
+}
+
+function logWrongNoteStorageInfoOnce() {
+  if (hasLoggedWrongNoteStorageInfo) {
+    return;
+  }
+
+  hasLoggedWrongNoteStorageInfo = true;
+  logStorageInfo("wrong_note_storage_root_resolved", {
+    appDataRoot: getAppDataRoot(),
+    wrongNoteStorageRoot: getWrongNoteStorageRoot(),
+    appBackupRoot: getAppBackupRoot(),
+  });
 }
 
 export function getAppDataRoot() {
@@ -85,23 +131,6 @@ export function getWrongNoteStorageRoot() {
   }
 
   return resolve(getAppDataRoot(), "wrong-notes");
-}
-
-function logWrongNoteStorageInfoOnce() {
-  if (hasLoggedWrongNoteStorageInfo) {
-    return;
-  }
-
-  hasLoggedWrongNoteStorageInfo = true;
-  logStorageInfo("wrong_note_storage_root_resolved", {
-    appDataRoot: getAppDataRoot(),
-    wrongNoteStorageRoot: getWrongNoteStorageRoot(),
-    appBackupRoot: getAppBackupRoot(),
-  });
-}
-
-export function getStudyArtifactUploadDirectory() {
-  return normalizeRelativePath(process.env.STUDY_UPLOAD_DIR ?? "public/uploads/study-work");
 }
 
 export function getUploadMaxBytes() {
@@ -146,57 +175,6 @@ export function hasValidImageSignature(mimeType: AllowedImageMime, buffer: Buffe
   return false;
 }
 
-function toPublicPath(uploadDir: string, fileName: string) {
-  const normalized = normalizeRelativePath(uploadDir);
-
-  if (normalized.startsWith("public/")) {
-    return `/${normalized.slice("public/".length)}/${fileName}`;
-  }
-
-  return `/${normalized}/${fileName}`;
-}
-
-function toSafeWrongNoteStorageKey(storageKey: string) {
-  const normalized = storageKey.replace(/\\/g, "/").replace(/^\/+/, "");
-  const parts = normalized.split("/").filter(Boolean);
-
-  if (!parts.length || parts.some((part) => part === "." || part === "..")) {
-    return null;
-  }
-
-  return parts.join("/");
-}
-
-function toLegacyWrongNoteAbsolutePath(imagePath: string) {
-  if (imagePath.startsWith(wrongNoteLegacyPublicPrefix)) {
-    return resolve(process.cwd(), "public", imagePath.slice(1));
-  }
-
-  return resolve(process.cwd(), normalizeRelativePath(imagePath));
-}
-
-function toMimeTypeFromPath(pathValue: string): AllowedImageMime {
-  const extension = extname(pathValue).toLowerCase();
-
-  if (extension === ".jpg" || extension === ".jpeg") {
-    return "image/jpeg";
-  }
-
-  if (extension === ".webp") {
-    return "image/webp";
-  }
-
-  if (extension === ".heic") {
-    return "image/heic";
-  }
-
-  if (extension === ".heif") {
-    return "image/heif";
-  }
-
-  return "image/png";
-}
-
 export function isLegacyWrongNoteImagePath(imagePath: string) {
   return imagePath.startsWith(wrongNoteLegacyPublicPrefix) || imagePath.startsWith("uploads/wrong-notes/") || imagePath.startsWith("public/uploads/wrong-notes/");
 }
@@ -233,7 +211,11 @@ export function resolveWrongNoteImageLocation(imagePath: string) {
   };
 }
 
-export async function readWrongNoteImageFile(imagePath: string) {
+export async function readWrongNoteImageFile(imagePath: string | null) {
+  if (!imagePath) {
+    return null;
+  }
+
   const resolved = resolveWrongNoteImageLocation(imagePath);
 
   if (!resolved) {
@@ -257,19 +239,6 @@ export async function readWrongNoteImageFile(imagePath: string) {
   }
 }
 
-export async function saveWrongAnswerImage(buffer: Buffer, mimeType: AllowedImageMime, wrongAnswerId: string) {
-  const uploadDir = getUploadDirectory();
-  const absoluteUploadDir = resolve(process.cwd(), uploadDir);
-  const extension = allowedImageMimeToExtension[mimeType];
-  const fileName = `${wrongAnswerId}-${Date.now()}-${randomUUID()}.${extension}`;
-  const absolutePath = join(absoluteUploadDir, fileName);
-
-  await mkdir(absoluteUploadDir, { recursive: true });
-  await writeFile(absolutePath, buffer);
-
-  return toPublicPath(uploadDir, fileName);
-}
-
 export function buildWrongNoteStorageKey(studentId: string, wrongNoteId: string, mimeType: AllowedImageMime) {
   const extension = allowedImageMimeToExtension[mimeType];
   return `${studentId}/${wrongNoteId}/${Date.now()}-${randomUUID()}.${extension}`;
@@ -285,16 +254,4 @@ export async function saveWrongNoteImage(buffer: Buffer, mimeType: AllowedImageM
   await writeFile(absolutePath, buffer);
 
   return storageKey;
-}
-
-export async function saveStudyWorkArtifactImage(buffer: Buffer, attemptId: string) {
-  const uploadDir = getStudyArtifactUploadDirectory();
-  const absoluteUploadDir = resolve(process.cwd(), uploadDir);
-  const fileName = `${attemptId}-${Date.now()}-${randomUUID()}.png`;
-  const absolutePath = join(absoluteUploadDir, fileName);
-
-  await mkdir(absoluteUploadDir, { recursive: true });
-  await writeFile(absolutePath, buffer);
-
-  return toPublicPath(uploadDir, fileName);
 }

@@ -1,7 +1,7 @@
 # API Spec v1
 
-- Version: v1.9-draft
-- Date: 2026-03-22
+- Version: v1.10-draft
+- Date: 2026-03-23
 - Base path: `/api/v1`
 - Scope: Wrong-note-first + workbook-progress service
 
@@ -649,4 +649,6 @@ note:
 
 ## 10. Legacy Note
 
-기존 `wrong-answers`, `dashboard/overview`, `dashboard/weakness`, `dashboard/trends`, `student/study/*` 계약은 코드베이스에 남아 있지만 현재 WrongNote 전용 제품의 기본 계약에는 포함하지 않는다.
+- legacy 페이지 URL(`/records/new`, `/study/content`, `/study/reviews`, `/wrong-answers/manage`, `/student/progress`, `/student/study/session`, `/student/wrong-answers`)은 redirect shim만 유지한다.
+- legacy API endpoint(`wrong-answers`, `dashboard/overview|weakness|trends|study-overview`, `student/study/*`, `study/*`, `attempts`, `materials`)는 현재 지원하지 않으며 `404` 대상이다.
+- legacy 이미지 호환은 `GET */wrong-notes/{id}/image`에서 `/uploads/wrong-notes/...` read-only 조회만 유지한다.

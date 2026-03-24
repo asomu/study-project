@@ -1,6 +1,6 @@
 # Technical Stack Baseline
 
-- Baseline Date: 2026-03-22
+- Baseline Date: 2026-03-23
 
 ## 1. 현재 구현됨
 
@@ -18,7 +18,7 @@
 
 - Wrong Note: `WrongNote` 전용 도메인 + 학생/보호자 전용 route handlers + guarded image API
 - Workbook Progress: `WorkbookTemplate` / `StudentWorkbook` / `StudentWorkbookProgress` 전용 도메인
-- Legacy modules: `attempt` / `wrong-answer` / `study` 코드는 남아 있지만 현재 기본 제품 경험의 소스 오브 트루스는 아님
+- Legacy posture: `attempt` / `wrong-answer` / `study` 런타임과 API는 제거했고, 이번 배치에서는 Prisma legacy 테이블만 dormant 상태로 유지한다.
 
 ### Data
 
@@ -27,7 +27,7 @@
 - Schema lifecycle: Prisma migrate + seed
 - Upload Storage
   - Wrong Note 이미지: `~/Library/Application Support/study-project/wrong-notes`
-  - Study artifact / legacy wrong-answer 이미지: 로컬 파일시스템(`public/uploads/...`)
+  - Wrong Note backup archive: `~/Library/Application Support/study-project-backups`
 
 ### Infra (Mac mini Local)
 
@@ -69,5 +69,6 @@
 - MVP는 모듈형 모놀리식으로 유지한다.
 - 현재 제품의 핵심 데이터 경계는 `WrongNote` + `Workbook` 중심으로 유지한다.
 - Wrong Note 업로드 데이터는 git repo 밖 앱 데이터 루트에 두고, 브라우저에는 ownership 검증을 거친 API로만 노출한다.
+- 레거시 page URL은 redirect shim만 유지하고, legacy API/runtime은 다시 추가하지 않는다.
 - 분석 로직은 서비스 계층에 캡슐화하고, 캐시/배치는 실제 병목이 생길 때만 도입한다.
 - 데이터 모델은 초/중/고 + 과목 확장을 고려한다.

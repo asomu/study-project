@@ -1,7 +1,7 @@
 # Project Status
 
-- Last Updated: 2026-03-22
-- Current Phase: M10 Workbook Progress + Wrong Note Link Verified
+- Last Updated: 2026-03-24
+- Current Phase: M10 Current Product Baseline Locked
 - Overall Progress: 100%
 
 ## 1. Milestone Status
@@ -111,6 +111,11 @@
   - workbook real integration
   - mocked e2e wrong-note + workbook flow
   - real smoke e2e
+- [x] legacy wrong-answer/study runtime 제거
+  - redirect-only shim page는 유지
+  - legacy API route/runtime/test surface 제거
+  - wrong-note storage helper를 shared module로 분리
+  - `demo:seed`를 current WrongNote + Workbook dataset 기준으로 재구성
 
 ## 3. Risks and Blocks
 
@@ -121,17 +126,16 @@
 - 2026-03-22 storage audit dry-run 기준 `wrongNoteCount=1`, `missingCount=1`, `orphanCount=0`이며, 누락 1건은 legacy `/uploads/wrong-notes/...` 경로라 자동 복구되지 않는다.
 - latest backup archive `study-project-20260322-205441.tar.gz`는 `/Users/mark/Documents/project/study-project/output/restore-smoke/20260322-restore-check`에 정상 복구되며, 현재 archive payload는 빈 `study-project/wrong-notes` 디렉터리 baseline이다.
 - OCR, 자동 피드백, 반복 오답 기반 재도전 관리는 아직 없다.
-- 레거시 `attempt / wrong-answer / study` 기능은 코드베이스에 남아 있으므로, 다음 정리 단계에서 완전 제거 여부를 판단해야 한다.
-- 레거시 API/도메인 코드는 아직 남아 있으나 UI surface와 수동 운영 기준에서는 비활성 처리되었다.
-- `demo:seed`는 아직 legacy `attempt / wrong-answer` 데모 데이터만 생성하며 current WrongNote + Workbook 시연 데이터는 수동 준비가 필요하다.
+- legacy `attempt / wrong-answer / study` 런타임과 API는 제거됐지만, Prisma legacy 테이블 drop migration은 후속 배치로 남아 있다.
+- `demo:seed`는 current WrongNote + Workbook dataset으로 재구성됐지만, 학생 실로그인 시연은 여전히 별도 활성화가 필요할 수 있다.
 - 중등 수학 커리큘럼은 2026 기준 학년별 적용 버전이 다르므로, 2027년 중3 개정 전환 시 seed와 authoring 기준을 다시 점검해야 한다.
 
 ## 4. Next Actions
 
 1. wrong-note workspace의 stale request abort가 heavy soak/mobile 반복 탐색에서도 추가 문제를 만들지 관찰한다.
-2. 레거시 `wrong-answer`/`study` 화면과 API를 완전 제거할지, 호환용으로 유지할지 결정한다.
-3. `demo:seed`를 current WrongNote + Workbook 시연 데이터 기준으로 재구성할지 결정한다.
-4. storage audit baseline의 legacy missing 1건을 운영상 known issue로 유지할지, 별도 정리 표식으로 관리할지 결정한다.
+2. Prisma legacy 테이블 drop migration 범위와 데이터 보존 정책을 별도 cleanup 배치로 확정한다.
+3. storage audit baseline의 legacy missing 1건을 운영상 known issue로 유지할지, 별도 정리 표식으로 관리할지 결정한다.
+4. demo 시나리오에서 학생 실로그인까지 필요한 경우 seed 학생 활성화 보조 절차를 둘지 결정한다.
 
 ## 5. Change Log
 
@@ -237,3 +241,13 @@
   - 2026-03-22 기준 초1~초6 전체를 `2022.12` active catalog로 반영
   - 공식 적용 일정과 초등 단원 정규화 근거를 `docs/06-data/ELEMENTARY_MATH_CURRENT_CURRICULUM_2026-03-22.md`에 기록
   - `prisma:seed`, `curriculum-route.test.ts`, `typecheck`, `lint`, doc link check를 재검증
+- 2026-03-23: legacy wrong-answer/study runtime 제거 완료
+  - `@/modules/mistake-note/upload`에서 current wrong-note storage helper를 `modules/shared/wrong-note-storage`로 분리
+  - legacy wrong-answer/study/dashboard API route, dead panel/component, 관련 회귀 테스트를 삭제하고 redirect shim page만 유지
+  - `demo:seed`와 real integration demo 검증을 current WrongNote + Workbook dataset 기준으로 재구성
+  - verification gate와 아키텍처/품질/운영 문서를 current runtime 기준으로 동기화
+  - `pnpm -C apps/web typecheck`, `pnpm -C apps/web lint`, `pnpm -C apps/web test`, `pnpm -C apps/web build`, `pnpm -C apps/web test:e2e`, `pnpm -C apps/web prisma:seed`, `pnpm -C apps/web demo:seed`, `pnpm -C apps/web demo:clear`, `pnpm -C apps/web run wrong-note:storage:audit -- --json`, `bash scripts/check-doc-links.sh` 재통과
+- 2026-03-24: study-code-cleanup closeout 완료
+  - findings-first review에서 추가 release blocker를 발견하지 못했다.
+  - legacy runtime 제거 이후 남은 historical learning-note broken link를 current 문서/구현 경로로 정리했다.
+  - `bash scripts/check-doc-links.sh` 재통과로 문서 무결성을 다시 확인했다.

@@ -11,10 +11,9 @@ async function main() {
       "Demo seed completed.",
       `studentId=${result.studentId}`,
       `referenceDate=${result.referenceDate}`,
-      `materials=${result.materialCount}`,
-      `attempts=${result.attemptCount}`,
-      `items=${result.itemCount}`,
-      `wrongAnswers=${result.wrongAnswerCount}`,
+      `studentWorkbookId=${result.studentWorkbookId}`,
+      `wrongNotes=${result.wrongNoteCount}`,
+      `progressRows=${result.progressRowCount}`,
     ].join(" "),
   );
 }

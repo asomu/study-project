@@ -1,8 +1,27 @@
 # Session Handoff
 
-## Latest Update (2026-03-22)
+## Latest Update (2026-03-24)
 
 - Done:
+  - study-code-cleanup closeout 완료
+    - findings-first review에서 추가 release blocker를 발견하지 못했다.
+    - legacy runtime 제거 이후 깨진 historical learning-note 링크를 current 문서/구현 경로로 정리했다.
+    - `bash scripts/check-doc-links.sh`
+  - legacy wrong-answer/study runtime 제거 완료
+    - wrong-note current storage/image helper를 `modules/shared/wrong-note-storage`로 분리해 active runtime이 legacy upload 모듈에 의존하지 않게 정리했다.
+    - legacy wrong-answer/study/dashboard API route, dead panel/component, 관련 legacy 회귀 테스트를 제거하고 protected page redirect shim만 남겼다.
+    - `demo:seed`와 `demo:clear`를 current WrongNote + Workbook dataset 기준으로 재구성했다.
+    - verification gate, 아키텍처/품질/운영 문서를 current runtime 기준으로 동기화했다.
+    - `pnpm -C apps/web typecheck`
+    - `pnpm -C apps/web lint`
+    - `pnpm -C apps/web test`
+    - `pnpm -C apps/web build`
+    - `pnpm -C apps/web test:e2e`
+    - `pnpm -C apps/web prisma:seed`
+    - `pnpm -C apps/web demo:seed`
+    - `pnpm -C apps/web demo:clear`
+    - `pnpm -C apps/web run wrong-note:storage:audit -- --json`
+    - `bash scripts/check-doc-links.sh`
   - study code cleanup closeout 완료
     - current uncommitted scope review에서 추가 release blocker를 발견하지 못했다.
     - `pnpm -C apps/web prisma:seed`
@@ -130,16 +149,16 @@
     - `TEST_AND_VALIDATION`, `M4_REVIEW_AND_TEST_PLAN`, `USER_E2E_MANUAL_CHECKLIST`, `DEMO_RUNBOOK`를 current WrongNote + Workbook 흐름 기준으로 갱신
     - `USER_GUIDE` 신규 추가
     - `docs/README`, `docs/INDEX`, `apps/web/README`에서 사용자/운영 가이드 링크를 노출
-    - `demo:seed`가 아직 legacy assessment demo data만 다룬다는 점을 문서에 명시
+    - `demo:seed` current dataset 기준을 문서에 반영
 - In Progress:
   - 없음
 - Blocked:
   - 없음
 - Next:
   - heavy soak/mobile 반복 탐색에서 wrong-note workspace의 stale request abort가 추가 문제를 만드는지 관찰
-  - 레거시 wrong-answer/study 제거 여부 결정
-  - `demo:seed`를 current WrongNote + Workbook 데모 데이터 기준으로 재구성할지 결정
+  - Prisma legacy 테이블 drop migration 범위와 데이터 보존 정책 결정
   - storage audit baseline의 legacy missing 1건을 known issue로 유지할지, 별도 표식으로 관리할지 결정
+  - demo 시나리오에서 student login까지 자동화할지, activation 절차를 유지할지 결정
 
 ## Session Start Checklist
 

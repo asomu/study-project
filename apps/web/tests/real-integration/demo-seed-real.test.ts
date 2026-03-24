@@ -1,17 +1,17 @@
-import { SchoolLevel, Subject } from "@prisma/client";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { GET as GET_OVERVIEW } from "@/app/api/v1/dashboard/overview/route";
-import { GET as GET_TRENDS } from "@/app/api/v1/dashboard/trends/route";
-import { GET as GET_WEAKNESS } from "@/app/api/v1/dashboard/weakness/route";
-import { GET as GET_WRONG_ANSWERS } from "@/app/api/v1/wrong-answers/route";
+import { GET as GET_GUARDIAN_WORKBOOK_DASHBOARD } from "@/app/api/v1/workbook-progress/dashboard/route";
+import { GET as GET_GUARDIAN_WRONG_NOTES } from "@/app/api/v1/wrong-notes/route";
+import { GET as GET_STUDENT_WORKBOOK_DASHBOARD } from "@/app/api/v1/student/workbook-progress/dashboard/route";
+import { GET as GET_STUDENT_WRONG_NOTE_DASHBOARD } from "@/app/api/v1/student/wrong-notes/dashboard/route";
 import { prisma } from "@/lib/prisma";
-import { clearDemoData, DEMO_CURRICULUM_VERSION, DEMO_STUDENT_ID, seedDemoData } from "@/modules/demo/demo-data";
-import { addDaysUtc } from "@/modules/dashboard/date-range";
-import { createSeedGuardianAuthCookie, getSeedGuardian } from "./db-test-helpers";
-
-function dateOnly(value: Date) {
-  return value.toISOString().slice(0, 10);
-}
+import {
+  clearDemoData,
+  DEMO_CURRICULUM_VERSION,
+  DEMO_STUDENT_ID,
+  DEMO_STUDENT_WORKBOOK_ID,
+  seedDemoData,
+} from "@/modules/demo/demo-data";
+import { createSeedGuardianAuthCookie, createSeedStudentAuthCookie, getSeedGuardian } from "./db-test-helpers";
 
 describe("real integration: demo seed", () => {
   beforeAll(async () => {
@@ -27,145 +27,152 @@ describe("real integration: demo seed", () => {
     await prisma.$disconnect();
   });
 
-  it("is idempotent and fills dashboard and wrong-answer demo views", async () => {
-    const referenceDate = new Date();
-    const authCookie = await createSeedGuardianAuthCookie();
+  it("is idempotent and fills current wrong-note + workbook demo views", async () => {
+    const referenceDate = new Date("2026-03-23T00:00:00.000Z");
+    const [guardianAuthCookie, studentAuthCookie] = await Promise.all([
+      createSeedGuardianAuthCookie(),
+      createSeedStudentAuthCookie(),
+    ]);
 
     const firstSeed = await seedDemoData({ referenceDate });
     const secondSeed = await seedDemoData({ referenceDate });
 
     expect(firstSeed).toEqual(secondSeed);
+    expect(firstSeed.studentWorkbookId).toBe(DEMO_STUDENT_WORKBOOK_ID);
+    expect(firstSeed.wrongNoteCount).toBe(3);
+    expect(firstSeed.progressRowCount).toBe(3);
 
-    const [materials, attempts, items, wrongAnswers] = await Promise.all([
-      prisma.material.count({
+    const [wrongNotes, progressRows] = await Promise.all([
+      prisma.wrongNote.findMany({
         where: {
           studentId: DEMO_STUDENT_ID,
+          deletedAt: null,
+        },
+        include: {
+          workbookTemplateStage: true,
+        },
+        orderBy: {
+          createdAt: "desc",
         },
       }),
-      prisma.attempt.count({
+      prisma.studentWorkbookProgress.findMany({
         where: {
-          studentId: DEMO_STUDENT_ID,
-        },
-      }),
-      prisma.attemptItem.count({
-        where: {
-          attempt: {
-            studentId: DEMO_STUDENT_ID,
-          },
-        },
-      }),
-      prisma.wrongAnswer.count({
-        where: {
-          attemptItem: {
-            attempt: {
-              studentId: DEMO_STUDENT_ID,
-            },
-          },
+          studentWorkbookId: DEMO_STUDENT_WORKBOOK_ID,
         },
       }),
     ]);
 
-    expect(materials).toBe(3);
-    expect(attempts).toBe(6);
-    expect(items).toBe(24);
-    expect(wrongAnswers).toBe(12);
+    expect(wrongNotes).toHaveLength(3);
+    expect(wrongNotes.some((wrongNote) => Boolean(wrongNote.guardianFeedback))).toBe(true);
+    expect(wrongNotes.some((wrongNote) => Boolean(wrongNote.studentWorkbookId && wrongNote.workbookTemplateStageId))).toBe(true);
+    expect(progressRows).toHaveLength(3);
 
-    const today = dateOnly(referenceDate);
-    const rangeStart = dateOnly(addDaysUtc(referenceDate, -27));
-
-    const overviewResponse = await GET_OVERVIEW(
-      new Request(`http://localhost/api/v1/dashboard/overview?studentId=${DEMO_STUDENT_ID}&date=${today}`, {
+    const studentDashboardResponse = await GET_STUDENT_WRONG_NOTE_DASHBOARD(
+      new Request("http://localhost/api/v1/student/wrong-notes/dashboard", {
         method: "GET",
         headers: {
-          cookie: authCookie,
+          cookie: studentAuthCookie,
         },
       }),
     );
-    const overviewBody = (await overviewResponse.json()) as {
-      summary: { totalItems: number; wrongAnswers: number };
+    const studentDashboardBody = (await studentDashboardResponse.json()) as {
+      summary: {
+        totalNotes: number;
+        feedbackCompletedNotes: number;
+      };
     };
 
-    expect(overviewResponse.status).toBe(200);
-    expect(overviewBody.summary.totalItems).toBeGreaterThan(0);
-    expect(overviewBody.summary.wrongAnswers).toBeGreaterThan(0);
+    expect(studentDashboardResponse.status).toBe(200);
+    expect(studentDashboardBody.summary.totalNotes).toBe(3);
+    expect(studentDashboardBody.summary.feedbackCompletedNotes).toBe(1);
 
-    const weeklyWeaknessResponse = await GET_WEAKNESS(
-      new Request(`http://localhost/api/v1/dashboard/weakness?studentId=${DEMO_STUDENT_ID}&period=weekly`, {
+    const guardianWrongNotesResponse = await GET_GUARDIAN_WRONG_NOTES(
+      new Request(`http://localhost/api/v1/wrong-notes?studentId=${DEMO_STUDENT_ID}`, {
         method: "GET",
         headers: {
-          cookie: authCookie,
+          cookie: guardianAuthCookie,
         },
       }),
     );
-    const weeklyWeaknessBody = (await weeklyWeaknessResponse.json()) as {
-      weakUnits: Array<{ unitName: string }>;
-      categoryDistribution: Array<{ key: string }>;
+    const guardianWrongNotesBody = (await guardianWrongNotesResponse.json()) as {
+      pagination: {
+        totalItems: number;
+      };
+      wrongNotes: Array<{
+        workbook: {
+          studentWorkbookId: string;
+          stageName: string;
+        } | null;
+        feedback: {
+          text: string;
+        } | null;
+      }>;
     };
 
-    expect(weeklyWeaknessResponse.status).toBe(200);
-    expect(weeklyWeaknessBody.weakUnits).toHaveLength(1);
-    expect(weeklyWeaknessBody.weakUnits[0]?.unitName).toBe("일차방정식");
-    expect(weeklyWeaknessBody.categoryDistribution.length).toBeGreaterThan(0);
+    expect(guardianWrongNotesResponse.status).toBe(200);
+    expect(guardianWrongNotesBody.pagination.totalItems).toBe(3);
+    expect(guardianWrongNotesBody.wrongNotes.some((wrongNote) => wrongNote.workbook?.studentWorkbookId === DEMO_STUDENT_WORKBOOK_ID)).toBe(true);
+    expect(
+      guardianWrongNotesBody.wrongNotes.some(
+        (wrongNote) => wrongNote.feedback?.text === "등식의 양변에 같은 계산을 적용하는 흐름을 한 줄씩 다시 써보자.",
+      ),
+    ).toBe(true);
 
-    const monthlyWeaknessResponse = await GET_WEAKNESS(
-      new Request(`http://localhost/api/v1/dashboard/weakness?studentId=${DEMO_STUDENT_ID}&period=monthly`, {
+    const studentWorkbookResponse = await GET_STUDENT_WORKBOOK_DASHBOARD(
+      new Request(`http://localhost/api/v1/student/workbook-progress/dashboard?grade=1&studentWorkbookId=${DEMO_STUDENT_WORKBOOK_ID}`, {
         method: "GET",
         headers: {
-          cookie: authCookie,
+          cookie: studentAuthCookie,
         },
       }),
     );
-    const monthlyWeaknessBody = (await monthlyWeaknessResponse.json()) as {
-      weakUnits: Array<{ unitName: string }>;
+    const studentWorkbookBody = (await studentWorkbookResponse.json()) as {
+      selectedWorkbook: {
+        studentWorkbookId: string;
+      } | null;
+      summary: {
+        totalSteps: number;
+        completedCount: number;
+        inProgressCount: number;
+      };
     };
 
-    expect(monthlyWeaknessResponse.status).toBe(200);
-    expect(monthlyWeaknessBody.weakUnits.length).toBeGreaterThanOrEqual(2);
+    expect(studentWorkbookResponse.status).toBe(200);
+    expect(studentWorkbookBody.selectedWorkbook?.studentWorkbookId).toBe(DEMO_STUDENT_WORKBOOK_ID);
+    expect(studentWorkbookBody.summary.totalSteps).toBeGreaterThan(0);
+    expect(studentWorkbookBody.summary.completedCount).toBe(2);
+    expect(studentWorkbookBody.summary.inProgressCount).toBe(1);
 
-    const trendsResponse = await GET_TRENDS(
+    const guardianWorkbookResponse = await GET_GUARDIAN_WORKBOOK_DASHBOARD(
       new Request(
-        `http://localhost/api/v1/dashboard/trends?studentId=${DEMO_STUDENT_ID}&rangeStart=${rangeStart}&rangeEnd=${today}`,
+        `http://localhost/api/v1/workbook-progress/dashboard?studentId=${DEMO_STUDENT_ID}&grade=1&studentWorkbookId=${DEMO_STUDENT_WORKBOOK_ID}`,
         {
           method: "GET",
           headers: {
-            cookie: authCookie,
+            cookie: guardianAuthCookie,
           },
         },
       ),
     );
-    const trendsBody = (await trendsResponse.json()) as {
-      points: Array<{ totalItems: number }>;
+    const guardianWorkbookBody = (await guardianWorkbookResponse.json()) as {
+      selectedWorkbook: {
+        studentWorkbookId: string;
+      } | null;
+      summary: {
+        completedCount: number;
+      };
     };
 
-    expect(trendsResponse.status).toBe(200);
-    expect(trendsBody.points.filter((point) => point.totalItems > 0).length).toBeGreaterThanOrEqual(2);
-
-    const wrongAnswersResponse = await GET_WRONG_ANSWERS(
-      new Request(`http://localhost/api/v1/wrong-answers?studentId=${DEMO_STUDENT_ID}&from=${rangeStart}&to=${today}`, {
-        method: "GET",
-        headers: {
-          cookie: authCookie,
-        },
-      }),
-    );
-    const wrongAnswersBody = (await wrongAnswersResponse.json()) as {
-      wrongAnswers: Array<{
-        imagePath: string | null;
-        categories: Array<{ key: string }>;
-      }>;
-    };
-
-    expect(wrongAnswersResponse.status).toBe(200);
-    expect(wrongAnswersBody.wrongAnswers.length).toBeGreaterThanOrEqual(6);
-    expect(wrongAnswersBody.wrongAnswers.some((item) => item.categories.length === 0)).toBe(true);
-    expect(wrongAnswersBody.wrongAnswers.some((item) => item.imagePath === null)).toBe(true);
+    expect(guardianWorkbookResponse.status).toBe(200);
+    expect(guardianWorkbookBody.selectedWorkbook?.studentWorkbookId).toBe(DEMO_STUDENT_WORKBOOK_ID);
+    expect(guardianWorkbookBody.summary.completedCount).toBe(2);
   });
 
-  it("clears only student-scoped demo data while preserving base records", async () => {
-    await seedDemoData({ referenceDate: new Date() });
+  it("clears only current demo wrong-note/workbook data while preserving base seed records", async () => {
+    await seedDemoData({ referenceDate: new Date("2026-03-23T00:00:00.000Z") });
     await clearDemoData();
 
-    const [guardian, student, categories, curriculumNodes, materials, attempts, items, wrongAnswers] = await Promise.all([
+    const [guardian, student, studentWorkbook, curriculumNodes, wrongNotes, progressRows] = await Promise.all([
       prisma.user.findUnique({
         where: {
           email: "guardian@example.com",
@@ -176,51 +183,33 @@ describe("real integration: demo seed", () => {
           id: DEMO_STUDENT_ID,
         },
       }),
-      prisma.wrongAnswerCategory.count(),
+      prisma.studentWorkbook.findUnique({
+        where: {
+          id: DEMO_STUDENT_WORKBOOK_ID,
+        },
+      }),
       prisma.curriculumNode.count({
         where: {
           curriculumVersion: DEMO_CURRICULUM_VERSION,
-          schoolLevel: SchoolLevel.middle,
-          subject: Subject.math,
-          grade: 1,
-          semester: 1,
         },
       }),
-      prisma.material.count({
+      prisma.wrongNote.count({
         where: {
           studentId: DEMO_STUDENT_ID,
         },
       }),
-      prisma.attempt.count({
+      prisma.studentWorkbookProgress.count({
         where: {
-          studentId: DEMO_STUDENT_ID,
-        },
-      }),
-      prisma.attemptItem.count({
-        where: {
-          attempt: {
-            studentId: DEMO_STUDENT_ID,
-          },
-        },
-      }),
-      prisma.wrongAnswer.count({
-        where: {
-          attemptItem: {
-            attempt: {
-              studentId: DEMO_STUDENT_ID,
-            },
-          },
+          studentWorkbookId: DEMO_STUDENT_WORKBOOK_ID,
         },
       }),
     ]);
 
     expect(guardian).not.toBeNull();
     expect(student).not.toBeNull();
-    expect(categories).toBeGreaterThanOrEqual(3);
-    expect(curriculumNodes).toBeGreaterThanOrEqual(5);
-    expect(materials).toBe(0);
-    expect(attempts).toBe(0);
-    expect(items).toBe(0);
-    expect(wrongAnswers).toBe(0);
+    expect(studentWorkbook).not.toBeNull();
+    expect(curriculumNodes).toBeGreaterThan(0);
+    expect(wrongNotes).toBe(0);
+    expect(progressRows).toBe(0);
   });
 });

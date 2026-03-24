@@ -16,11 +16,9 @@
 
 - 한 줄 정의: 저장된 문항 데이터에서 바로 지표를 계산해 대시보드 수치를 만드는 방식이다.
 - 이번 프로젝트 적용 지점:
-  - `/Users/mark/Documents/project/study-project/apps/web/src/modules/analytics/dashboard-metrics.ts`
+  - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md`
   - `/Users/mark/Documents/project/study-project/apps/web/src/modules/dashboard/date-range.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/dashboard/overview/route.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/dashboard/weakness/route.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/dashboard/trends/route.ts`
+  - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - 왜 이걸 선택했는가:
   - `DEVELOPMENT_PLAN.md` M3 Scope Lock에서 “분석 데이터: attempt_items 직접 집계”로 고정했다.
   - `DECISION_LOG.md` ADR-0011에서 재현성과 추적 가능성을 우선한다고 명시했다.
@@ -39,9 +37,7 @@
 - 이번 프로젝트 적용 지점:
   - `/Users/mark/Documents/project/study-project/apps/web/src/modules/auth/session.ts`
   - `/Users/mark/Documents/project/study-project/apps/web/src/modules/auth/ownership-guard.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/dashboard/overview/route.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/dashboard/weakness/route.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/dashboard/trends/route.ts`
+  - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - 왜 이걸 선택했는가:
   - PRD의 보호자-학생 모델과 ADR-0004(IDOR 방지) 요구를 그대로 따르기 위해서다.
 - 대안과 트레이드오프:
@@ -56,9 +52,8 @@
 
 - 한 줄 정의: 외부 차트 패키지 없이 브라우저 기본 SVG로 라인/바 시각화를 그린다.
 - 이번 프로젝트 적용 지점:
-  - `/Users/mark/Documents/project/study-project/apps/web/src/components/dashboard/trends-line-chart.tsx`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/components/dashboard/progress-comparison.tsx`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/components/dashboard/category-distribution-chart.tsx`
+  - `/Users/mark/Documents/project/study-project/apps/web/src/components/wrong-notes/wrong-note-workspace.tsx`
+  - `/Users/mark/Documents/project/study-project/docs/07-learning/notes/2026-03-22-current-product-tech-explainer.md`
 - 왜 이걸 선택했는가:
   - M3 결정사항에서 “외부 라이브러리 없이 SVG/CSS 구현”으로 확정되어 의존성 증가를 피했다.
 - 대안과 트레이드오프:
@@ -74,9 +69,9 @@
 
 - 한 줄 정의: 계산 로직은 unit, API 계약은 integration, 사용자 흐름은 e2e로 나눠 검증하는 전략이다.
 - 이번 프로젝트 적용 지점:
-  - `/Users/mark/Documents/project/study-project/apps/web/tests/unit/dashboard-metrics.test.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/tests/integration/dashboard-routes.test.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/tests/e2e/dashboard-m3.spec.ts`
+  - `/Users/mark/Documents/project/study-project/apps/web/tests/unit/wrong-note-service.test.ts`
+  - `/Users/mark/Documents/project/study-project/apps/web/tests/integration/wrong-notes-routes.test.ts`
+  - `/Users/mark/Documents/project/study-project/apps/web/tests/e2e/wrong-note-dashboard.spec.ts`
 - 왜 이걸 선택했는가:
   - `TEST_AND_VALIDATION.md`와 ADR-0003에서 대시보드/분석 로직은 Hybrid TDD가 적합하다고 규정했다.
 - 대안과 트레이드오프:

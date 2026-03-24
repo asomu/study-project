@@ -1,6 +1,6 @@
 # System Architecture
 
-- Date: 2026-03-22
+- Date: 2026-03-23
 - Scope: Wrong-note-first + workbook-progress private beta
 
 ## 1. 아키텍처 스타일
@@ -37,8 +37,10 @@
     - 단원별 오답 현황
     - 오류유형별 오답 현황
   - 필터 기반 카드 탐색
-- Legacy Assessment/Study
-  - 과거 `Attempt`, `WrongAnswer`, `Study` 흐름은 코드베이스에 남아 있으나 현재 기본 제품 경험과 통계 소스 오브 트루스는 아니다.
+- Legacy Compatibility
+  - legacy page URL은 redirect shim만 유지한다.
+  - legacy `/uploads/wrong-notes/...` image path는 read-only 호환만 유지한다.
+  - legacy wrong-answer/study/dashboard runtime/API는 제거되었고, 이번 배치에서는 DB 테이블만 dormant 상태로 남긴다.
 
 ## 3. 현재 핵심 데이터 저장소
 
@@ -53,7 +55,7 @@
 - `student_workbooks`
 - `student_workbook_progresses`
 
-레거시 저장소:
+Dormant legacy tables:
 
 - `materials`
 - `attempts`

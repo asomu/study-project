@@ -4,7 +4,7 @@ import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AUTH_COOKIE_NAME } from "@/modules/auth/constants";
 import { signAuthToken } from "@/modules/auth/jwt";
-import { getWrongNoteStorageRoot } from "@/modules/mistake-note/upload";
+import { getWrongNoteStorageRoot } from "@/modules/shared/wrong-note-storage";
 
 export const SEEDED_STUDENT_ID = "11111111-1111-4111-8111-111111111111";
 export const SEEDED_CURRICULUM_NODE_ID = "22222222-2222-4222-8222-222222222222";
@@ -123,74 +123,6 @@ export async function resetSeedStudentScopedData() {
       studentId: SEEDED_STUDENT_ID,
     },
   });
-
-  await prisma.studyReview.deleteMany({
-    where: {
-      studentId: SEEDED_STUDENT_ID,
-    },
-  });
-
-  await prisma.studyWorkArtifact.deleteMany({
-    where: {
-      attempt: {
-        studentId: SEEDED_STUDENT_ID,
-      },
-    },
-  });
-
-  await prisma.wrongAnswerCategoryMap.deleteMany({
-    where: {
-      wrongAnswer: {
-        attemptItem: {
-          attempt: {
-            studentId: SEEDED_STUDENT_ID,
-          },
-        },
-      },
-    },
-  });
-
-  await prisma.wrongAnswer.deleteMany({
-    where: {
-      attemptItem: {
-        attempt: {
-          studentId: SEEDED_STUDENT_ID,
-        },
-      },
-    },
-  });
-
-  await prisma.attemptItem.deleteMany({
-    where: {
-      attempt: {
-        studentId: SEEDED_STUDENT_ID,
-      },
-    },
-  });
-
-  await prisma.attempt.deleteMany({
-    where: {
-      studentId: SEEDED_STUDENT_ID,
-    },
-  });
-
-  await prisma.material.deleteMany({
-    where: {
-      studentId: SEEDED_STUDENT_ID,
-    },
-  });
-
-  await prisma.studentUnitProgress.deleteMany({
-    where: {
-      studentId: SEEDED_STUDENT_ID,
-    },
-  });
-
-  await prisma.masterySnapshot.deleteMany({
-    where: {
-      studentId: SEEDED_STUDENT_ID,
-    },
-  });
 }
 
 export async function resetSeedStudentAccountState() {
@@ -236,11 +168,7 @@ export async function resetSeedStudentAccountState() {
 }
 
 export async function clearTestUploadDirectory() {
-  const uploadDirs = [
-    resolve(process.cwd(), process.env.UPLOAD_DIR ?? "public/uploads/test-wrong-answers"),
-    getWrongNoteStorageRoot(),
-    resolve(process.cwd(), process.env.STUDY_UPLOAD_DIR ?? "public/uploads/test-study-work"),
-  ];
+  const uploadDirs = [getWrongNoteStorageRoot()];
 
   for (const uploadDir of uploadDirs) {
     await mkdir(uploadDir, { recursive: true });

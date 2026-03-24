@@ -7,7 +7,7 @@ import type {
   WrongNoteStudentSummary,
 } from "@/modules/wrong-note/contracts";
 import { getWrongNoteReasonLabel } from "@/modules/wrong-note/constants";
-import { buildGuardianWrongNoteImageUrl, buildStudentWrongNoteImageUrl } from "@/modules/mistake-note/upload";
+import { buildGuardianWrongNoteImageUrl, buildStudentWrongNoteImageUrl } from "@/modules/shared/wrong-note-storage";
 
 export const wrongNoteInclude = {
   student: {

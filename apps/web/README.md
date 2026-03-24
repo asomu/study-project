@@ -54,10 +54,10 @@ pnpm -C apps/web demo:seed
 pnpm -C apps/web demo:clear
 ```
 
-- `demo:seed`는 현재 legacy `attempt / wrong-answer` 데모 데이터만 다시 채웁니다.
-- `demo:clear`는 같은 legacy 데모 데이터와 업로드 파일만 정리합니다.
+- `demo:seed`는 current WrongNote + Workbook 데모 데이터를 다시 채웁니다.
+- `demo:clear`는 같은 current demo wrong-note/workbook 데이터와 관련 이미지 파일만 정리합니다.
 - `DEMO_REFERENCE_DATE=YYYY-MM-DD pnpm -C apps/web demo:seed`로 기준일을 고정할 수 있습니다.
-- 현재 제품의 WrongNote + Workbook 데모는 수동 준비가 기준이며 `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`를 따릅니다.
+- student login 계정은 여전히 별도 활성화가 필요할 수 있으며, 운영자용 시연 절차는 `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`를 따릅니다.
 
 ## Current Product Guides
 

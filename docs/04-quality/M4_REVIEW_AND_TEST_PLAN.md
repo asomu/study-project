@@ -1,7 +1,7 @@
 # M4 Review and Verification Test Plan
 
-- Version: v1.2
-- Last Updated: 2026-03-22
+- Version: v1.3
+- Last Updated: 2026-03-23
 - Baseline: 2026-03-22 (`M10 Completed / WrongNote + Workbook beta`)
 - Scope: `/Users/mark/Documents/project/study-project/apps/web`
 - Note: 파일명은 `M4_*`를 유지하지만, 현재 private beta 회귀 게이트 기준 문서로 계속 사용한다.
@@ -110,23 +110,23 @@
 
 운영 체크 세트:
 
-1. `test -d apps/web/public/uploads/wrong-answers`
-2. `test -d /Users/mark/Library/Application Support/study-project/wrong-notes`
-3. `test -d backups/wrong-answers`
-4. `test -d /Users/mark/Library/Application Support/study-project-backups`
-5. `du -sk apps/web/public/uploads/wrong-answers`
-6. `du -sk /Users/mark/Library/Application Support/study-project/wrong-notes`
-7. 업로드 디렉터리 용량 2GB 초과 시 `HOLD` 판정 후 원인 분석
+1. `test -d /Users/mark/Library/Application Support/study-project/wrong-notes`
+2. `test -d /Users/mark/Library/Application Support/study-project-backups`
+3. `du -sk /Users/mark/Library/Application Support/study-project/wrong-notes`
+4. wrong-note storage 용량 2GB 초과 시 `HOLD` 판정 후 원인 분석
 
 ## 5. FR 매핑 기반 동작 검증 시나리오
 
 1. FR-001 / FR-002 / FR-009
 - 대상: 보호자/학생 로그인, guardian/student ownership
 - 테스트:
+  - `tests/integration/auth-login-route.test.ts`
+  - `tests/integration/auth-signup-route.test.ts`
+  - `tests/integration/auth-student-activate-route.test.ts`
   - `tests/integration/students-route.test.ts`
   - `tests/integration/wrong-notes-routes.test.ts`
   - `tests/integration/workbook-routes.test.ts`
-  - `tests/e2e/login-dashboard.spec.ts`
+  - `tests/e2e/wrong-note-real-smoke.spec.ts`
 - 기대결과: 타 보호자/타 학생 데이터 접근 차단, role-based routing 정상
 
 2. FR-003 / FR-004 / FR-005 / FR-006 / FR-013
@@ -181,7 +181,7 @@
 정책:
 
 - 본 플랜은 현재 실제 게이트와 운영 스크립트를 소스 오브 트루스로 본다.
-- 레거시 `dashboard/overview|weakness|trends` 계열은 현재 핵심 제품 게이트에서 제외한다.
+- legacy page redirect shim은 계속 검증하되, 제거된 legacy API는 게이트 대상이 아니라 `404` contract로 본다.
 
 ## 7. 실행 후 결과 보고 템플릿
 
@@ -206,4 +206,4 @@
 3. `verify:pr`/`verify:release`는 `prisma migrate deploy` + `prisma:seed`를 선행 실행한다.
 4. 문서 변경이 포함되면 `check-doc-links.sh`를 항상 실행한다.
 5. 릴리즈 판정 예외는 두지 않고 필수 게이트 전부 통과 시에만 `Go`로 판단한다.
-6. `demo:seed`는 현재 legacy assessment demo data용이며, WrongNote + Workbook 시연 데이터는 별도 수동 준비가 필요하다.
+6. `demo:seed`는 current WrongNote + Workbook 기준 demo dataset을 주입하고, 학생 실로그인은 별도 활성화가 필요할 수 있다.

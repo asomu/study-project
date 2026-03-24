@@ -16,10 +16,8 @@
 
 - 한 줄 정의: 새 학습 기능은 별도 `Study` 모듈에서 조합하되, 실제 풀이 결과는 기존 `Attempt`, `AttemptItem`, `WrongAnswer`에 저장하는 구조다.
 - 이번 프로젝트 적용 지점:
-  - `/Users/mark/Documents/project/study-project/apps/web/src/modules/study/service.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/student/study/sessions/route.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/student/study/sessions/[id]/submit/route.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/study/reviews/[sessionId]/route.ts`
+  - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md`
+  - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - 왜 이걸 선택했는가:
   - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` ADR-0017에서 M2/M3 파이프라인 회귀를 줄이기 위해 `Attempt/WrongAnswer` 재사용을 고정했다.
   - 기존 분석/오답 파이프라인을 버리지 않고 학생 기능을 확장해야 했기 때문이다.
@@ -57,10 +55,8 @@
 
 - 한 줄 정의: 학생 필기는 stroke 로그를 서버에 보내지 않고, 제출 시점의 PNG 한 장만 저장하는 방식이다.
 - 이번 프로젝트 적용 지점:
-  - `/Users/mark/Documents/project/study-project/apps/web/src/components/study/study-canvas.tsx`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/modules/study/service.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/modules/mistake-note/upload.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/app/(protected)/student/study/session/study-session-panel.tsx`
+  - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md`
+  - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - 왜 이걸 선택했는가:
   - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` ADR-0018에서 MVP는 제출 증빙과 보호자 리뷰에 필요한 최소 산출물만 저장하기로 고정했다.
   - iPad 입력은 중요하지만 stroke replay까지 넣으면 서버/네트워크/복구 로직이 크게 복잡해진다.
@@ -71,16 +67,16 @@
   - data URL을 그대로 DB에 저장해 크기와 전송량이 급격히 커지는 것.
   - MIME만 보고 저장해서 실제 파일 시그니처 검증을 빼먹는 것.
 - 바로 해볼 체크:
-  - 학생 학습 세션에서 필기 후 제출하고 `study_work_artifacts.image_path`가 기록되는지, 업로드 파일이 `public/uploads/study-work`에 생기는지 확인한다.
+  - 학생 학습 세션에서 필기 후 제출하고 `study_work_artifacts.image_path`가 기록되는지 확인한다.
 
 ### 2.4 Hybrid TDD로 학생-보호자 루프를 단계별 고정
 
 - 한 줄 정의: 계산 함수, API 권한, 실제 DB 흐름, 브라우저 사용자 시나리오를 서로 다른 레벨 테스트로 나눠 검증하는 방식이다.
 - 이번 프로젝트 적용 지점:
-  - `/Users/mark/Documents/project/study-project/apps/web/tests/unit/study-service.test.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/tests/integration/study-routes.test.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/tests/real-integration/study-loop-real.test.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/tests/e2e/study-loop.spec.ts`
+  - `/Users/mark/Documents/project/study-project/apps/web/tests/unit/wrong-note-service.test.ts`
+  - `/Users/mark/Documents/project/study-project/apps/web/tests/integration/wrong-notes-routes.test.ts`
+  - `/Users/mark/Documents/project/study-project/apps/web/tests/real-integration/wrong-notes-real.test.ts`
+  - `/Users/mark/Documents/project/study-project/apps/web/tests/e2e/wrong-note-real-smoke.spec.ts`
 - 왜 이걸 선택했는가:
   - 학생 학습 루프는 자동채점, 권한 분리, 오답 생성, 보호자 리뷰, 진도 상태 반영이 한 번에 연결되므로 한 레벨 테스트만으로는 회귀를 막기 어렵다.
   - `/Users/mark/Documents/project/study-project/docs/04-quality/TEST_AND_VALIDATION.md`의 Hybrid TDD 원칙을 그대로 따른다.

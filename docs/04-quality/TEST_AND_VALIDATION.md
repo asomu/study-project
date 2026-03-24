@@ -1,6 +1,6 @@
 # Test and Validation Strategy
 
-- Last Updated: 2026-03-22
+- Last Updated: 2026-03-23
 - Scope: Wrong-note-first + workbook-progress private beta
 - Audience: 개발자 / 리뷰어 / 운영자
 
@@ -30,7 +30,7 @@
 - workbook progress KPI, 단원별 bar chart, `단원 x 단계` matrix
 - wrong-note workbook linkage와 grade/semester/stage 검증
 - 학생/보호자 role guard 및 ownership chain
-- 레거시 wrong-answer/study surface의 redirect 동작
+- 레거시 page redirect shim 동작
 
 ## 4. 테스트 레벨
 
@@ -78,7 +78,7 @@
   - `pnpm verify:release`
   - 기본 세트: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm test:e2e`
   - 운영 세트: `pnpm -C apps/web run wrong-note:storage:audit -- --json`, `bash scripts/check-doc-links.sh`
-  - storage/backup directory 존재 여부와 2GB threshold를 함께 확인한다.
+  - wrong-note storage/backup directory 존재 여부와 wrong-note storage 2GB threshold를 함께 확인한다.
 
 ### 6.1 실행 명령 표준화
 
@@ -136,4 +136,3 @@
 - 자동 피드백
 - 재도전 상태 추적
 - PDF/주간 리포트
-- legacy `dashboard/overview|weakness|trends` 계열은 현재 기본 제품 게이트가 아니라 호환/잔존 코드로만 본다.

@@ -241,3 +241,15 @@
   - 초등 단원명은 공식 성취기준의 학년군 구조를 바탕으로, 앱 UX를 위해 `학년 / 학기 / 대표 단원명`으로 정규화한다.
   - 초등 1~2, 3~4, 5~6의 적용 시점은 각각 `2024-03-01`, `2025-03-01`, `2026-03-01`로 유지한다.
   - 향후 publisher-specific authoring이나 교과서 단원 단위 세분화가 필요해지면, 현재 대표 단원 라벨을 더 세밀한 catalog로 재점검해야 한다.
+
+## ADR-0030: legacy wrong-answer/study 런타임은 제거하고 redirect shim + dormant DB만 유지한다
+
+- Date: 2026-03-23
+- Decision: 현재 제품 기준으로 legacy `wrong-answer` / `study` / old dashboard 런타임과 API는 제거하고, protected page redirect shim과 wrong-note image의 `/uploads/wrong-notes/...` read-only 호환만 유지한다. Prisma legacy 모델과 실제 DB 테이블 drop migration은 이번 배치에 포함하지 않는다.
+- Rationale: WrongNote + Workbook가 이미 제품의 단일 source of truth가 된 상태에서 legacy runtime이 남아 있으면 테스트/문서/demo/운영 기준이 흔들리고, current runtime이 `mistake-note/upload` 같은 과거 모듈에 얇게 결합된 상태도 유지보수 리스크를 만든다. 먼저 runtime/API/test/demo 의존을 정리해 current baseline을 고정하는 편이, 바로 DB drop까지 같이 진행하는 것보다 회귀 위험을 더 낮춘다.
+- Consequence:
+  - legacy page URL(`/records/new`, `/study/content`, `/study/reviews`, `/wrong-answers/manage`, `/student/progress`, `/student/study/session`, `/student/wrong-answers`)은 redirect-only shim으로 유지한다.
+  - legacy API endpoint는 더 이상 지원하지 않으며 `404` contract로 본다.
+  - current wrong-note storage/image logic은 `modules/shared/wrong-note-storage`에서만 재사용한다.
+  - `demo:seed`는 current WrongNote + Workbook dataset만 주입하고, legacy attempt/wrong-answer demo data는 만들지 않는다.
+  - 후속 cleanup 배치에서만 Prisma schema drop, migration, 데이터 보존 정책을 다룬다.

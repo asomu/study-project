@@ -10,7 +10,7 @@
 - 현재 기본 제품 경험은 학생 `/student/dashboard`, 보호자 `/dashboard`다.
 - 보호자 첫 설정 화면은 `/students/manage`다.
 - seed 보호자 계정은 제공되지만 학생 로그인 계정은 기본으로 생성되지 않는다.
-- `demo:seed`는 현재 legacy assessment demo data만 채우므로, WrongNote/Workbook 수동 검증 데이터는 아래 시나리오로 직접 만든다.
+- `demo:seed`는 seeded guardian/student/workbook 기준 current WrongNote + Workbook 데모 데이터를 채운다. 다만 학생 실로그인은 별도 활성화가 필요할 수 있다.
 - 레거시 `records/new`, `student/study/session`, `student/progress`, `study/reviews`, `study/content`, `wrong-answers/manage`는 현재 제품 기준 비활성 또는 리다이렉트 대상이다.
 
 ## 2. 권장 준비 순서

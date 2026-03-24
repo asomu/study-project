@@ -12,7 +12,7 @@ import {
   isSupportedImageMime,
   saveWrongNoteImage,
   supportedImageMimeDescription,
-} from "@/modules/mistake-note/upload";
+} from "@/modules/shared/wrong-note-storage";
 import { apiError } from "@/modules/shared/api-error";
 import { logAccessDenied, logUploadFailure } from "@/modules/shared/structured-log";
 import { isGradeAllowedForSchoolLevel } from "@/modules/wrong-note/constants";

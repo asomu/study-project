@@ -1,23 +1,23 @@
 # Context Index
 
-- Last Updated: 2026-03-22
+- Last Updated: 2026-03-24
 - Purpose: 새 세션에서 2~3분 내 현재 제품 상태를 파악하기 위한 요약 허브
 
 ## 1. Quick Snapshot
 
-- Current Phase: M10 Workbook Progress + Wrong Note Link Verified
+- Current Phase: M10 Current Product Baseline Locked
 - Overall Progress: 100%
 - Current Focus:
   - workbook progress UI/API 운영 안정화
   - wrong-note workspace stale request abort의 soak 관찰
   - wrong-note storage audit baseline / restore smoke 운영 반영
-  - current WrongNote + Workbook demo seed 재정비 여부 결정
+  - Prisma legacy 테이블 cleanup 배치 범위 정리
   - 후속 범위(OCR/자동 피드백/리포트) 우선순위 정리
 - Top Risks:
   - 2026-03-22 모바일 follow-up에서는 student/guardian 모두 console error 0건과 `ERR_INSUFFICIENT_RESOURCES` 미재현을 확인했지만, stale request 정리에 따른 `net::ERR_ABORTED`가 남아 있어 heavy soak에서 추가 문제를 만드는지 더 지켜봐야 한다.
   - 2026-03-22 storage audit baseline은 `wrongNoteCount=1`, `missingCount=1`, `orphanCount=0`이며, 누락 1건은 unrecoverable legacy `/uploads/wrong-notes/...` 경로다.
   - OCR, 자동 피드백, 재도전 상태 추적은 아직 없다.
-  - 레거시 `wrong-answer`/`study` 기능이 코드베이스에 남아 있어 추가 정리 판단이 필요하다.
+  - Prisma legacy 테이블은 아직 DB에 남아 있어 drop migration 범위와 보존 정책을 별도 결정해야 한다.
 
 Source:
 

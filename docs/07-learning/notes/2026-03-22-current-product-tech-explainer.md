@@ -126,7 +126,7 @@
 - 이번 프로젝트 적용 지점:
   - `/Users/mark/Documents/project/study-project/apps/web/prisma/schema.prisma`
   - `/Users/mark/Documents/project/study-project/apps/web/src/modules/wrong-note/service.ts`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/modules/mistake-note/upload.ts`
+  - `/Users/mark/Documents/project/study-project/apps/web/src/modules/shared/wrong-note-storage.ts`
   - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/student/wrong-notes/[id]/image/route.ts`
   - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/wrong-notes/[id]/image/route.ts`
   - `/Users/mark/Documents/project/study-project/apps/web/scripts/wrong-note-storage-audit.ts`
@@ -209,7 +209,7 @@
 3. 학생 오답 업로드:
   - 학생이 `/student/dashboard`에서 사진, 대상 학년, 학기, 단원, 오류유형을 선택해 업로드한다.
   - `/Users/mark/Documents/project/study-project/apps/web/src/app/api/v1/student/wrong-notes/route.ts`가 입력값과 커리큘럼 범위를 검증한다.
-  - `/Users/mark/Documents/project/study-project/apps/web/src/modules/mistake-note/upload.ts`가 MIME, 시그니처, 용량을 확인하고 repo 밖 저장소에 파일을 저장한다.
+  - `/Users/mark/Documents/project/study-project/apps/web/src/modules/shared/wrong-note-storage.ts`가 MIME, 시그니처, 용량을 확인하고 repo 밖 저장소에 파일을 저장한다.
   - DB에는 공개 URL이 아니라 storage key가 저장되고, 응답에는 guarded image API URL이 들어간다.
 
 4. 문제집 진도 반영:

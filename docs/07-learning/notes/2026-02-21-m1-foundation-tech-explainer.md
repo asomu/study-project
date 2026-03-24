@@ -60,7 +60,7 @@
 ### 2.6 테스트 스택 (Vitest + Playwright)
 
 - 한 줄 정의: 단위/통합/E2E 계층으로 품질 게이트를 구성.
-- 적용 지점: `/Users/mark/Documents/project/study-project/apps/web/tests/unit/jwt.test.ts`, `/Users/mark/Documents/project/study-project/apps/web/tests/integration/students-route.test.ts`, `/Users/mark/Documents/project/study-project/apps/web/tests/e2e/login-dashboard.spec.ts`
+- 적용 지점: `/Users/mark/Documents/project/study-project/apps/web/tests/unit/jwt.test.ts`, `/Users/mark/Documents/project/study-project/apps/web/tests/integration/students-route.test.ts`, `/Users/mark/Documents/project/study-project/apps/web/tests/e2e/wrong-note-dashboard.spec.ts`
 - 선택 이유: 핵심 로직 회귀를 빠르게 감지하고 사용자 흐름까지 점검.
 - 대안/트레이드오프: E2E만 사용하면 느리고 디버깅이 어려움.
 - 흔한 실수: 통합 테스트 없이 mock 테스트만 수행.

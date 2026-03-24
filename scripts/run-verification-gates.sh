@@ -85,12 +85,8 @@ prepare_runtime_directories() {
   wrong_note_backup_root="$(resolve_app_backup_root)"
 
   run_in_root mkdir -p \
-    apps/web/public/uploads/wrong-answers \
-    apps/web/public/uploads/test-wrong-answers \
-    apps/web/public/uploads/test-study-work \
     apps/web/.tmp/test-data/wrong-notes \
     apps/web/.tmp/test-backups \
-    backups/wrong-answers \
     "$wrong_note_storage_root" \
     "$wrong_note_backup_root"
 }
@@ -164,10 +160,8 @@ run_pr_mode() {
 }
 
 run_release_mode() {
-  local upload_dir="$PROJECT_ROOT/apps/web/public/uploads/wrong-answers"
   local wrong_note_storage_root
   wrong_note_storage_root="$(resolve_wrong_note_storage_root)"
-  local backup_dir="$PROJECT_ROOT/backups/wrong-answers"
   local wrong_note_backup_root
   wrong_note_backup_root="$(resolve_app_backup_root)"
   local size_kb
@@ -182,21 +176,9 @@ run_release_mode() {
   run_in_root pnpm -C apps/web run wrong-note:storage:audit -- --json
   run_in_root bash scripts/check-doc-links.sh
 
-  echo "[CHECK] test -d apps/web/public/uploads/wrong-answers"
-  if [[ ! -d "$upload_dir" ]]; then
-    echo "[ERROR] Upload directory not found: $upload_dir"
-    exit 1
-  fi
-
   echo "[CHECK] test -d $wrong_note_storage_root"
   if [[ ! -d "$wrong_note_storage_root" ]]; then
     echo "[ERROR] Wrong-note storage directory not found: $wrong_note_storage_root"
-    exit 1
-  fi
-
-  echo "[CHECK] test -d backups/wrong-answers"
-  if [[ ! -d "$backup_dir" ]]; then
-    echo "[ERROR] Backup directory not found: $backup_dir"
     exit 1
   fi
 
@@ -204,15 +186,6 @@ run_release_mode() {
   if [[ ! -d "$wrong_note_backup_root" ]]; then
     echo "[ERROR] Wrong-note backup directory not found: $wrong_note_backup_root"
     exit 1
-  fi
-
-  echo "[CHECK] du -sk apps/web/public/uploads/wrong-answers"
-  size_kb="$(du -sk "$upload_dir" | awk '{print $1}')"
-  echo "[INFO] Upload directory size: ${size_kb}KB (threshold: ${threshold_kb}KB)"
-
-  if (( size_kb > threshold_kb )); then
-    echo "[HOLD] Upload directory exceeds 2GB threshold. Release should be conditionally held."
-    exit 3
   fi
 
   echo "[CHECK] du -sk $wrong_note_storage_root"
