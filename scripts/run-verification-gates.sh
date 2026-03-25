@@ -93,6 +93,7 @@ prepare_runtime_directories() {
 
 prepare_database() {
   prepare_runtime_directories
+  run_in_root pnpm -C apps/web prisma:generate
   run_in_root pnpm -C apps/web exec prisma migrate deploy
   run_in_root pnpm -C apps/web prisma:seed
 }
