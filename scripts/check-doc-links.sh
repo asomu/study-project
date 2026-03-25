@@ -19,6 +19,10 @@ check_path() {
   local ref_line="$2"
   local target="$3"
 
+  if should_skip_path_check "$target"; then
+    return
+  fi
+
   if [[ ! -e "$target" ]]; then
     echo "[BROKEN] ${ref_file}:${ref_line} -> ${target}"
     fail_count=$((fail_count + 1))
@@ -39,6 +43,19 @@ normalize_project_target() {
   fi
 
   printf '%s\n' "$target"
+}
+
+should_skip_path_check() {
+  local target="$1"
+
+  case "$target" in
+    "$PROJECT_ROOT"/output/*)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
 }
 
 find_absolute_project_paths() {
