@@ -3,6 +3,7 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOCS_DIR="${PROJECT_ROOT}/docs"
+CANONICAL_PROJECT_ROOT="/Users/mark/Documents/project/study-project"
 HAS_RG="false"
 
 if command -v rg >/dev/null 2>&1; then
@@ -22,6 +23,22 @@ check_path() {
     echo "[BROKEN] ${ref_file}:${ref_line} -> ${target}"
     fail_count=$((fail_count + 1))
   fi
+}
+
+normalize_project_target() {
+  local target="$1"
+
+  if [[ "$target" == "$CANONICAL_PROJECT_ROOT" ]]; then
+    printf '%s\n' "$PROJECT_ROOT"
+    return
+  fi
+
+  if [[ "$target" == "$CANONICAL_PROJECT_ROOT/"* ]]; then
+    printf '%s%s\n' "$PROJECT_ROOT" "${target#"$CANONICAL_PROJECT_ROOT"}"
+    return
+  fi
+
+  printf '%s\n' "$target"
 }
 
 find_absolute_project_paths() {
@@ -58,6 +75,7 @@ find_markdown_links() {
 while IFS='|' read -r file line raw; do
   path="$raw"
   [[ -z "$path" ]] && continue
+  path="$(normalize_project_target "$path")"
   check_path "$file" "$line" "$path"
 done < <(find_absolute_project_paths)
 
@@ -79,6 +97,7 @@ while IFS='|' read -r file line link; do
     target="$(cd "$(dirname "$file")" && pwd)/$link"
   fi
 
+  target="$(normalize_project_target "$target")"
   check_path "$file" "$line" "$target"
 done < <(find_markdown_links)
 
