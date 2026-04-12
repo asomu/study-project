@@ -1,6 +1,6 @@
 # Operations Checklist
 
-- Last Updated: 2026-03-22
+- Last Updated: 2026-04-12
 - Scope: Private beta 로컬 운영(`apps/web`)
 - Owner: Team
 
@@ -15,7 +15,7 @@
   - `missingCount = 0`
   - `orphanCount = 0`
 - Response Rule:
-  - `missing.kind = legacy`만 존재하면, 기존 legacy 공개 경로 유실 baseline과 비교해 count 증감만 추적한다.
+  - `missing.kind = legacy`만 존재하면, `KNOWN_STORAGE_ISSUES.json` 엔트리 baseline과 비교해 count와 항목 증감을 함께 추적한다.
   - `missing.kind = storage | invalid`가 1건이라도 있으면 같은 날 P1로 조사한다.
   - `orphanCount > 0`이면 DB 참조 여부를 재확인하고 24시간 안에 정리 계획을 남긴다.
 - Current Baseline (2026-03-22):
@@ -23,6 +23,7 @@
   - `missingCount = 1`
   - `orphanCount = 0`
   - missing entry는 legacy `/uploads/wrong-notes/...` 경로 1건이며 자동 복구 대상이 아니다.
+  - 운영 표식 파일: `/Users/mark/Documents/project/study-project/docs/05-operations/KNOWN_STORAGE_ISSUES.json`
 
 ## 2. Upload Storage Backup Policy
 
@@ -54,7 +55,7 @@
 - 백업 실패가 2회 연속 발생하면 우선순위 P1 이슈로 처리한다.
 - 이미지 업로드 실패가 하루 3회 이상 발생하면 업로드 경로/권한/디스크 여유 공간을 점검한다.
 - storage audit에서 `missing.kind = storage | invalid`가 1건이라도 나오면 운영 장애 후보로 본다.
-- storage audit의 legacy missing count가 baseline보다 증가하면 migration/cleanup 회귀로 보고 원인을 추적한다.
+- storage audit의 `unexpectedMissingCount > 0` 이면 migration/cleanup 회귀 또는 신규 운영 장애 후보로 보고 원인을 추적한다.
 
 ## 5. External Exposure Preflight Checklist
 

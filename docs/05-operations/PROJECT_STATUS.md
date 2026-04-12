@@ -127,7 +127,7 @@
 - 검증 블로커 없음
 - 현재 제품은 초등/중등 수학 과목 + 수동 분류 + 수동 피드백까지 포함한다.
 - guardian/student 공통 wrong-note workspace는 isolated QA schema 기준 360px/390px 모바일에서 이미지 업로드, 상세 dialog, 보호자 피드백 저장까지 통과했다. 2026-03-22 후속 모바일 로그인 QA에서는 student/guardian 모두 console error 0건이었고 `ERR_INSUFFICIENT_RESOURCES`는 재현되지 않았다. 현재는 stale request abort에 따른 `net::ERR_ABORTED`만 남아 있어, heavy soak 상황에서 추가 fan-out이 다시 보이는지만 계속 관찰하면 된다.
-- 2026-03-22 storage audit dry-run 기준 `wrongNoteCount=1`, `missingCount=1`, `orphanCount=0`이며, 누락 1건은 legacy `/uploads/wrong-notes/...` 경로라 자동 복구되지 않는다.
+- 2026-04-12 storage audit dry-run 기준 `wrongNoteCount=2`, `missingCount=1`, `orphanCount=0`이며, legacy `/uploads/wrong-notes/...` 누락 1건은 `KNOWN_STORAGE_ISSUES.json` 엔트리 baseline으로 관리한다.
 - latest backup archive `study-project-20260322-205441.tar.gz`는 `/Users/mark/Documents/project/study-project/output/restore-smoke/20260322-restore-check`에 정상 복구되며, 현재 archive payload는 빈 `study-project/wrong-notes` 디렉터리 baseline이다.
 - OCR, 자동 피드백, 반복 오답 기반 재도전 관리는 아직 없다.
 - legacy `attempt / wrong-answer / study` 런타임과 API는 제거됐지만, Prisma legacy 테이블 drop migration은 후속 배치로 남아 있다.
@@ -140,7 +140,7 @@
 2. `quality.yml` 변경 이후 CI에서 `pnpm verify:pr` 경로 기반 게이트가 안정적으로 도는지 확인한다.
 3. `LEGACY_DB_CLEANUP_PLAN.md` 기준으로 `ownership-guard` legacy helper 제거 -> Prisma schema 정리 -> drop migration 순서의 별도 배치를 실행한다.
 4. wrong-note workspace의 stale request abort가 heavy soak/mobile 반복 탐색에서도 추가 문제를 만들지 관찰한다.
-5. storage audit baseline의 legacy missing 1건을 운영상 known issue로 유지할지, 별도 정리 표식으로 관리할지 결정한다.
+5. `KNOWN_STORAGE_ISSUES.json` baseline과 실제 audit 결과가 계속 일치하는지 운영 중 확인한다.
 6. `demo:activate-student` 운영 절차가 실제 시연 흐름에서 충분한지 확인하고, 필요하면 seed/clear와 더 강하게 묶을지 결정한다.
 
 ## 5. Change Log
@@ -281,3 +281,7 @@
   - dormant legacy Prisma 모델/테이블 목록을 current runtime baseline과 분리해 정리
   - `ownership-guard.ts`의 legacy Prisma payload 의존이 schema drop 전 선행 정리 대상임을 명시
   - schema cleanup -> drop migration 실행 순서를 `LEGACY_DB_CLEANUP_PLAN.md`로 고정
+- 2026-04-12: storage known issue marker 도입
+  - storage audit baseline의 legacy missing 1건을 `KNOWN_STORAGE_ISSUES.json` 엔트리로 고정
+  - `wrong-note-storage-audit.ts`가 known baseline count와 unexpected missing count를 함께 출력하도록 정리
+  - 운영 체크리스트를 count baseline 기준에서 entry baseline 기준으로 갱신

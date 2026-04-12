@@ -1,0 +1,12 @@
+{
+  "lastUpdated": "2026-04-12",
+  "issues": [
+    {
+      "wrongNoteId": "82bf26a8-dcd2-4b5d-a6b8-fcbfc6d998a9",
+      "studentId": "16efdb99-8fa7-41d3-94e2-2e6da09798a3",
+      "imagePath": "/uploads/wrong-notes/82bf26a8-dcd2-4b5d-a6b8-fcbfc6d998a9-1774089940878-80bea5fd-f669-40e1-b161-9704783b28ae.png",
+      "kind": "legacy",
+      "note": "Legacy public upload path baseline captured before wrong-note storage migration. Not auto-recoverable."
+    }
+  ]
+}

@@ -18,6 +18,10 @@
     - dormant Prisma legacy 모델/테이블 목록과 선행 코드 정리 범위를 `LEGACY_DB_CLEANUP_PLAN.md`로 정리했다.
     - `ownership-guard.ts`의 legacy Prisma payload 의존이 schema drop 전 선행 제거 대상임을 기록했다.
     - 이후 배치는 `code detach -> schema cleanup -> drop migration` 순서로 진행하도록 고정했다.
+  - storage known issue marker 도입
+    - storage audit baseline의 legacy missing 1건을 `KNOWN_STORAGE_ISSUES.json` 엔트리로 고정했다.
+    - `wrong-note-storage-audit.ts`가 known baseline count와 unexpected missing count를 함께 출력하도록 정리했다.
+    - `OPERATIONS_CHECKLIST`, `PROJECT_STATUS`를 entry baseline 기준으로 갱신했다.
   - project recovery baseline 문서화 완료
     - `PROJECT_RECOVERY_PLAN`, `DOC_SYNC_CHECKLIST`, `MODULE_CLASSIFICATION`를 추가했다.
     - `README`, `apps/web/README`, `USER_GUIDE`, `CONTEXT_INDEX`, `DEVELOPMENT_PLAN`, `INDEX`, `docs/README`를 현재 기준으로 부분 정리했다.

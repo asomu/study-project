@@ -1,4 +1,4 @@
-import { access, readdir } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { prisma } from "@/lib/prisma";
 import { getAppBackupRoot, getAppDataRoot, getWrongNoteStorageRoot, resolveWrongNoteImageLocation } from "@/modules/shared/wrong-note-storage";
@@ -12,6 +12,46 @@ type MissingEntry = {
   kind: "storage" | "legacy" | "invalid";
   deleted: boolean;
 };
+
+type KnownStorageIssue = {
+  wrongNoteId: string;
+  studentId: string;
+  imagePath: string;
+  kind: "legacy" | "storage" | "invalid";
+  note: string;
+};
+
+type KnownStorageIssueManifest = {
+  lastUpdated: string;
+  issues: KnownStorageIssue[];
+};
+
+const knownIssuesManifestPath = resolve(process.cwd(), "../../docs/05-operations/KNOWN_STORAGE_ISSUES.json");
+
+function buildMissingEntryKey(entry: Pick<MissingEntry, "wrongNoteId" | "studentId" | "imagePath" | "kind">) {
+  return [entry.wrongNoteId, entry.studentId, entry.imagePath, entry.kind].join("::");
+}
+
+async function loadKnownIssues(): Promise<KnownStorageIssueManifest> {
+  try {
+    const raw = await readFile(knownIssuesManifestPath, "utf8");
+    const parsed = JSON.parse(raw) as KnownStorageIssueManifest;
+
+    if (!Array.isArray(parsed.issues)) {
+      return {
+        lastUpdated: "",
+        issues: [],
+      };
+    }
+
+    return parsed;
+  } catch {
+    return {
+      lastUpdated: "",
+      issues: [],
+    };
+  }
+}
 
 async function pathExists(pathValue: string) {
   try {
@@ -50,6 +90,8 @@ async function main() {
   const storageRoot = getWrongNoteStorageRoot();
   const appDataRoot = getAppDataRoot();
   const appBackupRoot = getAppBackupRoot();
+  const knownIssues = await loadKnownIssues();
+  const knownIssueKeySet = new Set(knownIssues.issues.map((issue) => buildMissingEntryKey(issue)));
 
   logStorageInfo("wrong_note_storage_audit_started", {
     dryRun,
@@ -111,9 +153,13 @@ async function main() {
     appDataRoot,
     appBackupRoot,
     wrongNoteStorageRoot: storageRoot,
+    knownIssuesManifestPath,
+    knownIssueBaselineCount: knownIssues.issues.length,
     wrongNoteCount: wrongNotes.length,
     missingCount: missing.length,
     orphanCount: orphans.length,
+    matchedKnownIssueCount: missing.filter((entry) => knownIssueKeySet.has(buildMissingEntryKey(entry))).length,
+    unexpectedMissingCount: missing.filter((entry) => !knownIssueKeySet.has(buildMissingEntryKey(entry))).length,
     missing,
     orphans,
   };
@@ -127,7 +173,11 @@ async function main() {
   console.log(`[AUDIT] app data root: ${appDataRoot}`);
   console.log(`[AUDIT] app backup root: ${appBackupRoot}`);
   console.log(`[AUDIT] mode: ${dryRun ? "dry-run" : "apply"}`);
+  console.log(`[AUDIT] known issue manifest: ${knownIssuesManifestPath}`);
   console.log(`[AUDIT] wrongNotes=${wrongNotes.length} missing=${missing.length} orphans=${orphans.length}`);
+  console.log(
+    `[AUDIT] knownBaseline=${result.knownIssueBaselineCount} matchedKnown=${result.matchedKnownIssueCount} unexpectedMissing=${result.unexpectedMissingCount}`,
+  );
 
   if (missing.length) {
     console.log("[AUDIT] missing files:");
