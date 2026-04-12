@@ -130,7 +130,7 @@ async function login(page: Page, identifier: string, password: string, expectedP
 }
 
 function wrongNoteCardGrid(page: Page) {
-  return page.locator("section").filter({ has: page.getByRole("heading", { name: "오답 카드" }) });
+  return page.locator("section").filter({ has: page.getByRole("heading", { name: "오답 탐색" }) });
 }
 
 test.beforeEach(async () => {
