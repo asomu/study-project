@@ -16,7 +16,15 @@ export default async function DashboardPage() {
   }
 
   return (
-    <AppShell title="오답 대시보드" subtitle="Guardian Wrong Note Dashboard" session={session}>
+    <AppShell
+      title="오답 대시보드"
+      subtitle="Guardian Wrong Note Dashboard"
+      session={session}
+      primaryNav={[
+        { href: "/dashboard", label: "대시보드", icon: "dashboard", exact: true },
+        { href: "/students/manage", label: "학생 관리", icon: "students", exact: true },
+      ]}
+    >
       <DashboardPanel />
     </AppShell>
   );

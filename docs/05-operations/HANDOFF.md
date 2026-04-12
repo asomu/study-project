@@ -1,8 +1,19 @@
 # Session Handoff
 
-## Latest Update (2026-03-24)
+## Latest Update (2026-04-12)
 
 - Done:
+  - verification/worktree cleanup baseline 정리
+    - `quality.yml`을 `pnpm verify:pr` 기준으로 맞추고 CI용 Playwright browser 설치를 추가했다.
+    - `release-gate.yml`, `.env.example`에서 미사용 `UPLOAD_DIR` 설정을 제거했다.
+    - empty leftover module directory(`analytics`, `assessment`, `mistake-note`, `study`)를 제거했다.
+  - shared utility naming cleanup
+    - `modules/dashboard/date-range.ts`를 `modules/shared/date-range.ts`로 이동했다.
+    - 로컬 `apps/web/.env`의 미사용 `UPLOAD_DIR` 설정을 제거했다.
+  - project recovery baseline 문서화 완료
+    - `PROJECT_RECOVERY_PLAN`, `DOC_SYNC_CHECKLIST`, `MODULE_CLASSIFICATION`를 추가했다.
+    - `README`, `apps/web/README`, `USER_GUIDE`, `CONTEXT_INDEX`, `DEVELOPMENT_PLAN`, `INDEX`, `docs/README`를 현재 기준으로 부분 정리했다.
+    - 현재 상태는 "프로젝트 붕괴"가 아니라 "문서/구조 drift 누적"으로 정의했다.
   - study-code-cleanup closeout 완료
     - findings-first review에서 추가 release blocker를 발견하지 못했다.
     - legacy runtime 제거 이후 깨진 historical learning-note 링크를 current 문서/구현 경로로 정리했다.
@@ -155,6 +166,8 @@
 - Blocked:
   - 없음
 - Next:
+  - `quality.yml`이 문서상의 `verify:pr` 정책과 완전히 일치하는지 정렬 여부를 결정
+  - empty leftover module directory 정리 배치를 별도 cleanup change로 실행할지 결정
   - heavy soak/mobile 반복 탐색에서 wrong-note workspace의 stale request abort가 추가 문제를 만드는지 관찰
   - Prisma legacy 테이블 drop migration 범위와 데이터 보존 정책 결정
   - storage audit baseline의 legacy missing 1건을 known issue로 유지할지, 별도 표식으로 관리할지 결정

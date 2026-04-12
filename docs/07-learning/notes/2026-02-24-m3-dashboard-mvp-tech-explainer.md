@@ -17,7 +17,7 @@
 - 한 줄 정의: 저장된 문항 데이터에서 바로 지표를 계산해 대시보드 수치를 만드는 방식이다.
 - 이번 프로젝트 적용 지점:
   - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md`
-  - `/Users/mark/Documents/project/study-project/apps/web/src/modules/dashboard/date-range.ts`
+  - `/Users/mark/Documents/project/study-project/apps/web/src/modules/shared/date-range.ts`
   - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - 왜 이걸 선택했는가:
   - `DEVELOPMENT_PLAN.md` M3 Scope Lock에서 “분석 데이터: attempt_items 직접 집계”로 고정했다.

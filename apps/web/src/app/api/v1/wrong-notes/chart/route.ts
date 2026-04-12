@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { assertStudentOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
 import { isGuardianRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
-import { formatDateOnly, startOfDayUtc } from "@/modules/dashboard/date-range";
+import { formatDateOnly, startOfDayUtc } from "@/modules/shared/date-range";
 import { findCurriculumByQuery } from "@/modules/curriculum/service";
 import { apiError } from "@/modules/shared/api-error";
 import { logAccessDenied } from "@/modules/shared/structured-log";

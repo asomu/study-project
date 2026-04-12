@@ -8,7 +8,7 @@ import type {
   WorkbookProgressUnitRow,
 } from "@/modules/workbook/contracts";
 import type { StudentWorkbookWithTemplate } from "@/modules/workbook/serializers";
-import { startOfDayUtc } from "@/modules/dashboard/date-range";
+import { startOfDayUtc } from "@/modules/shared/date-range";
 
 type CurriculumNodeSummary = {
   id: string;

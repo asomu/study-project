@@ -439,6 +439,12 @@ test("student wrong-note dashboard uploads and reflects a new note", async ({ pa
   const filterSection = page.locator('article[aria-label="오답 탐색 필터"]');
   const uploadSection = page.locator("section").filter({ has: page.getByRole("heading", { name: "사진 1장으로 오답 1건을 기록합니다" }) });
 
+  await expect(page.getByRole("link", { name: "대시보드" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "빠른 업로드" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "문제집 진도" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "오답 그래프" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "오답 탐색" })).toBeVisible();
+
   await uploadSection.getByLabel("사진 파일").setInputFiles({
     name: "wrong-note.png",
     mimeType: "image/png",
@@ -1260,6 +1266,11 @@ test("guardian dashboard edits a workbook template inline", async ({ page }) => 
 
   await expect(page.getByText("문제집 템플릿 정보를 수정했습니다.")).toBeVisible();
   await expect(page.locator("div.rounded-2xl").filter({ has: page.getByText("쎈 수학 라이트 1-1 · 좋은책신사고 개정판", { exact: true }) }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "학생 관리" }).first()).toBeVisible();
+  await page.getByRole("link", { name: "학생 관리" }).first().click();
+  await expect(page).toHaveURL(/\/students\/manage$/);
+  await expect(page.getByRole("link", { name: "학생 상태" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "학생 프로필 만들기" })).toBeVisible();
 });
 
 test("student wrong-note dashboard shows a placeholder when the stored image file is missing", async ({ page }) => {
@@ -1431,7 +1442,16 @@ test("student wrong-note dashboard shows a placeholder when the stored image fil
     },
   ]);
 
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/student/dashboard");
+  await page.getByRole("button", { name: "메뉴 열기" }).click();
+  await expect(page.getByRole("link", { name: "오답 탐색" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "메뉴 닫기" })).toHaveCount(0);
+  await page.getByRole("button", { name: "메뉴 열기" }).click();
+  await page.getByRole("link", { name: "오답 탐색" }).click();
+  await expect(page).toHaveURL(/#note-explorer$/);
+  await expect(page.getByRole("button", { name: "메뉴 닫기" })).toHaveCount(0);
   await expect(page.getByText("이미지 파일을 찾을 수 없습니다")).toBeVisible();
   await page.getByRole("button", { name: /정수와 유리수/ }).first().click();
   await expect(page.getByText("학생 화면에서 이미지를 다시 업로드해 주세요.")).toBeVisible();

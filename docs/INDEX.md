@@ -15,6 +15,7 @@
 
 - `/Users/mark/Documents/project/study-project/docs/02-architecture/SYSTEM_ARCHITECTURE.md`
 - `/Users/mark/Documents/project/study-project/docs/02-architecture/PROJECT_STRUCTURE.md`
+- `/Users/mark/Documents/project/study-project/docs/02-architecture/MODULE_CLASSIFICATION.md`
 - `/Users/mark/Documents/project/study-project/docs/02-architecture/DATA_MODEL.md`
 - `/Users/mark/Documents/project/study-project/docs/02-architecture/API_SPEC_V1.md`
 
@@ -37,6 +38,8 @@
 
 - `/Users/mark/Documents/project/study-project/docs/05-operations/USER_GUIDE.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
+- `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_RECOVERY_PLAN.md`
+- `/Users/mark/Documents/project/study-project/docs/05-operations/DOC_SYNC_CHECKLIST.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`

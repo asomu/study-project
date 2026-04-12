@@ -1,12 +1,13 @@
 # Study Project
 
-중학생 수학 학업 성취 대시보드 웹서비스 프로젝트입니다.
+초등/중등 수학 오답노트 + 문제집 진도 대시보드 웹서비스 프로젝트입니다.
 
 ## 문서 시작점
 
 - `/Users/mark/Documents/project/study-project/docs/INDEX.md`
 - `/Users/mark/Documents/project/study-project/docs/README.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
+- `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_RECOVERY_PLAN.md`
 
 ## 에이전트 지침
 

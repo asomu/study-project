@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { assertStudentLoginOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
 import { isStudentRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
-import { parseDateOnly } from "@/modules/dashboard/date-range";
+import { parseDateOnly } from "@/modules/shared/date-range";
 import {
   allowedImageMimeToExtension,
   getUploadMaxBytes,

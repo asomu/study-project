@@ -16,7 +16,15 @@ export default async function StudentsManagePage() {
   }
 
   return (
-    <AppShell title="학생 관리" subtitle="Guardian Setup" session={session}>
+    <AppShell
+      title="학생 관리"
+      subtitle="Guardian Setup"
+      session={session}
+      primaryNav={[
+        { href: "/dashboard", label: "대시보드", icon: "dashboard", exact: true },
+        { href: "/students/manage", label: "학생 관리", icon: "students", exact: true },
+      ]}
+    >
       <StudentManager />
     </AppShell>
   );

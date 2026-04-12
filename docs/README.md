@@ -17,6 +17,8 @@
 - 문서 인덱스: `/Users/mark/Documents/project/study-project/docs/INDEX.md`
 - 현재 제품 요약: `/Users/mark/Documents/project/study-project/docs/CONTEXT_INDEX.md`
 - 진행 상태: `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
+- 복구 계획: `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_RECOVERY_PLAN.md`
+- 문서 동기화 체크리스트: `/Users/mark/Documents/project/study-project/docs/05-operations/DOC_SYNC_CHECKLIST.md`
 - 사용자 가이드: `/Users/mark/Documents/project/study-project/docs/05-operations/USER_GUIDE.md`
 - 운영 체크리스트: `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`
 - 데모 운영 런북: `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`
@@ -29,6 +31,7 @@
 - 기능/범위 변경: `01-product/PRD.md` 먼저 수정
 - 기술/아키텍처 변경: `02-architecture/*` + `05-operations/DECISION_LOG.md` 갱신
 - 일정/우선순위 변경: `03-process/DEVELOPMENT_PLAN.md` + `05-operations/PROJECT_STATUS.md` 동시 갱신
+- active vs leftover 모듈 상태가 바뀌면 `02-architecture/MODULE_CLASSIFICATION.md` 갱신
 - 세션 시작/종료: `05-operations/HANDOFF.md` 체크리스트 준수
 
 ## 자동화 도구

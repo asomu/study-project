@@ -26,9 +26,10 @@ jobs:
       JWT_EXPIRES_IN: 7d
       APP_URL: http://127.0.0.1:3100
       E2E_BASE_URL: http://127.0.0.1:3100
+      APP_DATA_ROOT: .tmp/test-data
+      APP_BACKUP_ROOT: .tmp/test-backups
       SEED_GUARDIAN_EMAIL: guardian@example.com
       SEED_GUARDIAN_PASSWORD: Guardian123!
-      UPLOAD_DIR: public/uploads/test-wrong-answers
       UPLOAD_MAX_BYTES: "5242880"
     steps:
       - uses: actions/checkout@v4

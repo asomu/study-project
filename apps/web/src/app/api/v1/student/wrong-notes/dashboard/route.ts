@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { assertStudentLoginOwnership, OwnershipError } from "@/modules/auth/ownership-guard";
 import { isStudentRole } from "@/modules/auth/roles";
 import { getAuthSessionFromRequest } from "@/modules/auth/session";
-import { startOfDayUtc } from "@/modules/dashboard/date-range";
+import { startOfDayUtc } from "@/modules/shared/date-range";
 import { apiError } from "@/modules/shared/api-error";
 import { logAccessDenied } from "@/modules/shared/structured-log";
 import { WRONG_NOTE_REASON_OPTIONS } from "@/modules/wrong-note/constants";

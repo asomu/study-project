@@ -1,6 +1,6 @@
 # Context Index
 
-- Last Updated: 2026-03-24
+- Last Updated: 2026-04-12
 - Purpose: 새 세션에서 2~3분 내 현재 제품 상태를 파악하기 위한 요약 허브
 
 ## 1. Quick Snapshot
@@ -8,6 +8,7 @@
 - Current Phase: M10 Current Product Baseline Locked
 - Overall Progress: 100%
 - Current Focus:
+  - 프로젝트 상태 복구용 문서/구조 audit baseline 정리
   - workbook progress UI/API 운영 안정화
   - wrong-note workspace stale request abort의 soak 관찰
   - wrong-note storage audit baseline / restore smoke 운영 반영
@@ -40,6 +41,7 @@ Source:
 | 시스템 구조 | `/Users/mark/Documents/project/study-project/docs/02-architecture/SYSTEM_ARCHITECTURE.md` | `WrongNote` + `Workbook` 모듈 경계와 레거시 경계 확인 |
 | 데이터 모델 | `/Users/mark/Documents/project/study-project/docs/02-architecture/DATA_MODEL.md` | `wrong_notes`, `workbook_*` 스키마와 파생 규칙 확인 |
 | 현재 진행률/다음 액션 | `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` | 이번 세션 우선순위와 리스크 확인 |
+| 복구 실행 기준 | `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_RECOVERY_PLAN.md` | 관리 공백 이후 정리 순서와 완료 조건 확인 |
 | 결정 히스토리 | `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` | WrongNote 전환과 Workbook 도메인 분리 결정 이유 추적 |
 | 실제 사용 순서 | `/Users/mark/Documents/project/study-project/docs/05-operations/USER_GUIDE.md` | 보호자/학생 현재 사용 플로우 확인 |
 | 세션 연속성 | `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md` | 직전 세션 완료 항목과 다음 액션 확인 |

@@ -1,6 +1,6 @@
 import type { Prisma, WrongNoteReason } from "@prisma/client";
 import { Subject } from "@prisma/client";
-import { addDaysUtc, endOfDayUtc, startOfDayUtc } from "@/modules/dashboard/date-range";
+import { addDaysUtc, endOfDayUtc, startOfDayUtc } from "@/modules/shared/date-range";
 import type { WrongNoteChartBar } from "@/modules/wrong-note/contracts";
 import { WRONG_NOTE_REASON_OPTIONS } from "@/modules/wrong-note/constants";
 

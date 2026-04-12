@@ -1,6 +1,6 @@
 # Project Status
 
-- Last Updated: 2026-03-24
+- Last Updated: 2026-04-12
 - Current Phase: M10 Current Product Baseline Locked
 - Overall Progress: 100%
 
@@ -116,6 +116,10 @@
   - legacy API route/runtime/test surface 제거
   - wrong-note storage helper를 shared module로 분리
   - `demo:seed`를 current WrongNote + Workbook dataset 기준으로 재구성
+- [x] 보호영역 사이드바 대시보드 셸 refresh
+  - 공통 `AppShell`을 좌측 사이드바 + 상단 sticky utility bar 구조로 재구성
+  - 학생/보호자 대시보드에 section anchor 탐색과 모바일 drawer를 추가
+  - 보호자 `학생 선택`, `학생 보기 / 문제집 관리` 토글을 header action으로 이동
 
 ## 3. Risks and Blocks
 
@@ -132,10 +136,12 @@
 
 ## 4. Next Actions
 
-1. wrong-note workspace의 stale request abort가 heavy soak/mobile 반복 탐색에서도 추가 문제를 만들지 관찰한다.
-2. Prisma legacy 테이블 drop migration 범위와 데이터 보존 정책을 별도 cleanup 배치로 확정한다.
-3. storage audit baseline의 legacy missing 1건을 운영상 known issue로 유지할지, 별도 정리 표식으로 관리할지 결정한다.
-4. demo 시나리오에서 학생 실로그인까지 필요한 경우 seed 학생 활성화 보조 절차를 둘지 결정한다.
+1. 프로젝트 상태 truth reset 기준으로 `CONTEXT_INDEX`, `HANDOFF`, `DEVELOPMENT_PLAN`, README 계열 drift를 계속 정리한다.
+2. `quality.yml` 변경 이후 CI에서 `pnpm verify:pr` 경로 기반 게이트가 안정적으로 도는지 확인한다.
+3. Prisma legacy 테이블 cleanup 범위를 별도 배치로 확정한다.
+4. wrong-note workspace의 stale request abort가 heavy soak/mobile 반복 탐색에서도 추가 문제를 만들지 관찰한다.
+5. storage audit baseline의 legacy missing 1건을 운영상 known issue로 유지할지, 별도 정리 표식으로 관리할지 결정한다.
+6. demo 시나리오에서 학생 실로그인까지 필요한 경우 seed 학생 활성화 보조 절차를 둘지 결정한다.
 
 ## 5. Change Log
 
@@ -251,3 +257,19 @@
   - findings-first review에서 추가 release blocker를 발견하지 못했다.
   - legacy runtime 제거 이후 남은 historical learning-note broken link를 current 문서/구현 경로로 정리했다.
   - `bash scripts/check-doc-links.sh` 재통과로 문서 무결성을 다시 확인했다.
+- 2026-04-03: 보호영역 사이드바 대시보드 UX refresh 완료
+  - 공통 `AppShell`을 사이드바 + sticky utility bar + 모바일 drawer 구조로 재구성했다.
+  - 학생 대시보드는 `개요 / 빠른 업로드 / 문제집 진도 / 오답 그래프 / 오답 탐색`, 보호자 대시보드는 모드별 section anchor 탐색을 제공하도록 정리했다.
+  - `학생 선택`, `학생 보기 / 문제집 관리` 토글을 header action으로 이동하고, 오답 탐색 영역을 desktop sticky filter rail 구조로 재배치했다.
+  - `pnpm -C apps/web typecheck`, `pnpm -C apps/web lint`, `pnpm -C apps/web test:e2e:mocked`, `pnpm -C apps/web build` 재통과
+- 2026-04-12: project recovery baseline 문서화
+  - `PROJECT_RECOVERY_PLAN`, `DOC_SYNC_CHECKLIST`, `MODULE_CLASSIFICATION` 추가
+  - bootstrap/README/user guide wording drift 정리
+  - 현재 관리 공백의 핵심 문제를 문서/구조 drift로 재정의
+- 2026-04-12: verification/worktree cleanup baseline 정리
+  - `quality.yml`을 문서 기준 `pnpm verify:pr` 정책에 맞추고 Playwright browser 설치를 포함하도록 정리
+  - release/quality workflow와 `.env.example`에서 미사용 `UPLOAD_DIR` 설정을 제거
+  - empty leftover module directory(`analytics`, `assessment`, `mistake-note`, `study`)를 제거
+ - 2026-04-12: shared utility naming cleanup
+   - `modules/dashboard/date-range.ts`를 `modules/shared/date-range.ts`로 이동해 current runtime이 legacy-like module name에 의존하지 않게 정리
+   - 로컬 `apps/web/.env`의 미사용 `UPLOAD_DIR` 설정을 제거

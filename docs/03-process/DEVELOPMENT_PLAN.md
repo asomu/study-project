@@ -1,7 +1,7 @@
 # Development Plan
 
 - Plan Version: v1.2
-- Last Updated: 2026-03-22
+- Last Updated: 2026-04-12
 
 ## 1. Milestones
 
@@ -105,6 +105,13 @@
   - real smoke
 
 ## 5. Deferred Backlog
+
+### Post-M10 Recovery Workstream
+
+- 문서 truth reset: `PROJECT_STATUS` -> `CONTEXT_INDEX` / `HANDOFF` / `DEVELOPMENT_PLAN` 재동기화
+- 문서 drift cleanup: README / USER_GUIDE / bootstrap docs wording 정리
+- active vs leftover module classification 고정
+- CI gate policy와 문서 기준 비교 및 정렬
 
 ### M5 Deferred
 

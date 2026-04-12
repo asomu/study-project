@@ -3,7 +3,7 @@ import { access, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { WorkbookProgressStatus, WrongNoteReason, type PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { addDaysUtc, formatDateOnly, startOfDayUtc } from "@/modules/dashboard/date-range";
+import { addDaysUtc, formatDateOnly, startOfDayUtc } from "@/modules/shared/date-range";
 import { getWrongNoteStorageRoot, resolveWrongNoteImageLocation, saveWrongNoteImage } from "@/modules/shared/wrong-note-storage";
 
 export const DEMO_GUARDIAN_EMAIL = "guardian@example.com";

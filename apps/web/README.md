@@ -1,6 +1,6 @@
 # Web App
 
-Next.js 16(App Router) 기반 중학생 수학 성취 대시보드 애플리케이션입니다.
+Next.js 16(App Router) 기반 초등/중등 수학 오답노트 + 문제집 진도 애플리케이션입니다.
 
 - 보호자: `/signup` -> `/dashboard`
 - 학생: 보호자 초대코드로 `/student/activate` -> `/student/dashboard`

@@ -253,3 +253,16 @@
   - current wrong-note storage/image logic은 `modules/shared/wrong-note-storage`에서만 재사용한다.
   - `demo:seed`는 current WrongNote + Workbook dataset만 주입하고, legacy attempt/wrong-answer demo data는 만들지 않는다.
   - 후속 cleanup 배치에서만 Prisma schema drop, migration, 데이터 보존 정책을 다룬다.
+
+## ADR-0031: 보호영역 대시보드는 사이드바 앱 셸 + 하이브리드 섹션 탐색으로 고정한다
+
+- Date: 2026-04-03
+- Decision: 학생/보호자 보호영역은 공통 `AppShell`을 좌측 사이드바 + 상단 sticky utility bar 구조로 재정의하고, 대시보드 내부 탐색은 "기본 페이지 메뉴 + 현재 페이지 섹션 앵커" 하이브리드 방식으로 고정한다.
+- Rationale: WrongNote + Workbook 기능이 한 화면에 모이면서, 기존 상단 헤더형 셸만으로는 학생/보호자가 현재 위치와 다음 행동을 빠르게 파악하기 어려웠다. 학생은 `빠른 업로드`를, 보호자는 `학생 보기 / 문제집 관리` 전환과 학생 선택을 더 짧은 동선에서 접근해야 하므로, 앱 수준 탐색과 화면 내부 섹션 탐색을 분리하는 편이 정보 구조와 사용성 모두에 유리하다.
+- Consequence:
+  - 보호자 primary nav는 `대시보드`, `학생 관리`, 학생 primary nav는 `대시보드`만 유지한다.
+  - 학생 대시보드는 `개요 / 빠른 업로드 / 문제집 진도 / 오답 그래프 / 오답 탐색` 섹션 앵커를 제공한다.
+  - 보호자 대시보드는 `학생 보기`에서는 `개요 / 학생 컨텍스트 / 문제집 진도 / 오답 그래프 / 오답 탐색`, `문제집 관리`에서는 `개요 / 템플릿 라이브러리 / 학생 배정` 섹션 앵커를 제공한다.
+  - 보호자 `학생 선택`과 `학생 보기 / 문제집 관리` 토글은 본문이 아니라 sticky utility bar에 둔다.
+  - 모바일에서는 같은 nav를 off-canvas drawer로 제공하고, backdrop / `Esc` / 항목 선택 시 닫힌다.
+  - skip link, `aria-current`, drawer focus restore를 공통 셸 접근성 규칙으로 유지한다.
