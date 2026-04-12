@@ -42,6 +42,7 @@ Source:
 | 데이터 모델 | `/Users/mark/Documents/project/study-project/docs/02-architecture/DATA_MODEL.md` | `wrong_notes`, `workbook_*` 스키마와 파생 규칙 확인 |
 | 현재 진행률/다음 액션 | `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md` | 이번 세션 우선순위와 리스크 확인 |
 | 복구 실행 기준 | `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_RECOVERY_PLAN.md` | 관리 공백 이후 정리 순서와 완료 조건 확인 |
+| legacy DB cleanup 범위 | `/Users/mark/Documents/project/study-project/docs/05-operations/LEGACY_DB_CLEANUP_PLAN.md` | dormant Prisma 모델/테이블 drop 전 선행 코드 정리 범위 확인 |
 | 결정 히스토리 | `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md` | WrongNote 전환과 Workbook 도메인 분리 결정 이유 추적 |
 | 실제 사용 순서 | `/Users/mark/Documents/project/study-project/docs/05-operations/USER_GUIDE.md` | 보호자/학생 현재 사용 플로우 확인 |
 | 세션 연속성 | `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md` | 직전 세션 완료 항목과 다음 액션 확인 |

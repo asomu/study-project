@@ -14,6 +14,10 @@
     - `pnpm -C apps/web demo:activate-student` 명령을 추가했다.
     - 데모 학생 로그인 자격 증명을 `DEMO_STUDENT_*` 환경 변수로 제어할 수 있게 했다.
     - `DEMO_RUNBOOK`, `apps/web/README`, `PROJECT_STATUS`를 현재 시연 절차 기준으로 갱신했다.
+  - legacy DB cleanup scope 문서화
+    - dormant Prisma legacy 모델/테이블 목록과 선행 코드 정리 범위를 `LEGACY_DB_CLEANUP_PLAN.md`로 정리했다.
+    - `ownership-guard.ts`의 legacy Prisma payload 의존이 schema drop 전 선행 제거 대상임을 기록했다.
+    - 이후 배치는 `code detach -> schema cleanup -> drop migration` 순서로 진행하도록 고정했다.
   - project recovery baseline 문서화 완료
     - `PROJECT_RECOVERY_PLAN`, `DOC_SYNC_CHECKLIST`, `MODULE_CLASSIFICATION`를 추가했다.
     - `README`, `apps/web/README`, `USER_GUIDE`, `CONTEXT_INDEX`, `DEVELOPMENT_PLAN`, `INDEX`, `docs/README`를 현재 기준으로 부분 정리했다.

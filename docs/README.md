@@ -19,6 +19,7 @@
 - 진행 상태: `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - 복구 계획: `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_RECOVERY_PLAN.md`
 - 문서 동기화 체크리스트: `/Users/mark/Documents/project/study-project/docs/05-operations/DOC_SYNC_CHECKLIST.md`
+- legacy DB cleanup 계획: `/Users/mark/Documents/project/study-project/docs/05-operations/LEGACY_DB_CLEANUP_PLAN.md`
 - 사용자 가이드: `/Users/mark/Documents/project/study-project/docs/05-operations/USER_GUIDE.md`
 - 운영 체크리스트: `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`
 - 데모 운영 런북: `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`

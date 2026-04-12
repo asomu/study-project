@@ -40,6 +40,7 @@
 - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_STATUS.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/PROJECT_RECOVERY_PLAN.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/DOC_SYNC_CHECKLIST.md`
+- `/Users/mark/Documents/project/study-project/docs/05-operations/LEGACY_DB_CLEANUP_PLAN.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/HANDOFF.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/DECISION_LOG.md`
 - `/Users/mark/Documents/project/study-project/docs/05-operations/OPERATIONS_CHECKLIST.md`

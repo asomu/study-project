@@ -138,7 +138,7 @@
 
 1. 프로젝트 상태 truth reset 기준으로 `CONTEXT_INDEX`, `HANDOFF`, `DEVELOPMENT_PLAN`, README 계열 drift를 계속 정리한다.
 2. `quality.yml` 변경 이후 CI에서 `pnpm verify:pr` 경로 기반 게이트가 안정적으로 도는지 확인한다.
-3. Prisma legacy 테이블 cleanup 범위를 별도 배치로 확정한다.
+3. `LEGACY_DB_CLEANUP_PLAN.md` 기준으로 `ownership-guard` legacy helper 제거 -> Prisma schema 정리 -> drop migration 순서의 별도 배치를 실행한다.
 4. wrong-note workspace의 stale request abort가 heavy soak/mobile 반복 탐색에서도 추가 문제를 만들지 관찰한다.
 5. storage audit baseline의 legacy missing 1건을 운영상 known issue로 유지할지, 별도 정리 표식으로 관리할지 결정한다.
 6. `demo:activate-student` 운영 절차가 실제 시연 흐름에서 충분한지 확인하고, 필요하면 seed/clear와 더 강하게 묶을지 결정한다.
@@ -277,3 +277,7 @@
   - `pnpm -C apps/web demo:activate-student` 명령 추가
   - 데모 학생 로그인 자격 증명을 `.env`/`.env.example`의 `DEMO_STUDENT_*` 값으로 제어 가능하게 정리
   - `DEMO_RUNBOOK`, `apps/web/README`를 현재 데모 절차 기준으로 동기화
+- 2026-04-12: legacy DB cleanup scope 문서화
+  - dormant legacy Prisma 모델/테이블 목록을 current runtime baseline과 분리해 정리
+  - `ownership-guard.ts`의 legacy Prisma payload 의존이 schema drop 전 선행 정리 대상임을 명시
+  - schema cleanup -> drop migration 실행 순서를 `LEGACY_DB_CLEANUP_PLAN.md`로 고정
