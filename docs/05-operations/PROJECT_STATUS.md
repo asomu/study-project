@@ -126,7 +126,7 @@
 - 기능 구현 블로커 없음
 - 검증 블로커 없음
 - 현재 제품은 초등/중등 수학 과목 + 수동 분류 + 수동 피드백까지 포함한다.
-- guardian/student 공통 wrong-note workspace는 isolated QA schema 기준 360px/390px 모바일에서 이미지 업로드, 상세 dialog, 보호자 피드백 저장까지 통과했다. 2026-03-22 후속 모바일 로그인 QA에서는 student/guardian 모두 console error 0건이었고 `ERR_INSUFFICIENT_RESOURCES`는 재현되지 않았다. 현재는 stale request abort에 따른 `net::ERR_ABORTED`만 남아 있어, heavy soak 상황에서 추가 fan-out이 다시 보이는지만 계속 관찰하면 된다.
+- guardian/student 공통 wrong-note workspace는 isolated QA schema 기준 360px/390px 모바일에서 이미지 업로드, 상세 dialog, 보호자 피드백 저장까지 통과했다. 2026-03-22 후속 모바일 로그인 QA에서는 student/guardian 모두 console error 0건이었고 `ERR_INSUFFICIENT_RESOURCES`는 재현되지 않았다. 2026-04-12 mocked E2E에는 rapid student switching 시 stale response가 최종 선택 학생 화면을 덮지 못하는 회귀 시나리오를 추가했다. 현재는 stale request abort에 따른 `net::ERR_ABORTED`만 남아 있어, heavy soak/mobile 실환경에서 추가 fan-out이 다시 보이는지만 계속 관찰하면 된다.
 - 2026-04-12 storage audit dry-run 기준 `wrongNoteCount=2`, `missingCount=1`, `orphanCount=0`이며, legacy `/uploads/wrong-notes/...` 누락 1건은 `KNOWN_STORAGE_ISSUES.json` 엔트리 baseline으로 관리한다.
 - latest backup archive `study-project-20260322-205441.tar.gz`는 `/Users/mark/Documents/project/study-project/output/restore-smoke/20260322-restore-check`에 정상 복구되며, 현재 archive payload는 빈 `study-project/wrong-notes` 디렉터리 baseline이다.
 - OCR, 자동 피드백, 반복 오답 기반 재도전 관리는 아직 없다.
@@ -285,3 +285,6 @@
   - storage audit baseline의 legacy missing 1건을 `KNOWN_STORAGE_ISSUES.json` 엔트리로 고정
   - `wrong-note-storage-audit.ts`가 known baseline count와 unexpected missing count를 함께 출력하도록 정리
   - 운영 체크리스트를 count baseline 기준에서 entry baseline 기준으로 갱신
+- 2026-04-12: stale response soak regression 추가
+  - guardian dashboard mocked E2E에 rapid student switching 시 delayed stale response가 최종 선택 학생 화면을 덮지 못하는 시나리오를 추가
+  - 현재 남은 관찰 범위를 mocked 회귀가 아닌 heavy soak/mobile 실환경 fan-out 확인으로 좁힘

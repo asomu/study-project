@@ -22,6 +22,9 @@
     - storage audit baseline의 legacy missing 1건을 `KNOWN_STORAGE_ISSUES.json` 엔트리로 고정했다.
     - `wrong-note-storage-audit.ts`가 known baseline count와 unexpected missing count를 함께 출력하도록 정리했다.
     - `OPERATIONS_CHECKLIST`, `PROJECT_STATUS`를 entry baseline 기준으로 갱신했다.
+  - stale response soak regression 추가
+    - guardian dashboard mocked E2E에 rapid student switching 시 delayed stale response가 최종 선택 학생 화면을 덮지 못하는 시나리오를 추가했다.
+    - 남은 리스크를 mocked regression 부재가 아닌 heavy soak/mobile 실환경 관찰로 좁혔다.
   - project recovery baseline 문서화 완료
     - `PROJECT_RECOVERY_PLAN`, `DOC_SYNC_CHECKLIST`, `MODULE_CLASSIFICATION`를 추가했다.
     - `README`, `apps/web/README`, `USER_GUIDE`, `CONTEXT_INDEX`, `DEVELOPMENT_PLAN`, `INDEX`, `docs/README`를 현재 기준으로 부분 정리했다.

@@ -1079,6 +1079,335 @@ test("guardian dashboard clears stale note cards while switching students", asyn
   await expect(page.getByRole("button", { name: /정수와 유리수/ })).toHaveCount(0);
 });
 
+test("guardian dashboard ignores delayed stale responses during rapid student switching", async ({ page }) => {
+  const guardianToken = await createAuthToken({
+    sub: "guardian-switch-soak-e2e",
+    role: "guardian",
+    loginId: "guardian-switch-soak@example.com",
+    email: "guardian-switch-soak@example.com",
+    name: "보호자 학생 전환 Soak E2E",
+  });
+
+  const students = [
+    {
+      id: "student-switch-soak-1",
+      name: "학생 하나",
+      schoolLevel: "middle" as const,
+      grade: 1,
+    },
+    {
+      id: "student-switch-soak-2",
+      name: "학생 둘",
+      schoolLevel: "middle" as const,
+      grade: 2,
+    },
+    {
+      id: "student-switch-soak-3",
+      name: "학생 셋",
+      schoolLevel: "middle" as const,
+      grade: 3,
+    },
+  ];
+
+  type StudentSwitchNote = {
+    id: string;
+    imagePath: string;
+    studentMemo: string | null;
+    createdAt: string;
+    updatedAt: string;
+    curriculum: {
+      grade: number;
+      semester: number;
+      curriculumNodeId: string;
+      unitName: string;
+    };
+    reason: {
+      key: "calculation_mistake" | "misread_question" | "lack_of_concept";
+      labelKo: string;
+    };
+    feedback: null;
+    workbook: null;
+  };
+
+  const notesByStudentId: Record<string, StudentSwitchNote[]> = {
+    "student-switch-soak-1": [
+      {
+        id: "note-switch-soak-1",
+        imagePath: "/api/v1/wrong-notes/note-switch-soak-1/image?studentId=student-switch-soak-1",
+        studentMemo: "첫 학생 메모",
+        createdAt: "2026-03-21T09:00:00.000Z",
+        updatedAt: "2026-03-21T09:00:00.000Z",
+        curriculum: {
+          grade: 1,
+          semester: 1,
+          curriculumNodeId: "node-switch-soak-1",
+          unitName: "정수와 유리수",
+        },
+        reason: {
+          key: "misread_question",
+          labelKo: "문제 잘못 읽음",
+        },
+        feedback: null,
+        workbook: null,
+      },
+    ],
+    "student-switch-soak-2": [
+      {
+        id: "note-switch-soak-2",
+        imagePath: "/api/v1/wrong-notes/note-switch-soak-2/image?studentId=student-switch-soak-2",
+        studentMemo: "둘째 학생 메모",
+        createdAt: "2026-03-22T09:00:00.000Z",
+        updatedAt: "2026-03-22T09:00:00.000Z",
+        curriculum: {
+          grade: 2,
+          semester: 1,
+          curriculumNodeId: "node-switch-soak-2",
+          unitName: "유리수와 순환소수",
+        },
+        reason: {
+          key: "lack_of_concept",
+          labelKo: "문제 이해 못함",
+        },
+        feedback: null,
+        workbook: null,
+      },
+    ],
+    "student-switch-soak-3": [
+      {
+        id: "note-switch-soak-3",
+        imagePath: "/api/v1/wrong-notes/note-switch-soak-3/image?studentId=student-switch-soak-3",
+        studentMemo: "셋째 학생 메모",
+        createdAt: "2026-03-23T09:00:00.000Z",
+        updatedAt: "2026-03-23T09:00:00.000Z",
+        curriculum: {
+          grade: 3,
+          semester: 1,
+          curriculumNodeId: "node-switch-soak-3",
+          unitName: "이차방정식",
+        },
+        reason: {
+          key: "calculation_mistake",
+          labelKo: "단순 연산 실수",
+        },
+        feedback: null,
+        workbook: null,
+      },
+    ],
+  };
+
+  const delayedStudentIds = new Set<string>(["student-switch-soak-2"]);
+  const delayedResolvers: Array<() => void> = [];
+
+  function waitForDelayedStudent(studentId: string) {
+    if (!delayedStudentIds.has(studentId)) {
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve) => {
+      delayedResolvers.push(resolve);
+    });
+  }
+
+  function countNotesByReason(notes: StudentSwitchNote[], reason: StudentSwitchNote["reason"]["key"]) {
+    return notes.filter((note) => note.reason.key === reason).length;
+  }
+
+  function buildDashboard(studentId: keyof typeof notesByStudentId) {
+    const student = students.find((candidate) => candidate.id === studentId)!;
+    const notes = notesByStudentId[studentId];
+    const reasonCounts = {
+      calculation_mistake: countNotesByReason(notes, "calculation_mistake"),
+      misread_question: countNotesByReason(notes, "misread_question"),
+      lack_of_concept: countNotesByReason(notes, "lack_of_concept"),
+    };
+
+    return {
+      student,
+      summary: {
+        totalNotes: notes.length,
+        recent30DaysNotes: notes.length,
+        feedbackCompletedNotes: 0,
+        reasonCounts,
+      },
+      reasonDistribution: [
+        { key: "calculation_mistake", labelKo: "단순 연산 실수", count: reasonCounts.calculation_mistake },
+        { key: "misread_question", labelKo: "문제 잘못 읽음", count: reasonCounts.misread_question },
+        { key: "lack_of_concept", labelKo: "문제 이해 못함", count: reasonCounts.lack_of_concept },
+      ],
+      topUnits: notes.map((note) => ({
+        curriculumNodeId: note.curriculum.curriculumNodeId,
+        unitName: note.curriculum.unitName,
+        count: 1,
+      })),
+    };
+  }
+
+  await page.route("**/api/v1/students", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        students,
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes/dashboard*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = (requestUrl.searchParams.get("studentId") ?? students[0].id) as keyof typeof notesByStudentId;
+
+    await waitForDelayedStudent(studentId);
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(buildDashboard(studentId)),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes?*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = (requestUrl.searchParams.get("studentId") ?? students[0].id) as keyof typeof notesByStudentId;
+
+    await waitForDelayedStudent(studentId);
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student: students.find((candidate) => candidate.id === studentId),
+        pagination: {
+          page: 1,
+          pageSize: 12,
+          totalItems: notesByStudentId[studentId].length,
+          totalPages: 1,
+        },
+        wrongNotes: notesByStudentId[studentId],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes/chart*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = (requestUrl.searchParams.get("studentId") ?? students[0].id) as keyof typeof notesByStudentId;
+    const note = notesByStudentId[studentId][0];
+
+    await waitForDelayedStudent(studentId);
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student: students.find((candidate) => candidate.id === studentId),
+        chart: {
+          dimension: "unit",
+          grade: note.curriculum.grade,
+          semester: note.curriculum.semester,
+          bars: [
+            {
+              key: note.curriculum.curriculumNodeId,
+              label: note.curriculum.unitName,
+              value: 1,
+            },
+          ],
+          maxValue: 1,
+          totalCount: 1,
+        },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/workbook-templates", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        workbookTemplates: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/student-workbooks?*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = requestUrl.searchParams.get("studentId") ?? students[0].id;
+
+    await waitForDelayedStudent(studentId);
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student: students.find((candidate) => candidate.id === studentId),
+        studentWorkbooks: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/workbook-progress/dashboard*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const studentId = requestUrl.searchParams.get("studentId") ?? students[0].id;
+
+    await waitForDelayedStudent(studentId);
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        student: students.find((candidate) => candidate.id === studentId),
+        availableWorkbooks: [],
+        selectedWorkbook: null,
+        summary: {
+          totalSteps: 0,
+          notStartedCount: 0,
+          inProgressCount: 0,
+          completedCount: 0,
+          completedPct: 0,
+        },
+        unitBars: [],
+        units: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/wrong-notes/note-switch-soak-*/image?*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "image/png",
+      body: onePixelPng,
+    });
+  });
+
+  await page.context().addCookies([
+    {
+      name: AUTH_COOKIE_NAME,
+      value: guardianToken,
+      url: appOrigin,
+      httpOnly: true,
+      sameSite: "Lax",
+    },
+  ]);
+
+  await page.goto("/dashboard");
+  await expect(page.getByLabel("학생 선택")).toHaveValue("student-switch-soak-1");
+  await expect(page.getByRole("button", { name: /정수와 유리수/ }).first()).toBeVisible();
+
+  await page.getByLabel("학생 선택").selectOption("student-switch-soak-2");
+  await expect(page.getByText("오답 목록을 불러오는 중입니다.")).toBeVisible();
+  await page.getByLabel("학생 선택").selectOption("student-switch-soak-3");
+
+  await expect(page.getByLabel("학생 선택")).toHaveValue("student-switch-soak-3");
+  await expect(page.getByRole("button", { name: /이차방정식/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /유리수와 순환소수/ })).toHaveCount(0);
+
+  delayedResolvers.splice(0).forEach((resolve) => resolve());
+
+  await page.waitForTimeout(200);
+  await expect(page.getByLabel("학생 선택")).toHaveValue("student-switch-soak-3");
+  await expect(page.getByRole("button", { name: /이차방정식/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /유리수와 순환소수/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /정수와 유리수/ })).toHaveCount(0);
+});
+
 test("guardian dashboard edits a workbook template inline", async ({ page }) => {
   const guardianToken = await createAuthToken({
     sub: "guardian-template-e2e",
