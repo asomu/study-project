@@ -3,6 +3,9 @@ import { access, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { WorkbookProgressStatus, WrongNoteReason, type PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { buildCredentialIdentifierValues, normalizeLoginId, resolveUserByIdentifier } from "@/modules/auth/account-service";
+import { hashPassword } from "@/modules/auth/password";
+import { validateAccountPassword } from "@/modules/auth/password-policy";
 import { addDaysUtc, formatDateOnly, startOfDayUtc } from "@/modules/shared/date-range";
 import { getWrongNoteStorageRoot, resolveWrongNoteImageLocation, saveWrongNoteImage } from "@/modules/shared/wrong-note-storage";
 
@@ -10,6 +13,8 @@ export const DEMO_GUARDIAN_EMAIL = "guardian@example.com";
 export const DEMO_STUDENT_ID = "11111111-1111-4111-8111-111111111111";
 export const DEMO_STUDENT_WORKBOOK_ID = "71717171-7171-4717-8717-717171717171";
 export const DEMO_CURRICULUM_VERSION = "2022.12";
+export const DEMO_STUDENT_LOGIN_ID = "demo-student";
+export const DEMO_STUDENT_PASSWORD = "DemoStudent123!";
 
 const DEMO_CURRICULUM_NODE_IDS = {
   primeFactorization: "22222222-2222-4222-8222-222222222222",
@@ -95,6 +100,13 @@ export type DemoSeedResult = {
   wrongNoteCount: number;
   progressRowCount: number;
   studentWorkbookId: string;
+};
+
+export type DemoStudentActivationResult = {
+  studentId: string;
+  loginId: string;
+  displayName: string;
+  alreadyActive: boolean;
 };
 
 const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -223,6 +235,130 @@ export async function clearDemoData(client: PrismaClient = prisma) {
       },
     });
   });
+}
+
+export async function ensureDemoStudentLogin(
+  params: {
+    loginId?: string;
+    password?: string;
+    displayName?: string;
+  } = {},
+  client: PrismaClient = prisma,
+): Promise<DemoStudentActivationResult> {
+  const loginId = normalizeLoginId(params.loginId ?? DEMO_STUDENT_LOGIN_ID);
+  const password = params.password ?? DEMO_STUDENT_PASSWORD;
+  const passwordPolicy = validateAccountPassword(password);
+
+  if (!passwordPolicy.valid) {
+    throw new Error(passwordPolicy.message);
+  }
+
+  const passwordHash = await hashPassword(password);
+  const base = await ensureBaseRecords(client);
+  const displayName = (params.displayName ?? base.student.name).trim() || base.student.name;
+
+  const result = await client.$transaction(async (tx) => {
+    const student = await tx.student.findUnique({
+      where: {
+        id: DEMO_STUDENT_ID,
+      },
+      include: {
+        loginUser: true,
+      },
+    });
+
+    if (!student) {
+      throw new Error(`Seed student ${DEMO_STUDENT_ID} not found. Run prisma migrate deploy and prisma:seed first.`);
+    }
+
+    const duplicateLookup = await resolveUserByIdentifier(loginId, tx);
+
+    if (duplicateLookup.user && duplicateLookup.user.id !== student.loginUserId) {
+      throw new Error(`Login ID ${loginId} is already used by another account.`);
+    }
+
+    if (student.loginUser) {
+      await tx.userCredentialIdentifier.deleteMany({
+        where: {
+          userId: student.loginUser.id,
+        },
+      });
+
+      const updatedUser = await tx.user.update({
+        where: {
+          id: student.loginUser.id,
+        },
+        data: {
+          loginId,
+          name: displayName,
+          isActive: true,
+          passwordHash,
+          credentialIdentifiers: {
+            create: buildCredentialIdentifierValues({
+              loginId,
+            }).map((value) => ({
+              value,
+            })),
+          },
+        },
+      });
+
+      await tx.student.update({
+        where: {
+          id: student.id,
+        },
+        data: {
+          name: displayName,
+        },
+      });
+
+      return {
+        studentId: student.id,
+        loginId: updatedUser.loginId,
+        displayName,
+        alreadyActive: true,
+      } satisfies DemoStudentActivationResult;
+    }
+
+    const createdUser = await tx.user.create({
+      data: {
+        role: "student",
+        loginId,
+        email: null,
+        name: displayName,
+        isActive: true,
+        acceptedTermsAt: new Date(),
+        lastLoginAt: new Date(),
+        passwordHash,
+        credentialIdentifiers: {
+          create: buildCredentialIdentifierValues({
+            loginId,
+          }).map((value) => ({
+            value,
+          })),
+        },
+      },
+    });
+
+    await tx.student.update({
+      where: {
+        id: student.id,
+      },
+      data: {
+        loginUserId: createdUser.id,
+        name: displayName,
+      },
+    });
+
+    return {
+      studentId: student.id,
+      loginId: createdUser.loginId,
+      displayName,
+      alreadyActive: false,
+    } satisfies DemoStudentActivationResult;
+  });
+
+  return result;
 }
 
 export async function seedDemoData(options?: { client?: PrismaClient; referenceDate?: Date }): Promise<DemoSeedResult> {

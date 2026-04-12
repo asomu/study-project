@@ -1,6 +1,6 @@
 # Demo Runbook
 
-- Last Updated: 2026-03-23
+- Last Updated: 2026-04-12
 - Scope: `/Users/mark/Documents/project/study-project/apps/web`
 - Audience: 제품 오너 / 운영자 / 내부 시연 담당자
 - Goal: 현재 WrongNote + Workbook 제품 흐름을 같은 LAN에서 안정적으로 시연한다.
@@ -62,12 +62,13 @@ pnpm -C apps/web start:lan
 ```bash
 pnpm -C apps/web demo:seed
 pnpm -C apps/web demo:clear
+pnpm -C apps/web demo:activate-student
 ```
 
 주의:
 
 - `demo:seed`는 seeded guardian/student/workbook 기준 current WrongNote + Workbook 데모 데이터를 갱신한다.
-- 학생 실로그인까지 시연하려면 별도 학생 활성화가 필요할 수 있다.
+- `demo:activate-student`는 데모 학생 로그인 계정을 바로 준비하거나 기존 데모 학생 계정을 같은 자격 증명으로 갱신한다.
 
 ## 3. 현재 데모 데이터 truth
 
@@ -81,7 +82,8 @@ pnpm -C apps/web demo:clear
   3. wrong-note 3건
   4. workbook-linked wrong-note 포함
   5. guardian feedback 완료 wrong-note 1건
-- 학생 로그인 계정은 기본으로 생성되지 않으므로, 학생 홈까지 시연하려면 `/student/activate`를 거쳐 계정을 연결한다.
+- 학생 로그인 계정은 `pnpm -C apps/web demo:activate-student`로 바로 준비할 수 있다.
+- 기본 데모 학생 자격 증명은 `.env` 또는 `.env.example`의 `DEMO_STUDENT_LOGIN_ID`, `DEMO_STUDENT_PASSWORD`, `DEMO_STUDENT_DISPLAY_NAME`으로 제어한다.
 
 ## 4. 시연 전 최소 준비 데이터
 
@@ -116,12 +118,12 @@ pnpm -C apps/web demo:clear
 3. `문제집 템플릿 등록` 카드에서 템플릿 1개 생성
 4. `학생 문제집 배정` 카드에서 해당 템플릿 배정
 
-### C. 학생 첫 활성화
+### C. 학생 로그인 준비
 
-1. 보호자 로그아웃
-2. `/student/activate` 이동
-3. 초대코드, 학생 로그인 아이디, 비밀번호 입력
-4. `/student/dashboard` 자동 진입 확인
+1. 터미널에서 `pnpm -C apps/web demo:activate-student` 실행
+2. 보호자 로그아웃
+3. `/login`에서 학생 로그인 아이디/비밀번호로 로그인
+4. `/student/dashboard` 진입 확인
 
 ### D. 학생 데이터 입력
 
@@ -238,4 +240,4 @@ docker compose -f infra/docker/docker-compose.local.yml down
 
 - `demo:seed`는 current WrongNote + Workbook 데이터만 주입하며, legacy attempt/wrong-answer dataset은 더 이상 만들지 않는다.
 - legacy image path에 실제 파일이 없으면 placeholder가 보일 수 있다.
-- 학생 실로그인 시연은 별도 활성화가 필요할 수 있다.
+- 학생 실로그인 시연은 `demo:activate-student` 명령으로 바로 준비할 수 있다.

@@ -52,12 +52,14 @@ pnpm -C apps/web dev
 ```bash
 pnpm -C apps/web demo:seed
 pnpm -C apps/web demo:clear
+pnpm -C apps/web demo:activate-student
 ```
 
 - `demo:seed`는 current WrongNote + Workbook 데모 데이터를 다시 채웁니다.
 - `demo:clear`는 같은 current demo wrong-note/workbook 데이터와 관련 이미지 파일만 정리합니다.
+- `demo:activate-student`는 데모 학생 로그인 계정을 바로 준비하거나 기존 계정을 같은 자격 증명으로 갱신합니다.
 - `DEMO_REFERENCE_DATE=YYYY-MM-DD pnpm -C apps/web demo:seed`로 기준일을 고정할 수 있습니다.
-- student login 계정은 여전히 별도 활성화가 필요할 수 있으며, 운영자용 시연 절차는 `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`를 따릅니다.
+- 기본 데모 학생 자격 증명은 `.env.example`의 `DEMO_STUDENT_*` 값이며, 운영자용 시연 절차는 `/Users/mark/Documents/project/study-project/docs/05-operations/DEMO_RUNBOOK.md`를 따릅니다.
 
 ## Current Product Guides
 

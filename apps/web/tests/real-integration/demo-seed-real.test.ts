@@ -7,11 +7,14 @@ import { prisma } from "@/lib/prisma";
 import {
   clearDemoData,
   DEMO_CURRICULUM_VERSION,
+  DEMO_STUDENT_LOGIN_ID,
+  DEMO_STUDENT_PASSWORD,
   DEMO_STUDENT_ID,
   DEMO_STUDENT_WORKBOOK_ID,
+  ensureDemoStudentLogin,
   seedDemoData,
 } from "@/modules/demo/demo-data";
-import { createSeedGuardianAuthCookie, createSeedStudentAuthCookie, getSeedGuardian } from "./db-test-helpers";
+import { createSeedGuardianAuthCookie, createSeedStudentAuthCookie, getSeedGuardian, resetSeedStudentAccountState } from "./db-test-helpers";
 
 describe("real integration: demo seed", () => {
   beforeAll(async () => {
@@ -20,15 +23,48 @@ describe("real integration: demo seed", () => {
 
   beforeEach(async () => {
     await clearDemoData();
+    await resetSeedStudentAccountState();
   });
 
   afterAll(async () => {
     await clearDemoData();
+    await resetSeedStudentAccountState();
     await prisma.$disconnect();
+  });
+
+  it("activates the demo student login idempotently with configured credentials", async () => {
+    const firstActivation = await ensureDemoStudentLogin({
+      displayName: "데모 학생",
+    });
+    const secondActivation = await ensureDemoStudentLogin({
+      displayName: "데모 학생",
+    });
+
+    const student = await prisma.student.findUnique({
+      where: {
+        id: DEMO_STUDENT_ID,
+      },
+      include: {
+        loginUser: {
+          include: {
+            credentialIdentifiers: true,
+          },
+        },
+      },
+    });
+
+    expect(firstActivation.alreadyActive).toBe(false);
+    expect(secondActivation.alreadyActive).toBe(true);
+    expect(firstActivation.loginId).toBe(DEMO_STUDENT_LOGIN_ID);
+    expect(secondActivation.loginId).toBe(DEMO_STUDENT_LOGIN_ID);
+    expect(student?.loginUser?.loginId).toBe(DEMO_STUDENT_LOGIN_ID);
+    expect(student?.loginUser?.credentialIdentifiers.some((item) => item.value === DEMO_STUDENT_LOGIN_ID)).toBe(true);
+    expect(student?.loginUser?.passwordHash).not.toBe(DEMO_STUDENT_PASSWORD);
   });
 
   it("is idempotent and fills current wrong-note + workbook demo views", async () => {
     const referenceDate = new Date("2026-03-23T00:00:00.000Z");
+    await ensureDemoStudentLogin();
     const [guardianAuthCookie, studentAuthCookie] = await Promise.all([
       createSeedGuardianAuthCookie(),
       createSeedStudentAuthCookie(),

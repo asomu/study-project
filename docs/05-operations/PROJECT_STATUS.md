@@ -131,7 +131,7 @@
 - latest backup archive `study-project-20260322-205441.tar.gz`는 `/Users/mark/Documents/project/study-project/output/restore-smoke/20260322-restore-check`에 정상 복구되며, 현재 archive payload는 빈 `study-project/wrong-notes` 디렉터리 baseline이다.
 - OCR, 자동 피드백, 반복 오답 기반 재도전 관리는 아직 없다.
 - legacy `attempt / wrong-answer / study` 런타임과 API는 제거됐지만, Prisma legacy 테이블 drop migration은 후속 배치로 남아 있다.
-- `demo:seed`는 current WrongNote + Workbook dataset으로 재구성됐지만, 학생 실로그인 시연은 여전히 별도 활성화가 필요할 수 있다.
+- `demo:seed`는 current WrongNote + Workbook dataset으로 재구성됐고, 학생 실로그인 시연은 `demo:activate-student` 명령으로 바로 준비할 수 있다.
 - 중등 수학 커리큘럼은 2026 기준 학년별 적용 버전이 다르므로, 2027년 중3 개정 전환 시 seed와 authoring 기준을 다시 점검해야 한다.
 
 ## 4. Next Actions
@@ -141,7 +141,7 @@
 3. Prisma legacy 테이블 cleanup 범위를 별도 배치로 확정한다.
 4. wrong-note workspace의 stale request abort가 heavy soak/mobile 반복 탐색에서도 추가 문제를 만들지 관찰한다.
 5. storage audit baseline의 legacy missing 1건을 운영상 known issue로 유지할지, 별도 정리 표식으로 관리할지 결정한다.
-6. demo 시나리오에서 학생 실로그인까지 필요한 경우 seed 학생 활성화 보조 절차를 둘지 결정한다.
+6. `demo:activate-student` 운영 절차가 실제 시연 흐름에서 충분한지 확인하고, 필요하면 seed/clear와 더 강하게 묶을지 결정한다.
 
 ## 5. Change Log
 
@@ -270,6 +270,10 @@
   - `quality.yml`을 문서 기준 `pnpm verify:pr` 정책에 맞추고 Playwright browser 설치를 포함하도록 정리
   - release/quality workflow와 `.env.example`에서 미사용 `UPLOAD_DIR` 설정을 제거
   - empty leftover module directory(`analytics`, `assessment`, `mistake-note`, `study`)를 제거
- - 2026-04-12: shared utility naming cleanup
-   - `modules/dashboard/date-range.ts`를 `modules/shared/date-range.ts`로 이동해 current runtime이 legacy-like module name에 의존하지 않게 정리
-   - 로컬 `apps/web/.env`의 미사용 `UPLOAD_DIR` 설정을 제거
+- 2026-04-12: shared utility naming cleanup
+  - `modules/dashboard/date-range.ts`를 `modules/shared/date-range.ts`로 이동해 current runtime이 legacy-like module name에 의존하지 않게 정리
+  - 로컬 `apps/web/.env`의 미사용 `UPLOAD_DIR` 설정을 제거
+- 2026-04-12: demo student activation follow-up
+  - `pnpm -C apps/web demo:activate-student` 명령 추가
+  - 데모 학생 로그인 자격 증명을 `.env`/`.env.example`의 `DEMO_STUDENT_*` 값으로 제어 가능하게 정리
+  - `DEMO_RUNBOOK`, `apps/web/README`를 현재 데모 절차 기준으로 동기화

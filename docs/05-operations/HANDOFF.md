@@ -10,6 +10,10 @@
   - shared utility naming cleanup
     - `modules/dashboard/date-range.ts`를 `modules/shared/date-range.ts`로 이동했다.
     - 로컬 `apps/web/.env`의 미사용 `UPLOAD_DIR` 설정을 제거했다.
+  - demo student activation follow-up
+    - `pnpm -C apps/web demo:activate-student` 명령을 추가했다.
+    - 데모 학생 로그인 자격 증명을 `DEMO_STUDENT_*` 환경 변수로 제어할 수 있게 했다.
+    - `DEMO_RUNBOOK`, `apps/web/README`, `PROJECT_STATUS`를 현재 시연 절차 기준으로 갱신했다.
   - project recovery baseline 문서화 완료
     - `PROJECT_RECOVERY_PLAN`, `DOC_SYNC_CHECKLIST`, `MODULE_CLASSIFICATION`를 추가했다.
     - `README`, `apps/web/README`, `USER_GUIDE`, `CONTEXT_INDEX`, `DEVELOPMENT_PLAN`, `INDEX`, `docs/README`를 현재 기준으로 부분 정리했다.
