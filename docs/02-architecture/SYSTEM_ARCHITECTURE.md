@@ -55,13 +55,14 @@
 - `student_workbooks`
 - `student_workbook_progresses`
 
-Dormant legacy tables:
+Removed legacy tables (2026-04-12 cleanup batch):
 
 - `materials`
 - `attempts`
 - `attempt_items`
 - `wrong_answers`
 - `wrong_answer_categories`
+- `wrong_answer_category_map`
 - `practice_sets`
 - `practice_problems`
 - `concept_lessons`

@@ -12,13 +12,13 @@
   - workbook progress UI/API 운영 안정화
   - wrong-note workspace stale request abort의 soak 관찰
   - wrong-note storage audit baseline / restore smoke 운영 반영
-  - Prisma legacy 테이블 cleanup 배치 범위 정리
+  - Prisma legacy DB cleanup 이후 운영 관찰 항목 유지
   - 후속 범위(OCR/자동 피드백/리포트) 우선순위 정리
 - Top Risks:
   - 2026-03-22 모바일 follow-up에서는 student/guardian 모두 console error 0건과 `ERR_INSUFFICIENT_RESOURCES` 미재현을 확인했지만, stale request 정리에 따른 `net::ERR_ABORTED`가 남아 있어 heavy soak에서 추가 문제를 만드는지 더 지켜봐야 한다.
   - 2026-03-22 storage audit baseline은 `wrongNoteCount=1`, `missingCount=1`, `orphanCount=0`이며, 누락 1건은 unrecoverable legacy `/uploads/wrong-notes/...` 경로다.
   - OCR, 자동 피드백, 재도전 상태 추적은 아직 없다.
-  - Prisma legacy 테이블은 아직 DB에 남아 있어 drop migration 범위와 보존 정책을 별도 결정해야 한다.
+  - Prisma legacy DB cleanup은 완료됐고, 현재 남은 항목은 heavy soak/mobile 관찰과 운영 baseline 유지다.
 
 Source:
 

@@ -25,28 +25,6 @@ enum Subject {
   english
 }
 
-enum MaterialSourceType {
-  manual
-  system
-}
-
-enum AttemptSourceType {
-  manual
-  practice
-}
-
-enum PracticeProblemType {
-  single_choice
-  short_answer
-}
-
-enum StudyProgressStatus {
-  planned
-  in_progress
-  review_needed
-  completed
-}
-
 enum WrongNoteReason {
   calculation_mistake
   misread_question
@@ -75,8 +53,6 @@ model User {
   studentProfile          Student?                   @relation("StudentLogin")
   credentialIdentifiers   UserCredentialIdentifier[]
   createdStudentInvites   StudentInvite[]            @relation("StudentInvitesCreatedByGuardian")
-  studyReviews            StudyReview[]              @relation("GuardianStudyReviews")
-  unitProgressUpdates     StudentUnitProgress[]      @relation("ProgressUpdatedByGuardian")
   wrongNoteFeedback       WrongNote[]                @relation("GuardianWrongNoteFeedback")
   workbookTemplates       WorkbookTemplate[]         @relation("GuardianWorkbookTemplates")
   workbookProgressUpdates StudentWorkbookProgress[]  @relation("WorkbookProgressUpdatedBy")
@@ -105,12 +81,7 @@ model Student {
   updatedAt        DateTime              @updatedAt @map("updated_at")
   guardian         User                  @relation("GuardianStudents", fields: [guardianUserId], references: [id], onDelete: Cascade)
   loginUser        User?                 @relation("StudentLogin", fields: [loginUserId], references: [id], onDelete: SetNull)
-  materials        Material[]
-  attempts         Attempt[]
   invites          StudentInvite[]
-  mastery          MasterySnapshot[]
-  studyReviews     StudyReview[]
-  unitProgress     StudentUnitProgress[]
   wrongNotes       WrongNote[]
   studentWorkbooks StudentWorkbook[]
 
@@ -151,120 +122,12 @@ model CurriculumNode {
   updatedAt         DateTime                  @updatedAt @map("updated_at")
   parent            CurriculumNode?           @relation("CurriculumNodeTree", fields: [parentId], references: [id], onDelete: SetNull)
   children          CurriculumNode[]          @relation("CurriculumNodeTree")
-  attemptItems      AttemptItem[]
-  masterySnapshots  MasterySnapshot[]
-  practiceSets      PracticeSet[]
-  practiceProblems  PracticeProblem[]
-  conceptLesson     ConceptLesson?
-  unitProgress      StudentUnitProgress[]
   wrongNotes        WrongNote[]
   workbookProgress  StudentWorkbookProgress[]
 
   @@index([schoolLevel, subject, grade, semester])
   @@index([curriculumVersion, schoolLevel, subject])
   @@map("curriculum_nodes")
-}
-
-model Material {
-  id          String             @id @default(uuid())
-  studentId   String             @map("student_id")
-  title       String
-  publisher   String
-  subject     Subject
-  schoolLevel SchoolLevel        @map("school_level")
-  grade       Int
-  semester    Int
-  sourceType  MaterialSourceType @default(manual) @map("source_type")
-  systemKey   String?            @unique @map("system_key")
-  createdAt   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
-  student     Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  attempts    Attempt[]
-
-  @@index([studentId, createdAt])
-  @@map("materials")
-}
-
-model Attempt {
-  id             String             @id @default(uuid())
-  studentId      String             @map("student_id")
-  materialId     String             @map("material_id")
-  attemptDate    DateTime           @map("attempt_date")
-  notes          String?
-  sourceType     AttemptSourceType  @default(manual) @map("source_type")
-  startedAt      DateTime?          @map("started_at")
-  submittedAt    DateTime?          @map("submitted_at")
-  elapsedSeconds Int?               @map("elapsed_seconds")
-  practiceSetId  String?            @map("practice_set_id")
-  createdAt      DateTime           @default(now()) @map("created_at")
-  updatedAt      DateTime           @updatedAt @map("updated_at")
-  student        Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  material       Material           @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  practiceSet    PracticeSet?       @relation(fields: [practiceSetId], references: [id], onDelete: SetNull)
-  items          AttemptItem[]
-  workArtifact   StudyWorkArtifact?
-  studyReview    StudyReview?
-
-  @@index([studentId, attemptDate])
-  @@index([studentId, sourceType, submittedAt])
-  @@map("attempts")
-}
-
-model AttemptItem {
-  id                String           @id @default(uuid())
-  attemptId         String           @map("attempt_id")
-  curriculumNodeId  String           @map("curriculum_node_id")
-  problemNo         Int              @map("problem_no")
-  isCorrect         Boolean          @map("is_correct")
-  difficulty        Int?
-  practiceProblemId String?          @map("practice_problem_id")
-  studentAnswer     String?          @map("student_answer")
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  attempt           Attempt          @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  curriculumNode    CurriculumNode   @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
-  practiceProblem   PracticeProblem? @relation(fields: [practiceProblemId], references: [id], onDelete: SetNull)
-  wrongAnswer       WrongAnswer?
-
-  @@unique([attemptId, problemNo])
-  @@index([attemptId, curriculumNodeId])
-  @@map("attempt_items")
-}
-
-model WrongAnswer {
-  id            String                   @id @default(uuid())
-  attemptItemId String                   @unique @map("attempt_item_id")
-  imagePath     String?                  @map("image_path")
-  memo          String?
-  reviewedAt    DateTime?                @map("reviewed_at")
-  createdAt     DateTime                 @default(now()) @map("created_at")
-  updatedAt     DateTime                 @updatedAt @map("updated_at")
-  attemptItem   AttemptItem              @relation(fields: [attemptItemId], references: [id], onDelete: Cascade)
-  categories    WrongAnswerCategoryMap[]
-
-  @@index([createdAt])
-  @@map("wrong_answers")
-}
-
-model WrongAnswerCategory {
-  id         String                   @id @default(uuid())
-  key        String                   @unique
-  labelKo    String                   @map("label_ko")
-  createdAt  DateTime                 @default(now()) @map("created_at")
-  updatedAt  DateTime                 @updatedAt @map("updated_at")
-  wrongItems WrongAnswerCategoryMap[]
-
-  @@map("wrong_answer_categories")
-}
-
-model WrongAnswerCategoryMap {
-  wrongAnswerId String              @map("wrong_answer_id")
-  categoryId    String              @map("category_id")
-  wrongAnswer   WrongAnswer         @relation(fields: [wrongAnswerId], references: [id], onDelete: Cascade)
-  category      WrongAnswerCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  @@id([wrongAnswerId, categoryId])
-  @@map("wrong_answer_category_map")
 }
 
 model WrongNote {
@@ -367,128 +230,4 @@ model StudentWorkbookProgress {
   @@index([studentWorkbookId, status, lastUpdatedAt])
   @@index([curriculumNodeId, lastUpdatedAt])
   @@map("student_workbook_progress")
-}
-
-model MasterySnapshot {
-  id               String         @id @default(uuid())
-  studentId        String         @map("student_id")
-  curriculumNodeId String         @map("curriculum_node_id")
-  score            Decimal        @db.Decimal(5, 2)
-  accuracy         Decimal        @db.Decimal(4, 3)
-  periodStart      DateTime       @map("period_start")
-  periodEnd        DateTime       @map("period_end")
-  createdAt        DateTime       @default(now()) @map("created_at")
-  student          Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  curriculumNode   CurriculumNode @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
-
-  @@index([studentId, curriculumNodeId, periodEnd])
-  @@map("mastery_snapshots")
-}
-
-model PracticeSet {
-  id               String            @id @default(uuid())
-  title            String
-  description      String?
-  schoolLevel      SchoolLevel       @map("school_level")
-  subject          Subject
-  grade            Int
-  semester         Int
-  curriculumNodeId String            @map("curriculum_node_id")
-  isActive         Boolean           @default(true) @map("is_active")
-  sortOrder        Int               @default(0) @map("sort_order")
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
-  curriculumNode   CurriculumNode    @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
-  problems         PracticeProblem[]
-  attempts         Attempt[]
-
-  @@index([schoolLevel, subject, grade, semester, isActive])
-  @@index([curriculumNodeId, sortOrder])
-  @@map("practice_sets")
-}
-
-model PracticeProblem {
-  id               String              @id @default(uuid())
-  practiceSetId    String              @map("practice_set_id")
-  curriculumNodeId String              @map("curriculum_node_id")
-  problemNo        Int                 @map("problem_no")
-  type             PracticeProblemType
-  prompt           String
-  choicesJson      Json?               @map("choices_json")
-  correctAnswer    String              @map("correct_answer")
-  explanation      String?
-  skillTags        String[]            @default([]) @map("skill_tags")
-  difficulty       Int                 @default(3)
-  createdAt        DateTime            @default(now()) @map("created_at")
-  updatedAt        DateTime            @updatedAt @map("updated_at")
-  practiceSet      PracticeSet         @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
-  curriculumNode   CurriculumNode      @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
-  attemptItems     AttemptItem[]
-
-  @@unique([practiceSetId, problemNo])
-  @@index([curriculumNodeId, difficulty])
-  @@map("practice_problems")
-}
-
-model ConceptLesson {
-  id               String         @id @default(uuid())
-  curriculumNodeId String         @unique @map("curriculum_node_id")
-  title            String
-  summary          String?
-  contentJson      Json           @map("content_json")
-  createdAt        DateTime       @default(now()) @map("created_at")
-  updatedAt        DateTime       @updatedAt @map("updated_at")
-  curriculumNode   CurriculumNode @relation(fields: [curriculumNodeId], references: [id], onDelete: Cascade)
-
-  @@map("concept_lessons")
-}
-
-model StudyWorkArtifact {
-  id        String   @id @default(uuid())
-  attemptId String   @unique @map("attempt_id")
-  imagePath String   @map("image_path")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  attempt   Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-
-  @@map("study_work_artifacts")
-}
-
-model StudyReview {
-  id             String              @id @default(uuid())
-  attemptId      String              @unique @map("attempt_id")
-  studentId      String              @map("student_id")
-  guardianUserId String              @map("guardian_user_id")
-  feedback       String
-  progressStatus StudyProgressStatus @map("progress_status")
-  reviewedAt     DateTime            @map("reviewed_at")
-  createdAt      DateTime            @default(now()) @map("created_at")
-  updatedAt      DateTime            @updatedAt @map("updated_at")
-  attempt        Attempt             @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  student        Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  guardian       User                @relation("GuardianStudyReviews", fields: [guardianUserId], references: [id], onDelete: Cascade)
-
-  @@index([studentId, reviewedAt])
-  @@index([guardianUserId, reviewedAt])
-  @@map("study_reviews")
-}
-
-model StudentUnitProgress {
-  id                      String              @id @default(uuid())
-  studentId               String              @map("student_id")
-  curriculumNodeId        String              @map("curriculum_node_id")
-  status                  StudyProgressStatus
-  note                    String?
-  lastStudiedAt           DateTime?           @map("last_studied_at")
-  reviewedAt              DateTime?           @map("reviewed_at")
-  updatedByGuardianUserId String?             @map("updated_by_guardian_user_id")
-  createdAt               DateTime            @default(now()) @map("created_at")
-  updatedAt               DateTime            @updatedAt @map("updated_at")
-  student                 Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  curriculumNode          CurriculumNode      @relation(fields: [curriculumNodeId], references: [id], onDelete: Restrict)
-  updatedByGuardian       User?               @relation("ProgressUpdatedByGuardian", fields: [updatedByGuardianUserId], references: [id], onDelete: SetNull)
-
-  @@unique([studentId, curriculumNodeId])
-  @@index([studentId, status, updatedAt])
-  @@map("student_unit_progress")
 }

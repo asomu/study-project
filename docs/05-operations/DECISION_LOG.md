@@ -266,3 +266,14 @@
   - 보호자 `학생 선택`과 `학생 보기 / 문제집 관리` 토글은 본문이 아니라 sticky utility bar에 둔다.
   - 모바일에서는 같은 nav를 off-canvas drawer로 제공하고, backdrop / `Esc` / 항목 선택 시 닫힌다.
   - skip link, `aria-current`, drawer focus restore를 공통 셸 접근성 규칙으로 유지한다.
+
+## ADR-0032: Prisma legacy study/wrong-answer tables drop cleanup을 완료한다
+
+- Date: 2026-04-12
+- Decision: legacy `attempt` / `wrong-answer` / `study` 관련 Prisma 모델, enum, DB 테이블을 current runtime에서 완전히 제거하고, explicit migration `20260412092000_drop_legacy_runtime_tables`를 적용한다.
+- Rationale: active code path에서 legacy ownership helper/type 의존까지 제거된 상태에서 dormant schema/table을 계속 유지하면 아키텍처 이해와 운영 기준만 복잡해진다. 현재 제품 source of truth는 `WrongNote + Workbook`로 이미 고정되어 있어, redirect shim과 legacy image read-only 호환만 남기고 DB 레벨 잔재를 정리하는 편이 더 명확하다.
+- Consequence:
+  - `schema.prisma`는 current runtime 모델만 유지한다.
+  - legacy 학습/오답 데이터는 current runtime으로 마이그레이션하지 않는다.
+  - historical recovery는 migration history와 운영 백업 기준으로만 다룬다.
+  - 남은 리스크는 DB drop pending이 아니라 heavy soak/mobile 관찰, storage known issue baseline, curriculum refresh 시점 확인으로 축소된다.

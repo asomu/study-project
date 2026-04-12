@@ -25,6 +25,10 @@
   - stale response soak regression 추가
     - guardian dashboard mocked E2E에 rapid student switching 시 delayed stale response가 최종 선택 학생 화면을 덮지 못하는 시나리오를 추가했다.
     - 남은 리스크를 mocked regression 부재가 아닌 heavy soak/mobile 실환경 관찰로 좁혔다.
+  - Prisma legacy DB cleanup 완료
+    - `ownership-guard.ts`의 legacy Prisma helper/type 제거 후 `schema.prisma`에서 dormant legacy 모델/enum을 제거했다.
+    - migration `20260412092000_drop_legacy_runtime_tables`를 적용하고 Prisma client를 재생성했다.
+    - 남은 리스크를 DB drop pending이 아닌 운영 관찰/정책성 항목으로 줄였다.
   - project recovery baseline 문서화 완료
     - `PROJECT_RECOVERY_PLAN`, `DOC_SYNC_CHECKLIST`, `MODULE_CLASSIFICATION`를 추가했다.
     - `README`, `apps/web/README`, `USER_GUIDE`, `CONTEXT_INDEX`, `DEVELOPMENT_PLAN`, `INDEX`, `docs/README`를 현재 기준으로 부분 정리했다.

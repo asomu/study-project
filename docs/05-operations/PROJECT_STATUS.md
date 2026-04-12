@@ -130,7 +130,7 @@
 - 2026-04-12 storage audit dry-run 기준 `wrongNoteCount=2`, `missingCount=1`, `orphanCount=0`이며, legacy `/uploads/wrong-notes/...` 누락 1건은 `KNOWN_STORAGE_ISSUES.json` 엔트리 baseline으로 관리한다.
 - latest backup archive `study-project-20260322-205441.tar.gz`는 `/Users/mark/Documents/project/study-project/output/restore-smoke/20260322-restore-check`에 정상 복구되며, 현재 archive payload는 빈 `study-project/wrong-notes` 디렉터리 baseline이다.
 - OCR, 자동 피드백, 반복 오답 기반 재도전 관리는 아직 없다.
-- legacy `attempt / wrong-answer / study` 런타임과 API는 제거됐지만, Prisma legacy 테이블 drop migration은 후속 배치로 남아 있다.
+- legacy `attempt / wrong-answer / study` 런타임/API/Prisma 테이블 cleanup은 완료됐고, 현재 호환 범위는 redirect shim과 legacy image path read-only 처리만 남아 있다.
 - `demo:seed`는 current WrongNote + Workbook dataset으로 재구성됐고, 학생 실로그인 시연은 `demo:activate-student` 명령으로 바로 준비할 수 있다.
 - 중등 수학 커리큘럼은 2026 기준 학년별 적용 버전이 다르므로, 2027년 중3 개정 전환 시 seed와 authoring 기준을 다시 점검해야 한다.
 
@@ -138,10 +138,9 @@
 
 1. 프로젝트 상태 truth reset 기준으로 `CONTEXT_INDEX`, `HANDOFF`, `DEVELOPMENT_PLAN`, README 계열 drift를 계속 정리한다.
 2. `quality.yml` 변경 이후 CI에서 `pnpm verify:pr` 경로 기반 게이트가 안정적으로 도는지 확인한다.
-3. `LEGACY_DB_CLEANUP_PLAN.md` 기준으로 `ownership-guard` legacy helper 제거 -> Prisma schema 정리 -> drop migration 순서의 별도 배치를 실행한다.
-4. wrong-note workspace의 stale request abort가 heavy soak/mobile 반복 탐색에서도 추가 문제를 만들지 관찰한다.
-5. `KNOWN_STORAGE_ISSUES.json` baseline과 실제 audit 결과가 계속 일치하는지 운영 중 확인한다.
-6. `demo:activate-student` 운영 절차가 실제 시연 흐름에서 충분한지 확인하고, 필요하면 seed/clear와 더 강하게 묶을지 결정한다.
+3. wrong-note workspace의 stale request abort가 heavy soak/mobile 반복 탐색에서도 추가 문제를 만들지 관찰한다.
+4. `KNOWN_STORAGE_ISSUES.json` baseline과 실제 audit 결과가 계속 일치하는지 운영 중 확인한다.
+5. `demo:activate-student` 운영 절차가 실제 시연 흐름에서 충분한지 확인하고, 필요하면 seed/clear와 더 강하게 묶을지 결정한다.
 
 ## 5. Change Log
 
@@ -288,3 +287,7 @@
 - 2026-04-12: stale response soak regression 추가
   - guardian dashboard mocked E2E에 rapid student switching 시 delayed stale response가 최종 선택 학생 화면을 덮지 못하는 시나리오를 추가
   - 현재 남은 관찰 범위를 mocked 회귀가 아닌 heavy soak/mobile 실환경 fan-out 확인으로 좁힘
+- 2026-04-12: Prisma legacy DB cleanup 완료
+  - `ownership-guard.ts`의 legacy Prisma helper/type 제거
+  - `schema.prisma`에서 dormant legacy 모델/enum 제거
+  - migration `20260412092000_drop_legacy_runtime_tables` 적용 및 Prisma client 재생성 완료

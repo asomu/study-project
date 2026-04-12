@@ -18,7 +18,7 @@
 
 - Wrong Note: `WrongNote` 전용 도메인 + 학생/보호자 전용 route handlers + guarded image API
 - Workbook Progress: `WorkbookTemplate` / `StudentWorkbook` / `StudentWorkbookProgress` 전용 도메인
-- Legacy posture: `attempt` / `wrong-answer` / `study` 런타임과 API는 제거했고, 이번 배치에서는 Prisma legacy 테이블만 dormant 상태로 유지한다.
+- Legacy posture: `attempt` / `wrong-answer` / `study` 런타임과 API는 제거했고, Prisma legacy 테이블 drop cleanup까지 완료했다. legacy URL은 redirect shim과 read-only image path 호환만 유지한다.
 
 ### Data
 

@@ -2,7 +2,7 @@
 
 - Last Updated: 2026-04-12
 - Scope: dormant Prisma legacy tables and related code references
-- Goal: 현재 WrongNote + Workbook baseline을 유지하면서 legacy DB drop 배치를 안전하게 준비한다.
+- Goal: 현재 WrongNote + Workbook baseline을 유지하면서 완료된 legacy DB drop 배치의 범위와 결과를 기록한다.
 
 ## 1. Current Baseline
 
@@ -19,7 +19,7 @@ Current runtime source of truth tables:
 - `student_workbooks`
 - `student_workbook_progress`
 
-Dormant legacy tables still present in Prisma schema:
+Removed legacy tables in the 2026-04-12 cleanup batch:
 
 - `materials`
 - `attempts`
@@ -35,33 +35,36 @@ Dormant legacy tables still present in Prisma schema:
 - `student_unit_progress`
 - `mastery_snapshots`
 
-## 2. Why This Is Still Deferred
+## 2. Executed Cleanup Summary
 
-- ADR-0030 explicitly removed legacy runtime/API first and deferred schema drop to a later cleanup batch.
-- Current product behavior no longer depends on those tables for wrong-note or workbook flows.
-- However, Prisma schema and a few shared helper types still mention legacy models, so dropping the tables without code cleanup would break build/typecheck.
+- ADR-0030 removed legacy runtime/API first and deferred schema drop to a later cleanup batch.
+- The 2026-04-12 cleanup batch completed the remaining steps:
+  - legacy ownership helper/type removal
+  - Prisma schema cleanup
+  - explicit drop migration application
+  - Prisma client regeneration
+  - `pnpm verify:pr` revalidation
 
-## 3. Code References That Must Be Removed First
+## 3. Cleanup Notes
 
 ### `apps/web/src/modules/auth/ownership-guard.ts`
 
-Still contains legacy ownership helpers and Prisma payload types for:
+Legacy ownership helpers and Prisma payload types for the following were removed before schema drop:
 
 - `Material`
 - `Attempt`
 - `AttemptItem`
 - `WrongAnswer`
 
-Current active runtime appears to use only:
+Active runtime now uses only:
 
 - `assertStudentOwnership`
 - `assertStudentLoginOwnership`
 
-Implication:
+- `assertStudentOwnership`
+- `assertStudentLoginOwnership`
 
-- Before dropping legacy Prisma models/tables, remove legacy helper exports and their Prisma type references from `ownership-guard.ts`.
-
-## 4. Recommended Execution Order
+## 4. Executed Order
 
 ### Phase 1. Code Detach
 
@@ -98,20 +101,20 @@ Implication:
 2. Prefer one focused drop batch instead of mixing with product feature work.
 3. Record exact dropped tables in `DECISION_LOG.md` and `PROJECT_STATUS.md`.
 
-## 5. Data Retention Recommendation
+## 5. Data Retention Outcome
 
-- Default recommendation: no in-app migration of legacy study/wrong-answer data into `WrongNote`.
-- Reason: product source of truth has already changed, and documents explicitly say legacy data is not migrated into current wrong-note workspace.
-- Before drop migration, take one final DB backup / schema snapshot for historical recovery only.
+- No in-app migration of legacy study/wrong-answer data into `WrongNote` was performed.
+- Product source of truth remains `WrongNote + Workbook` only.
+- Historical retention is handled through DB/migration history and storage backup records, not through current runtime compatibility.
 
-## 6. Success Criteria
+## 6. Outcome
 
 - No active code imports legacy Prisma payload types.
 - `schema.prisma` contains only current runtime models.
-- `pnpm verify:pr` passes after Prisma regeneration and migration.
-- Architecture/operations docs no longer describe dormant legacy tables as pending cleanup.
+- explicit migration `20260412092000_drop_legacy_runtime_tables` was applied.
+- architecture/operations docs now describe the legacy DB cleanup as completed work.
 
-## 7. Out of Scope
+## 7. Remaining Out of Scope
 
 - redirect shim page removal
 - storage known issue handling for legacy `/uploads/wrong-notes/...`
